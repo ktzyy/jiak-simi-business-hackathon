@@ -83,7 +83,15 @@ export function handsfreeHandler(deps: { backend?: () => BackendClient; create?:
             speech: async text => { await budget(); return (deps.speech ?? speakQuote)(text, key); },
             transcribe: async wav => { await budget(); return (deps.transcribe ?? transcribeConfirmation)(wav, key); },
             submit: async nonce => {
-              const ticket = await databaseRpc(client, "submit_voice_order", { ...args, p_confirmation_nonce: nonce }, TicketSchema);
+              // The database keeps the receipt under this nonce. Recover one
+              // uncertain transport response using the exact same confirmation.
+              const submit = () => databaseRpc(client, "submit_voice_order", { ...args, p_confirmation_nonce: nonce }, TicketSchema);
+              let ticket;
+              try { ticket = await submit(); }
+              catch (error) {
+                if (!(error instanceof HttpError) || error.code !== "DATABASE_ERROR") throw error;
+                ticket = await submit();
+              }
               if (ticket.source !== "voice" || ticket.cart.restaurantId !== session.restaurantId) throw new Error("Ticket mismatch.");
               return ticket;
             },
@@ -103,6 +111,9 @@ export function handsfreeHandler(deps: { backend?: () => BackendClient; create?:
       const session = await databaseRpc(client, "read_voice_session", { p_actor_id: actor, p_voice_session_id: input.voiceSessionId }, Session);
       if (session.restaurantId !== PUBLIC_DEMO_RESTAURANT_ID || session.id !== input.voiceSessionId) throw new HttpError(403, "FORBIDDEN", "This voice session is outside the dummy stall.");
       if (input.action === "close") { await butler.stop(); return json({ ok: true }); }
+      // Closing invalidates the database review, but its diagnostic/receipt still
+      // belongs to this re-authorized device. Do not hide it behind an expiry error.
+      if (input.action === "status" && ["closed", "error", "submitted"].includes(butler.status().phase)) return json(butler.status());
       if (session.status !== "active" || Date.parse(session.expiresAt) <= Date.now()) { await butler.stop(); throw new HttpError(409, "VOICE_SESSION_EXPIRED", "Start a new voice session."); }
       if (input.action === "draft") butler.previewTranscript(input.text);
       if (input.action === "audio") return json({ audio: butler.takeAudio(input.readbackId).toString("base64") });

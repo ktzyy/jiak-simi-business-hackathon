@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Local user-selected Blob URLs are displayed unchanged for source review. */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
 import { globalAddonRows, applyGlobalAddons, dollars, type DishEdit, type SourceDecision } from "./review-state";
 import { cleanDemoAddons } from "./demo-draft";
@@ -10,7 +10,8 @@ import { DishOptions } from "./dish-options";
 import { DishPhotoComparison } from "./dish-photo-comparison";
 import s from "./onboarding.module.css";
 
-export function MenuReview({ anyExtras, onAnyExtrasChange, restaurantId, quickDemo = false, dishes, draft, sources, issues, sample, photoUrl, onDishChange, onConfirmDish, onConfirmAll, onAddDish, onRemoveDish, onSourceChange, onIssueChange, onContinue, onBack }: {
+export function MenuReview({ anyExtras, onAnyExtrasChange, restaurantId, quickDemo = false, dishes, draft, sources, issues, sample, photoUrl, onDishChange, onConfirmDish, onConfirmAll, onAddDish, onRemoveDish, onSourceChange, onIssueChange, onContinue, onBack, renderDishPhoto }: {
+  renderDishPhoto?: (dish: DishEdit) => ReactNode;
   anyExtras: ReadonlySet<string>; onAnyExtrasChange: (id: string, enabled: boolean) => void; restaurantId: string; quickDemo?: boolean; dishes: DishEdit[]; draft: ExtractedMenuDraft | null; sources: Record<string, SourceDecision>; issues: Record<string, string>; sample: boolean; photoUrl: string | null;
   onDishChange: (id: string, patch: Partial<DishEdit>) => void; onConfirmDish: (id: string) => boolean; onConfirmAll: () => boolean; onAddDish: () => string; onRemoveDish: (id: string) => void;
   onSourceChange: (id: string, value: SourceDecision) => void; onIssueChange: (id: string, value: string) => void; onContinue: (dishes?: DishEdit[]) => void; onBack: () => void;
@@ -62,6 +63,7 @@ export function MenuReview({ anyExtras, onAnyExtrasChange, restaurantId, quickDe
           <label className={s.check}><input type="checkbox" checked={dish.included} onChange={e => onDishChange(dish.id, { included: e.target.checked })} />Include this dish on my menu</label>
           {dish.included ? <>
             <label className="field">Dish name<input value={dish.name} maxLength={120} onChange={e => onDishChange(dish.id, { name: e.target.value })} /></label>
+            {renderDishPhoto?.(dish)}
             <label className="field">Price (S$)<input value={dish.price} inputMode="decimal" placeholder="e.g. 4.50" onChange={e => onDishChange(dish.id, { price: e.target.value })} /></label>
             <label className={s.check}><input type="checkbox" checked={dish.available} onChange={e => onDishChange(dish.id, { available: e.target.checked })} />Available to order</label>
             <DishOptions anyExtras={anyExtras} onAnyExtrasChange={onAnyExtrasChange} groups={dish.groups} onChange={groups => onDishChange(dish.id, { groups })} />

@@ -10,7 +10,15 @@ import { createApiClient } from "@/shared/api-client";
 import styles from "./voice.module.css";
 
 type Connection = Awaited<ReturnType<typeof connectLiveAudio>>;
-type Status = { phase: string; readbackId?: string; ticket?: Ticket; quote?: Quote };
+type Status = { phase: string; readbackId?: string; ticket?: Ticket; quote?: Quote; errorCode?: string; errorStage?: string };
+const phaseLabel: Record<string, string> = { collecting: "Listening — tell us your order", preparing: "Checking your order and total…", readback: "Your order is ready to read back", playing: "Reading back your order", confirming: "Say Confirm after the beep", transcribing: "Checking your answer…", submitted: "Order sent to the kitchen" };
+function failureMessage(status: Status) {
+  if (status.errorCode === "RATE_LIMITED") return "The demo is busy. Please wait a moment, then start again.";
+  if (status.errorStage === "mute" || status.errorStage === "provider") return "The voice connection was interrupted. Start again to reconnect.";
+  if (status.errorStage === "prepare") return "We couldn't check that order. Please start again and say the dish name.";
+  if (status.errorStage === "speech") return "We couldn't read your order aloud. Please start again.";
+  return "The voice session ended before completion. Check Cook Mode before starting a new order.";
+}
 const money = (cents: number) => `S$${(cents / 100).toFixed(2)}`;
 async function sendCommand<T>(body: object, signal?: AbortSignal, publicDemo = false): Promise<T> {
   let token = PUBLIC_DEMO_BEARER;
@@ -41,7 +49,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
     if (audio.current) audio.current.muted = true;
     await current?.close().catch(() => { if (mounted.current) setError("Session close was not acknowledged. The local server will expire it."); });
     await context.current?.close().catch(() => undefined); context.current = null;
-    if (mounted.current) { setRunning(false); setState("Stopped"); setQuote(null); }
+    if (mounted.current) { setRunning(false); setState("Stopped"); }
   }
   useEffect(() => { mounted.current = true; const end = () => { void stop(); }; window.addEventListener("pagehide", end); return () => { mounted.current = false; window.removeEventListener("pagehide", end); void stop(); }; }, []);
   async function start() {
@@ -64,7 +72,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
       while (!abort.signal.aborted) {
         const status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
         if (!mounted.current || abort.signal.aborted) break;
-        if (status.phase === "error" || status.phase === "closed") throw new Error("The voice session ended before completion. Check the kitchen queue before starting a new order.");
+        if (status.phase === "error" || status.phase === "closed") throw new Error(failureMessage(status));
         if (status.phase === "collecting" && transcriptDraft.current.text && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
           transcriptDraft.current.sent = transcriptDraft.current.text;
           await command({ action: "draft", voiceSessionId: live.voiceSessionId, text: transcriptDraft.current.text }, abort.signal);
@@ -72,9 +80,11 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
         setQuote(status.quote ?? null);
         live.setMicrophoneEnabled(status.phase === "collecting");
         audio.current!.muted = !["collecting", "submitted"].includes(status.phase);
-        setState(status.phase === "collecting" ? "Listening — order aloud, including dine-in or takeaway" : status.phase);
+        setState(phaseLabel[status.phase] ?? "Checking your order…");
         if (status.phase === "readback" && status.readbackId && !seen.has(status.readbackId)) {
           seen.add(status.readbackId);
+          if (status.errorCode) setError("I couldn't hear the confirmation clearly. Listen once more, then say Confirm after the beep.");
+          else setError("");
           const id = status.readbackId;
           const result = await command<{ audio: string }>({ action: "audio", voiceSessionId: live.voiceSessionId, readbackId: id }, abort.signal);
           setState("Reading back your order");
@@ -109,7 +119,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
         <div className="actions"><button className="btn btn-primary" onClick={() => { void start(); }} disabled={running}>Start device</button><button className="btn btn-outline" onClick={() => { void stop(); }} disabled={!running}>Stop device</button></div>
         <p role="status" className={styles.state}>{state}</p>{error && <p role="alert" className={styles.error}>{error}</p>}
       </section>
-      <section className={`card ${styles.panel}`} aria-labelledby="voice-summary" aria-live="polite"><p className="eyebrow">{ticket ? "Sent to the kitchen" : summary ? "Ready for your spoken confirmation" : "Your voice order"}</p><h2 id="voice-summary">Your order</h2>
+      <section className={`card ${styles.panel}`} aria-labelledby="voice-summary" aria-live="polite"><p className="eyebrow">{ticket ? "Sent to the kitchen" : summary ? "Your order draft" : "Your voice order"}</p><h2 id="voice-summary">Your order</h2>
         {summary ? <><p>{summary.fulfillmentType === "dine_in" ? "Dine-in" : summary.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</p><ul className={styles.order}>{summary.lines.map((line, index) => <li key={`${line.dishId}-${index}`}><div><strong>{line.quantity} × {line.name}</strong><strong>{money(line.lineTotalCents)}</strong></div>{line.options.length > 0 && <p>{line.options.map(option => `${option.name}${option.priceDeltaCents ? ` (${money(option.priceDeltaCents)} per dish)` : ""}`).join(" · ")}</p>}</li>)}</ul><div className={styles.total}><strong>Total</strong><strong>{money(summary.totalCents)}</strong></div><p>{ticket ? "Order received · Unpaid — pay at the stall." : "Not placed yet · Payment due at the stall."}</p>{ticket && <><p className={styles.ticket}>Ticket {ticket.id}</p><Link className="btn btn-teal" href={`/kitchen?restaurantId=${DEMO_RESTAURANT_ID}`}>View in Cook Mode →</Link></>}</> : <p className={styles.empty}>Your dishes, extras and total will appear here after GPT Live checks your order.</p>}
       </section>
     </div>

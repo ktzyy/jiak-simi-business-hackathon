@@ -1,0 +1,15 @@
+{
+  "status": "photo_applied_catalog_verified",
+  "project": "mikpepfrumtglwweolzq",
+  "sha256": "2a895744103cd3d280d2acd6d32d8d028a71a5e14cca20a521d086de775513aa",
+  "remoteVersion": "20260913084500",
+  "catalog": {
+    "tables": 2,
+    "rls_tables": 2,
+    "functions": 5,
+    "secured_functions": 5,
+    "browser_functions": 0,
+    "browser_tables": 0
+  },
+  "verifiedAt": "2026-09-13T08:45:02.076Z"
+}

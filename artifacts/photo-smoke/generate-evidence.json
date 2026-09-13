@@ -1,0 +1,16 @@
+{
+  "createdAt": "2026-09-13T08:46:43.944Z",
+  "status": 200,
+  "key": "f32f9afa-b0fb-45af-ab5a-b8e745e056a3",
+  "jobId": "2f5a983c-19be-4c8c-971c-6d95812f521e",
+  "candidateId": "a2b278c0-8153-4631-8346-bb1c14247001",
+  "model": "gpt-image-2.5-flare",
+  "label": "AI-generated illustration",
+  "jobStatus": "ready",
+  "previewBytes": 118341,
+  "previewPath": "/private/tmp/jiak-generated-fishball-noodles.jpg",
+  "sameKeyReplaySameCandidate": true,
+  "anonymousPreviewStatus": 401,
+  "unpublishedPublicMediaStatus": 404,
+  "published": false
+}
