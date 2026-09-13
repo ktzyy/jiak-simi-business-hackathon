@@ -19,8 +19,9 @@ import { getStaffAccessToken } from "@/components/ui/staff-access";
 import { CustomerCart } from "@/components/ordering/customer-cart";
 import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
-import { DAYS, applyGlobalAddons, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, menuFromEdits, type DishEdit } from "./review-state";
+import { DAYS, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, menuFromEdits, type DishEdit, type GlobalAddonEdit } from "./review-state";
 import s from "./onboarding.module.css";
+import { splitSharedExtras } from "./shared-extras";
 
 const api = createApiClient();
 const PendingWithPhotosSchema = PendingPublicationSchema.extend({ photoSelections: z.array(dishPhotoSelectionSchema).max(100).optional() });
@@ -51,6 +52,8 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   const [pendingDetails, setPendingDetails] = useState<SavedStallDetails | null>(null);
   const [draft, setDraft] = useState<ExtractedMenuDraft | null>(null);
   const [anyExtras, setAnyExtras] = useState<Set<string>>(() => new Set());
+  const [sharedRows, setSharedRows] = useState<GlobalAddonEdit[]>([]);
+  const [excludedExtras, setExcludedExtras] = useState<string[]>([]);
   const [dishes, setDishes] = useState<DishEdit[]>([]);
   const [current, setCurrent] = useState<Menu | null>(null);
   const [menuRead, setMenuRead] = useState<"loading" | "ready" | "error">("loading");
@@ -124,11 +127,8 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   function loadDraft(next: ExtractedMenuDraft | null) {
     dishPhotos.reset(); setRetainedPhotos([]);
     let nextDishes = next ? draftDishes(next) : current ? existingDishes(current) : [newDish()];
-    const extras = globalAddonRows(next, nextDishes);
-    // Apply readable shared extras once; uncertain rows remain editable below.
-    if (extras.length && nextDishes.length) {
-      try { nextDishes = applyGlobalAddons(nextDishes, extras, crypto.randomUUID()).dishes; } catch { /* Merchant resolves unclear extras. */ }
-    }
+    const shared = next ? { dishes: nextDishes, rows: globalAddonRows(next, nextDishes), excluded: [] } : splitSharedExtras(nextDishes);
+    nextDishes = shared.dishes; setSharedRows(shared.rows); setExcludedExtras(shared.excluded);
     setDraft(next); setDishes(nextDishes); setAnyExtras(new Set()); setPreview(null); setError(""); setNotice(""); setStep(2);
   }
   async function editExisting() {
@@ -197,7 +197,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     setError(""); return true;
   }
   function removeDish(id: string) {
-    dishPhotos.remove(id); setDishes(old => old.filter(d => d.id !== id)); setPreview(null);
+    dishPhotos.remove(id); setDishes(old => old.filter(d => d.id !== id)); setExcludedExtras(old => old.filter(excluded => excluded !== id)); setPreview(null);
   }
   async function reloadDetails() {
     if (inFlight.current) return;
@@ -341,7 +341,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     <div className={s.onboarding}>
       <header className={s.header}><h1 ref={heading} tabIndex={-1}>{published ? "Menu published" : ["Set up your stall", "Review menu", "Preview"][step - 1]}</h1></header>
       <ol className={s.steps} aria-label="Setup progress">{["Stall details", "Review menu", "Preview & publish"].map((label, index) => <li key={label} aria-current={step === index + 1 ? "step" : undefined} className={step >= index + 1 ? s.activeStep : ""}><span>{step > index + 1 ? "✓" : index + 1}</span>{label}</li>)}</ol>
-      {error && <div className={`notice ${s.error}`} role="alert" ref={errorNode} tabIndex={-1}><strong>Let’s check that</strong><p>{error}</p>{menuRead === "error" && <button className="btn btn-outline" onClick={refresh} disabled={!!busy}>Check menu connection again</button>}<Link href="/login" className={s.signIn}>Staff sign in</Link></div>}
+      {error && <div className={`notice ${s.error}`} role="alert" ref={errorNode} tabIndex={-1}><strong>Let’s check that</strong><p>{error}</p>{menuRead === "error" && <button className="btn btn-outline" onClick={refresh} disabled={!!busy}>Check menu connection again</button>}{/sign in|unauthoriz|access denied/i.test(error) && <Link href="/login" className={s.signIn}>Staff sign in</Link>}</div>}
       {notice && <div className="notice" role="status">{notice}</div>}
       {storageBlocked && <p className="notice" role="status">Publishing is paused while the previous browser record needs checking. You can continue editing, but don’t clear that record or start another publication.</p>}
       {busy === "extract" && <div className={s.extracting} role="status"><div className={s.foodAnimation} aria-hidden="true">{["noodles", "dimsum-basket", "kopi"].map(name => <Image key={name} src={`/illustrations/${name}.svg`} alt="" width={110} height={110} unoptimized />)}</div><h2>Reading your menu…</h2><p>Usually 30–60 seconds. Grab a drink; keep this page open.</p></div>}
@@ -349,7 +349,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
       {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes</p><p>Your menu is live.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
         {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} uploads={uploads} onPhotos={selectPhotos} onRemovePhoto={removeUpload} busy={!!busy} onExtract={extract} onDemoImage={loadDemoImage} onExisting={() => void editExisting()} existingAvailable={!!current} />}
-        {step === 2 && <MenuReview anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} dishes={dishes} draft={draft} uploads={draft ? uploads : []} renderDishPhoto={dish => {
+        {step === 2 && <MenuReview sharedRows={sharedRows} setSharedRows={setSharedRows} excludedExtras={excludedExtras} setExcludedExtras={setExcludedExtras} anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} dishes={dishes} draft={draft} uploads={draft ? uploads : []} renderDishPhoto={dish => {
           const item = draft?.items.find(item => item.id === dish.draftItemId);
           const upload = uploads.find(upload => upload.draft?.items.some(item => item.id === dish.draftItemId));
           const crop = crops[dish.id];

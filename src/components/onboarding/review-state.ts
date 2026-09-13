@@ -32,6 +32,7 @@ export function dishProblem(dish: DishEdit): string | null {
   if (!Number.isInteger(price) || price < 0 || price > 1_000_000) return "Add a price from S$0.00 to S$10,000.00, with up to two decimal places.";
   if (dish.groups.length > 20) return "Use up to 20 groups of options per dish.";
   for (const group of dish.groups) {
+    if (!group.options.length) return "Add an option or delete the empty add-ons group.";
     if (!group.name.trim() || group.name.trim().length > 120) return "Give each group of options a name.";
     if (!/^\d+$/.test(group.min) || !/^\d+$/.test(group.max)) return "Choose the minimum and maximum selections for each option group.";
     if (Number(group.min) > Number(group.max) || Number(group.max) > group.options.length || Number(group.max) > 20) return "The maximum must cover the minimum and cannot exceed the number of options (up to 20).";

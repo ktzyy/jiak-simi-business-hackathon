@@ -35,7 +35,7 @@ export function useDishPhotos(restaurantId: string) {
   async function accept(id: string, record: PhotoRecord, job: DishPhotoJob, token: string, epoch: number) {
     if (epoch !== generation.current || recordsRef.current[id]?.key !== record.key) return;
     if (job.candidate && (job.candidate.dishId !== record.request.dishId || job.candidate.mode !== record.request.mode)) throw new Error("The returned photo does not match this dish.");
-    const next = { ...record, selected: record.request.mode === "source_crop" && job.status === "ready" ? true : record.selected, jobId: job.jobId, status: job.status, candidate: job.candidate ?? undefined };
+    const next = { ...record, selected: job.status === "ready" && record.status !== "ready" ? true : record.selected, jobId: job.jobId, status: job.status, candidate: job.candidate ?? undefined };
     update(id, next);
     if (job.status === "ready" && job.candidate) {
       const blob = await api.dishPhotoPreview(restaurantId, job.jobId, token);
