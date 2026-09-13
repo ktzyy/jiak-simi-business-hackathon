@@ -53,7 +53,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
   const [menu, setMenu] = useState<Menu | null>(previewMenu ?? null);
   const [publishedPhotos, setPublishedPhotos] = useState<DisplayDishPhoto[]>([]);
   const [publishedDetails, setPublishedDetails] = useState<StallDetails | null>(null);
-  const [fulfillmentType, setFulfillmentType] = useState<CartRequest["fulfillmentType"] | null>(null);
+  const [fulfillmentType, setFulfillmentType] = useState<CartRequest["fulfillmentType"] | null>("dine_in");
   const [loading, setLoading] = useState(!preview);
   const [ready, setReady] = useState(preview);
   const [boot, setBoot] = useState(0);
@@ -78,7 +78,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
     requestEpoch.current += 1;
     async function start() {
       busyRef.current = false; setBusy(false);
-      setLoading(true); setReady(preview); setPublishedDetails(null); setFulfillmentType(null); setMenu(previewMenu ?? null); setLines([]); setQuote(null); setPending(null); setReceipt(null); setPreviewReceipt(null); setStorageError(null); setMessage(null); setCartOpen(false); setSheet(null); setSheetError(null);
+      setLoading(true); setReady(preview); setPublishedDetails(null); setFulfillmentType("dine_in"); setMenu(previewMenu ?? null); setLines([]); setQuote(null); setPending(null); setReceipt(null); setPreviewReceipt(null); setStorageError(null); setMessage(null); setCartOpen(false); setSheet(null); setSheetError(null);
       if (previewMenu) {
         const parsed = MenuSchema.safeParse(previewMenu);
         if (parsed.success) setMenu(parsed.data);

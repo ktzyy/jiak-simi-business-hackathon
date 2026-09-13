@@ -53,17 +53,18 @@ export function MenuReview({ anyExtras, onAnyExtrasChange, dishes, draft, upload
             <label className={s.check}><input type="checkbox" checked={dish.available} onChange={e => onDishChange(dish.id, { available: e.target.checked })} />Available</label>
             <DishOptions anyExtras={anyExtras} onAnyExtrasChange={onAnyExtrasChange} groups={dish.groups} onChange={groups => onDishChange(dish.id, { groups })} />
           </>}
-          <div className={s.actions}><button className="btn btn-teal" onClick={() => { if (onConfirmDish(dish.id)) setExpanded(null); }}>Done</button>{!dish.draftItemId && <button className="btn btn-outline" onClick={() => onRemoveDish(dish.id)}>Remove dish</button>}</div>
+          <div className={s.actions}><button className="btn btn-teal" onClick={() => { if (onConfirmDish(dish.id)) setExpanded(null); }}>Done</button><button type="button" className="btn btn-outline" onClick={() => onRemoveDish(dish.id)}>Delete dish</button></div>
         </div>}
       </article>;
     })}</div>
     <button className={`btn btn-teal ${s.addDish}`} disabled={dishes.length >= 100} onClick={() => setExpanded(onAddDish())}>+ Add a dish</button>
     <section className={`card ${s.section}`}>
       <h2>Extras for all dishes</h2>
+      {!!globalRows.length && <div className={s.sharedTableHeading} aria-hidden="true"><span /><span>Add-on</span><span>Price (S$)</span></div>}
       {globalRows.map((row, index) => <div key={row.id} className={s.sharedOptionRow}>
         <label className={s.check}><input type="checkbox" checked={row.included} onChange={e => updateGlobal(index, { included: e.target.checked })} />Include</label>
-        <label className="field">Extra<input maxLength={120} value={row.name} disabled={!row.included} onChange={e => updateGlobal(index, { name: e.target.value })} /></label>
-        <label className="field">Price (S$)<input inputMode="decimal" value={row.price} disabled={!row.included} placeholder="0.00" onChange={e => updateGlobal(index, { price: e.target.value })} /></label>
+        <label className="field"><span className={s.srOnly}>Extra</span><input maxLength={120} value={row.name} disabled={!row.included} onChange={e => updateGlobal(index, { name: e.target.value })} /></label>
+        <label className="field"><span className={s.srOnly}>Price (S$)</span><input inputMode="decimal" value={row.price} disabled={!row.included} placeholder="0.00" onChange={e => updateGlobal(index, { price: e.target.value })} /></label>
       </div>)}
       <div className={s.actions}><button className="btn btn-outline" disabled={globalRows.length >= 20} onClick={() => { setGlobalRows(old => [...old, { id: crypto.randomUUID(), name: "", price: "", included: true, sourceIds: [] }]); setGlobalDirty(true); }}>+ Add extra</button>
       {!!globalRows.length && <button className="btn btn-teal" onClick={applyShared}>Apply to all dishes</button>}</div>

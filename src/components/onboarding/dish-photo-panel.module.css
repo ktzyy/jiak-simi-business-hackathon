@@ -16,3 +16,11 @@
 .sliders label { display: grid; gap: 6px; color: #20564b; font-size: 15px; }
 .sliders input { width: 100%; accent-color: #20564b; }
 @media (max-width: 640px) { .panel { padding: 0 16px 20px; } .comparison { gap: 12px; } .comparison figure { flex-basis: calc(50% - 6px); } .controls { width: 100%; display: flex; flex-wrap: wrap; align-items: center; } }
+.comparison { display:grid; grid-template-columns:repeat(2,minmax(0,250px)); align-items:start; gap:20px; }
+.photoColumn { display:grid; gap:10px; min-width:0; }.photoColumn figure{width:100%;}.photoColumn > button{width:100%;font-size:16px;padding:12px;}
+.cropHint { font-size:13px; color:var(--muted); margin:0; min-height:44px; line-height:1.5; }
+.cropHint .textButton { display:inline; min-height:0; padding:0; font-size:inherit; font-weight:700; }
+.cropCanvas { overflow:hidden; border-radius:12px; }
+.cropOutline { border:3px solid white; outline:3px solid var(--red); background:#ff262630; box-shadow:0 0 0 999px #0005; pointer-events:auto; touch-action:none; cursor:move; }
+.resizeHandle { position:absolute; bottom:-9px; right:-9px; width:22px;height:22px;background:var(--red);border:3px solid white;border-radius:50%;cursor:nwse-resize;touch-action:none; }
+@media(max-width:500px) { .comparison { gap:12px; }.photoColumn > button{font-size:14px;} }

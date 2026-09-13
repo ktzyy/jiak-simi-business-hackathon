@@ -20,6 +20,7 @@ export function StallDetails({ name, setName, hours, setHours, sameHours, setSam
     </section>
     <section className={`card ${s.section}`} aria-label="Your menu">
       <p className="eyebrow">02 · Your menu</p>
+      <div className={s.menuUploadHeading}><p>Menu photos</p>{existingAvailable && <button type="button" className="btn btn-outline" onClick={onExisting}>Edit published menu</button>}</div>
       <div className={s.upload}>
         <span className={s.uploadMark} aria-hidden="true">↑</span><strong>Upload your menu</strong>
         <p className={s.help}>Up to 3 photos · JPEG, PNG or WebP · 5 MB each</p>
@@ -27,11 +28,10 @@ export function StallDetails({ name, setName, hours, setHours, sameHours, setSam
         {uploads.length < 3 && <button type="button" className={s.textAction} onClick={onDemoImage} disabled={busy}>Upload Demo Image</button>}
         {!!uploads.length && <div className={s.uploadedPhotos}>{uploads.map((upload, index) => <figure key={upload.id}>
           <img src={upload.url} alt={`Uploaded menu ${index + 1}`} /><figcaption>{upload.file.name}</figcaption>
-          <button className="btn btn-outline" onClick={() => onRemovePhoto(upload.id)} aria-label={`Remove menu ${index + 1}`}>Remove</button>
+          <button type="button" className={s.photoDelete} onClick={() => onRemovePhoto(upload.id)} aria-label={`Remove menu ${index + 1}`}>×</button>
         </figure>)}</div>}
       </div>
       <div className={s.actions}>
-        {existingAvailable && <button className={s.textAction} onClick={onExisting}>Edit published menu</button>}
         <button className="btn btn-primary" onClick={onExtract} disabled={busy || !uploads.length}>Next →</button>
       </div>
     </section>

@@ -23,3 +23,8 @@
 .adminHeader a { color: #fff; text-decoration: underline; padding-block: 8px; }
 .header .hours { color: #293f36; }
 @media(max-width:640px) { .adminHeader { flex-direction: column; align-items: flex-start; padding: 14px 20px; } .demoActions :global(.btn) { font-size: 17px; } }
+
+.header { background: var(--red); color: white; }
+.header h1, .header .hours, .header .hours summary, .header .muted { color: white; }
+.header :global(.btn-teal) { border: 2px solid white; }
+.header .dining button { cursor: pointer; }

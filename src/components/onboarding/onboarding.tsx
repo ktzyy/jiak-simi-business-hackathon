@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, createApiClient } from "@/shared/api-client";
 import { MenuSchema, type Menu } from "@/shared/contracts";
@@ -343,7 +344,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       {error && <div className={`notice ${s.error}`} role="alert" ref={errorNode} tabIndex={-1}><strong>Let’s check that</strong><p>{error}</p>{menuRead === "error" && <button className="btn btn-outline" onClick={refresh} disabled={!!busy}>Check menu connection again</button>}<Link href="/login" className={s.signIn}>Staff sign in</Link></div>}
       {notice && <div className="notice" role="status">{notice}</div>}
       {storageBlocked && <p className="notice" role="status">Publishing is paused while the previous browser record needs checking. You can continue editing, but don’t clear that record or start another publication.</p>}
-      {busy === "extract" && <div className={s.extracting} role="status"><div className={s.foodAnimation} aria-hidden="true"><span>🍜</span><span>🥟</span><span>🍵</span></div><h2>Reading your menu…</h2><p>About 30 seconds. Grab a drink; keep this page open.</p></div>}
+      {busy === "extract" && <div className={s.extracting} role="status"><div className={s.foodAnimation} aria-hidden="true">{["noodles", "dimsum-basket", "kopi"].map(name => <Image key={name} src={`/illustrations/${name}.svg`} alt="" width={110} height={110} unoptimized />)}</div><h2>Reading your menu…</h2><p>Usually 30–60 seconds. Grab a drink; keep this page open.</p></div>}
       {busy && busy !== "extract" && <p className={s.busy} role="status" aria-live="polite">{busy === "demo-image" ? "Adding demo image…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
       {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes</p><p>Your menu is live.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
