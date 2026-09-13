@@ -37,7 +37,10 @@ export class LiveButler {
   private now: () => number;
   constructor(readonly actor: string, readonly sessionId: string, private hooks: ButlerHooks) { this.now = hooks.now ?? Date.now; }
 
-  status() { return { phase: this.phase, readbackId: this.readbackId, ticket: this.ticket }; }
+  status() {
+    const showQuote = ["readback", "playing", "confirming", "transcribing"].includes(this.phase);
+    return { phase: this.phase, readbackId: this.readbackId, ticket: this.ticket, ...(showQuote && this.review ? { quote: this.review.quote } : {}) };
+  }
   private send(type: string, content: string, delegationId: string | null = null) {
     this.hooks.send({ type, event_id: randomUUID(), delegation_id: delegationId, content });
   }

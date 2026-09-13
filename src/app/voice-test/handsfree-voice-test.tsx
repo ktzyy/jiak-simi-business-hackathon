@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
 import { connectLiveAudio, playVoiceReadback, recordVoiceConfirmation, type LiveSessionAnswer } from "@/shared/live-client";
-import type { Ticket } from "@/shared/contracts";
+import type { Ticket, Quote, Menu } from "@/shared/contracts";
 import { PUBLIC_DEMO_BEARER } from "@/shared/public-demo";
+import { createApiClient } from "@/shared/api-client";
+import styles from "./voice.module.css";
 
 type Connection = Awaited<ReturnType<typeof connectLiveAudio>>;
-type Status = { phase: string; readbackId?: string; ticket?: Ticket };
+type Status = { phase: string; readbackId?: string; ticket?: Ticket; quote?: Quote };
+const money = (cents: number) => `S$${(cents / 100).toFixed(2)}`;
 async function sendCommand<T>(body: object, signal?: AbortSignal, publicDemo = false): Promise<T> {
   let token = PUBLIC_DEMO_BEARER;
   if (!publicDemo) {
@@ -28,19 +31,22 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
   const audio = useRef<HTMLAudioElement>(null), connection = useRef<Connection | null>(null), controller = useRef<AbortController | null>(null), context = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
   const [state, setState] = useState("Ready"), [running, setRunning] = useState(false), [text, setText] = useState(""), [error, setError] = useState(""), [ticket, setTicket] = useState<Ticket | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [menu, setMenu] = useState<Menu | null>(null);
+  useEffect(() => { let active = true; void createApiClient().readMenu(DEMO_RESTAURANT_ID).then(value => { if (active) setMenu(value); }).catch(() => undefined); return () => { active = false; }; }, []);
   async function stop() {
     controller.current?.abort(); controller.current = null;
     const current = connection.current; connection.current = null;
     if (audio.current) audio.current.muted = true;
     await current?.close().catch(() => { if (mounted.current) setError("Session close was not acknowledged. The local server will expire it."); });
     await context.current?.close().catch(() => undefined); context.current = null;
-    if (mounted.current) { setRunning(false); setState("Stopped"); }
+    if (mounted.current) { setRunning(false); setState("Stopped"); setQuote(null); }
   }
   useEffect(() => { mounted.current = true; const end = () => { void stop(); }; window.addEventListener("pagehide", end); return () => { mounted.current = false; window.removeEventListener("pagehide", end); void stop(); }; }, []);
   async function start() {
     if (controller.current || !audio.current) return;
     const abort = new AbortController(); controller.current = abort;
-    setRunning(true); setError(""); setTicket(null); setText(""); setState("Connecting GPT-Live");
+    setRunning(true); setError(""); setTicket(null); setQuote(null); setText(""); setState("Connecting GPT-Live");
     const ctx = new AudioContext(); context.current = ctx;
     try {
       await ctx.resume(); audio.current.muted = false;
@@ -57,6 +63,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
         const status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
         if (!mounted.current || abort.signal.aborted) break;
         if (status.phase === "error" || status.phase === "closed") throw new Error("The voice session ended before completion. Check the kitchen queue before starting a new order.");
+        setQuote(status.quote ?? null);
         live.setMicrophoneEnabled(status.phase === "collecting");
         audio.current!.muted = !["collecting", "submitted"].includes(status.phase);
         setState(status.phase === "collecting" ? "Listening — order aloud, including dine-in or takeaway" : status.phase);
@@ -83,5 +90,23 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
       await stop();
     }
   }
-  return <main className="mx-auto max-w-2xl space-y-6 p-8"><Link href="/">← Portal</Link><h1 className="text-3xl font-bold">GPT-Live hands-free ordering</h1><p>Staff-operated local test. Customers order and confirm by speaking. These voices are AI-generated.</p><p className="text-sm">Conversation: gpt-live-1. Exact quote readback: gpt-4o-mini-tts. Separate recorded confirmation: gpt-4o-transcribe. Say “Yes, place this order” after the readback, then wait quietly.</p><div className="flex gap-4"><button className="rounded border px-5 py-3 disabled:opacity-40" onClick={() => { void start(); }} disabled={running}>Start device</button><button className="rounded border px-5 py-3 disabled:opacity-40" onClick={() => { void stop(); }} disabled={!running}>Stop device</button></div><p role="status">{state}</p>{error && <p role="alert" className="text-red-700">{error}</p>}{ticket && <p>Ticket: {ticket.id}. Unpaid.</p>}<details><summary>Staff transcript monitor</summary><p className="whitespace-pre-wrap">{text || "No speech yet."}</p></details><audio ref={audio} autoPlay /></main>;
+  const summary = ticket?.cart ?? quote;
+  return <main className={styles.page}>
+    <Link href="/">← Portal</Link>
+    <header className={styles.header}><p className="eyebrow">Jiak Simi · Voice ordering</p><h1>Tell us what you’d like.</h1><p>Order with GPT Live. Say your dish, any extras, and dine-in or takeaway. The voice is AI-generated.</p></header>
+    <div className={styles.grid}>
+      <section className={`card ${styles.panel}`} aria-labelledby="voice-guide"><h2 id="voice-guide">What can I order?</h2>
+        {menu ? <ul className={styles.menu}>{menu.dishes.filter(dish => dish.available).map(dish => <li key={dish.id}><strong>{dish.name}</strong><span>{money(dish.priceCents)}</span></li>)}</ul> : <p>Loading today’s menu…</p>}
+        <p>Add egg, char siew or shao rou. Ask for chilli or no chilli.</p>
+        <div className={styles.example}><strong>Try saying</strong><p>“One Char Siew Rice, add egg, no chilli, takeaway.”</p></div>
+        <p>Listen to the summary. After the beep, say <strong>“Yes, place this order.”</strong></p>
+        <div className="actions"><button className="btn btn-primary" onClick={() => { void start(); }} disabled={running}>Start device</button><button className="btn btn-outline" onClick={() => { void stop(); }} disabled={!running}>Stop device</button></div>
+        <p role="status" className={styles.state}>{state}</p>{error && <p role="alert" className={styles.error}>{error}</p>}
+      </section>
+      <section className={`card ${styles.panel}`} aria-labelledby="voice-summary" aria-live="polite"><p className="eyebrow">{ticket ? "Sent to the kitchen" : summary ? "Ready for your spoken confirmation" : "Your voice order"}</p><h2 id="voice-summary">Your order</h2>
+        {summary ? <><p>{summary.fulfillmentType === "dine_in" ? "Dine-in" : summary.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</p><ul className={styles.order}>{summary.lines.map((line, index) => <li key={`${line.dishId}-${index}`}><div><strong>{line.quantity} × {line.name}</strong><strong>{money(line.lineTotalCents)}</strong></div>{line.options.length > 0 && <p>{line.options.map(option => `${option.name}${option.priceDeltaCents ? ` (${money(option.priceDeltaCents)} per dish)` : ""}`).join(" · ")}</p>}</li>)}</ul><div className={styles.total}><strong>Total</strong><strong>{money(summary.totalCents)}</strong></div><p>{ticket ? "Order received · Unpaid — pay at the stall." : "Not placed yet · Payment due at the stall."}</p>{ticket && <><p className={styles.ticket}>Ticket {ticket.id}</p><Link className="btn btn-teal" href={`/kitchen?restaurantId=${DEMO_RESTAURANT_ID}`}>View in Cook Mode →</Link></>}</> : <p className={styles.empty}>Your dishes, extras and total will appear here after GPT Live checks your order.</p>}
+      </section>
+    </div>
+    <details className={styles.monitor}><summary>Conversation transcript</summary><p>{text || "No speech yet."}</p></details><audio ref={audio} autoPlay />
+  </main>;
 }

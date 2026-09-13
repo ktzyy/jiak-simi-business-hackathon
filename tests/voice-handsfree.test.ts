@@ -53,6 +53,27 @@ test("negation or edits in completed recording invalidate quote without ordering
   await assert.rejects(s.butler.confirm(id, wav()));
 });
 
+test("status exposes only the fresh canonical quote during review and clears it on invalidation or close", async () => {
+  const s = setup("No, change the order.");
+  assert.equal("quote" in s.butler.status(), false);
+  const id = await ready(s);
+  for (const phase of ["readback", "playing", "confirming"] as const) {
+    const status = s.butler.status();
+    assert.equal(status.phase, phase); assert.deepEqual(status.quote, fixtureQuote);
+    assert.deepEqual(Object.keys(status).sort(), ["phase", "quote", "readbackId", "ticket"]);
+    const serialized = JSON.stringify(status);
+    for (const privateField of ["confirmationNonce", "revision", "sessionTokenHash", "audio"]) assert.ok(!serialized.includes(`"${privateField}"`));
+    if (phase === "readback") s.butler.takeAudio(id);
+    if (phase === "playing") { s.tick(4000); s.butler.playbackEnded(id); }
+  }
+  s.tick(8000); await s.butler.confirm(id, wav());
+  assert.equal(s.butler.status().phase, "collecting"); assert.equal("quote" in s.butler.status(), false);
+  const another = setup(); await ready(another); await another.butler.stop();
+  assert.equal("quote" in another.butler.status(), false);
+  const failed = setup(); await ready(failed); await failed.butler.stop(true);
+  assert.equal("quote" in failed.butler.status(), false);
+});
+
 test("short complete audio can confirm promptly without waiting eight seconds", async () => {
   const s = setup(), id = await ready(s);
   const audio = Buffer.from(wav().subarray(0, 44 + 16000 * 2 * 3.1));
