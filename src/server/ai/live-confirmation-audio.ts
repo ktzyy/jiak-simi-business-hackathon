@@ -1,12 +1,13 @@
 import "server-only";
 import type { Quote } from "../../shared/contracts";
 import { HttpError, readBoundedBody } from "../http";
+import { HAWKER_VOICE, HAWKER_VOICE_STYLE } from "./live-voice-style";
 
 export function quoteReadback(quote: Quote): string {
   const lines = quote.lines.map(line => `${line.quantity} ${line.name}${line.options.length ? ` with ${line.options.map(option => option.name).join(", ")}` : ""}`).join("; ");
   const dollars = Math.floor(quote.totalCents / 100), cents = quote.totalCents % 100;
-  const amount = `${dollars} Singapore dollars${cents ? ` and ${cents} cents` : ""}`;
-  const text = `${lines}. ${quote.fulfillmentType === "dine_in" ? "Dine in" : "Takeaway"}. Total ${amount}. Payment is still due at the stall. After the beep, say confirm.`;
+  const amount = `${dollars} dollar${dollars === 1 ? "" : "s"}${cents ? ` ${cents} cents` : ""}`;
+  const text = `Okay, ${lines}. ${quote.fulfillmentType === "dine_in" ? "Having here" : "Dabao"}. Total ${amount}. Pay at the stall later. After the beep, say confirm.`;
   if (text.length > 3500) throw new HttpError(422, "VOICE_ORDER_TOO_LONG", "This order is too long for voice confirmation.");
   return text;
 }
@@ -14,7 +15,7 @@ export function quoteReadback(quote: Quote): string {
 export function explicitVoiceConfirmation(text: string): boolean {
   // Whole completed recording only: never match an affirmative inside an edit or negation.
   const answer = text.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
-  return ["confirm", "yes", "yes confirm", "confirm order", "yes place order", "yes place this order"].includes(answer);
+  return ["confirm", "yes", "yes confirm", "confirm order", "yes place order", "yes place this order", "can confirm", "confirm lah", "yes confirm lah"].includes(answer);
 }
 
 /** Canonical WAV from our staff device: 1.25–8 seconds, PCM16, quiet final second.
@@ -39,9 +40,12 @@ export function validateConfirmationWav(wav: Buffer): number {
   return size / (rate * 2);
 }
 
+export const QUOTE_VOICE = { model: "gpt-4o-mini-tts", voice: HAWKER_VOICE, response_format: "wav", speed: 1.12,
+  instructions: `${HAWKER_VOICE_STYLE} Read the supplied text faithfully, including its local phrasing. Do not add or omit words, items, options, amounts or the confirmation instruction.` } as const;
+
 export async function speakQuote(text: string, apiKey: string, fetcher = fetch): Promise<Buffer> {
   try {
-    const response = await fetcher("https://api.openai.com/v1/audio/speech", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(30_000), body: JSON.stringify({ model: "gpt-4o-mini-tts", voice: "coral", response_format: "wav", input: text, instructions: "Read the supplied text faithfully, clearly and at a normal pace. Do not add or omit words. This is an AI-generated order readback." }) });
+    const response = await fetcher("https://api.openai.com/v1/audio/speech", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(30_000), body: JSON.stringify({ ...QUOTE_VOICE, input: text }) });
     if (!response.ok) throw new Error();
     return Buffer.from(await readBoundedBody(new Request("http://audio.local", { method: "POST", body: response.body, duplex: "half" } as RequestInit), 4_000_000));
   } catch { throw new HttpError(502, "VOICE_READBACK_FAILED", "The order could not be read back. Nothing has been placed."); }

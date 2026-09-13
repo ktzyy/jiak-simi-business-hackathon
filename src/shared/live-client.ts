@@ -125,6 +125,7 @@ export async function connectLiveAudio(
   const transcript = liveTranscriptBuffer();
   let stream: MediaStream | undefined, answer: LiveSessionAnswer | undefined;
   let transportClosed = false;
+  let started = false;
   let closed = false, ending: Promise<void> | undefined;
   let expiry: ReturnType<typeof setTimeout> | undefined;
   const controller = new AbortController();
@@ -162,7 +163,7 @@ export async function connectLiveAudio(
     if (closed || typeof event.data !== "string" || event.data.length > 32_000) return;
     try {
       const data = JSON.parse(event.data);
-      if (data.type === "session.started") options.onState?.("listening");
+      if (data.type === "session.started") { started = true; options.onState?.("listening"); }
       if (data.type === "session.closed") abort();
       if (data.type === "error") { options.onState?.("error"); abort(); }
       const value = transcript.append(data);
@@ -207,6 +208,18 @@ export async function connectLiveAudio(
     await pc.setRemoteDescription({ type: "answer", sdp: answer.sdp });
     check();
     return { ...answer, peerConnection: pc, close, transcript: transcript.text,
+      async waitUntilStarted() {
+        check();
+        if (started) return;
+        await new Promise<void>((resolve, reject) => {
+          const cleanup = () => { clearTimeout(timer); events.removeEventListener("message", ready); controller.signal.removeEventListener("abort", cancelled); };
+          const ready = () => { if (started) { cleanup(); resolve(); } };
+          const cancelled = () => { cleanup(); reject(new Error("Voice connection cancelled.")); };
+          const timer = setTimeout(() => { cleanup(); reject(new Error("Voice connection timed out.")); }, 15000);
+          events.addEventListener("message", ready); controller.signal.addEventListener("abort", cancelled, { once: true });
+          if (controller.signal.aborted) cancelled(); else ready();
+        });
+      },
       setMicrophoneEnabled(enabled: boolean) {
         if (closed) return;
         stream?.getAudioTracks().forEach(track => { track.enabled = enabled; });

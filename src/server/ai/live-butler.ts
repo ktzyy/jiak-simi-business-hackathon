@@ -4,6 +4,8 @@ import WebSocket from "ws";
 import type { Quote, Ticket } from "../../shared/contracts";
 import { HttpError } from "../http";
 import { explicitVoiceConfirmation, quoteReadback, validateConfirmationWav } from "./live-confirmation-audio";
+import { isVoiceMenuConversation } from "../../shared/live-conversation";
+import { HAWKER_VOICE_STYLE } from "./live-voice-style";
 
 export type VoiceReview = { quote: Quote; confirmationNonce: string; revision: number };
 type Phase = "collecting" | "preparing" | "readback" | "playing" | "confirming" | "transcribing" | "submitted" | "closed" | "error";
@@ -21,6 +23,20 @@ export interface ButlerHooks {
 /** One server owner per supervised local device. Lost process state fails closed;
  * only the database owns the pending cart, nonce and idempotent order receipt. */
 export class LiveButler {
+  private greeting?: Promise<void>;
+  private opening?: { id: string; resolve: () => void; reject: () => void };
+  greet(): Promise<void> {
+    if (this.greeting) return this.greeting;
+    if (this.phase !== "collecting" || this.text.trim()) return Promise.resolve();
+    this.greeting = new Promise<void>((resolve, reject) => {
+      const id = randomUUID();
+      const timer = setTimeout(() => { this.opening = undefined; reject(new HttpError(504, "VOICE_GREETING_TIMEOUT", "The voice greeting could not start. Try again.")); }, 8000);
+      this.opening = { id, resolve: () => { clearTimeout(timer); this.opening = undefined; resolve(); }, reject: () => { clearTimeout(timer); this.opening = undefined; reject(new HttpError(502, "VOICE_GREETING_FAILED", "The voice greeting could not start.")); } };
+      try { this.hooks.send({ type: "session.instructions.append", event_id: id, delegation_id: null, content: `${HAWKER_VOICE_STYLE} Greet immediately in Singaporean English without waiting for the customer to speak. Say exactly: "Come, what you want to eat?" Then pause and listen. Do not add another opening question. The screen already identifies you as an AI assistant.` }); }
+      catch { this.opening.reject(); }
+    }).then(() => { if (this.phase === "collecting" && !this.text.trim()) this.send("session.commentary.append", "Begin the conversation now, following the opening greeting instructions."); });
+    return this.greeting;
+  }
   private phase: Phase = "collecting";
   private text = "";
   private seen = new Set<string>();
@@ -54,6 +70,7 @@ export class LiveButler {
   }
   async receive(event: Record<string, unknown>): Promise<void> {
     if (this.phase === "closed" || this.phase === "error") return;
+    if (this.opening && event.type === "session.instructions.appended" && event.client_event_id === this.opening.id) { this.opening.resolve(); return; }
     if (this.mute && event.type === this.mute.expected && event.client_event_id === this.mute.id) { this.mute?.resolve(); return; }
     if (event.type === "error") { this.diagnose("provider", "VOICE_PROVIDER_COMMAND_FAILED"); await this.stop(true); return; }
     if (event.type === "session.closed") { await this.stop(); return; }
@@ -105,6 +122,12 @@ export class LiveButler {
   }
   private async prepare(delegationId: string | null) {
     if (this.draftTimer) clearTimeout(this.draftTimer);
+    if (isVoiceMenuConversation(this.text)) {
+      try {
+        if (delegationId) this.send("session.thinking.append", "Answer this greeting or menu question briefly from the published menu. No order is being prepared. Keep listening for the customer's order.", delegationId);
+      } catch { this.diagnose("provider", "VOICE_PROVIDER_COMMAND_FAILED"); await this.stop(true); }
+      return;
+    }
     this.phase = "preparing"; this.review = undefined;
     let generation = this.generation;
     let stage = "mute";
@@ -119,7 +142,7 @@ export class LiveButler {
       stage = "prepare";
       const review = await this.hooks.prepare(this.text);
       if (this.phase !== "preparing") return;
-      if (!review || generation !== this.generation) { await this.resume("The order needs clarification. Ask for the full final order, including dine-in or takeaway and required options, then delegate again. Nothing was placed."); return; }
+      if (!review || generation !== this.generation) { await this.resume("The order needs clarification. Ask one short question about the unclear dish, quantity or required choice. Keep the demo's dine-in and chilli defaults unless the customer changes them. Then collect the final order and delegate again. Nothing was placed."); return; }
       this.review = review;
       const text = quoteReadback(review.quote);
       stage = "speech";
@@ -165,7 +188,7 @@ export class LiveButler {
         stage = "submit";
         const ticket = await this.hooks.submit(review.confirmationNonce);
         this.ticket = ticket; this.phase = "submitted";
-        this.send("session.commentary.append", `The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Tell the customer their order has reached the kitchen and payment is due at the stall.`);
+        this.send("session.commentary.append", `${HAWKER_VOICE_STYLE} The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Acknowledge once: Can, your order sent already. Pay at the stall later, thanks! Do not read the ticket ID or ask another question.`);
       } catch (error) {
         this.diagnose(stage, error instanceof HttpError && /^[A-Z_]{1,64}$/.test(error.code) ? error.code : `VOICE_${stage.toUpperCase()}_FAILED`);
         // A known transcription failure happened before submission. Replay the
@@ -181,7 +204,7 @@ export class LiveButler {
   async stop(error = false) {
     if (this.phase === "closed" || this.phase === "error") return;
     if (this.draftTimer) clearTimeout(this.draftTimer);
-    this.phase = error ? "error" : "closed"; this.generation++; this.mute?.reject(); this.audio = undefined;
+    this.phase = error ? "error" : "closed"; this.generation++; this.opening?.reject(); this.mute?.reject(); this.audio = undefined;
     await this.hooks.close().catch(() => undefined);
   }
 }

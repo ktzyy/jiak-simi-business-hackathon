@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyVoiceDefaults, handsfreeHandler } from "../src/server/ai/live-handsfree";
+import { applyVoiceDefaults, handsfreeHandler, normalizeVoiceDiningText } from "../src/server/ai/live-handsfree";
+import { explicitFulfillmentType } from "../src/server/ai/order-intent";
 import { DEMO_MENU_WITH_EXTRAS } from "../src/shared/demo-menu";
 import { PUBLIC_DEMO_RESTAURANT_ID, PUBLIC_DEMO_BEARER } from "../src/shared/public-demo";
 import { fixtureMenu, fixtureCart, fixtureQuote, fixtureTicket } from "../src/shared/fixtures";
 import { LiveButler } from "../src/server/ai/live-butler";
 import type { BackendClient } from "../src/server/supabase-backend";
+
+test("Singlish dining terms retain explicit choices, negations and ambiguity", () => {
+  for (const term of ["dabao", "da bao", "tapao", "bungkus"]) assert.equal(explicitFulfillmentType(normalizeVoiceDiningText(`One char siew rice ${term}`)), "takeaway");
+  assert.equal(explicitFulfillmentType(normalizeVoiceDiningText("one rice, packet of chilli")), null);
+  assert.equal(explicitFulfillmentType(normalizeVoiceDiningText("one rice having here")), "dine_in");
+  assert.equal(explicitFulfillmentType(normalizeVoiceDiningText("one rice don't dabao")), null);
+  assert.equal(explicitFulfillmentType(normalizeVoiceDiningText("one rice dabao or having here")), null);
+});
 
 test("voice-only defaults choose dine-in and free chilli without overriding explicit choices", () => {
   const menu = DEMO_MENU_WITH_EXTRAS, dish = menu.dishes[0], group = dish.modifierGroups[1];

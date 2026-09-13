@@ -7,6 +7,7 @@ import { connectLiveAudio, playVoiceReadback, recordVoiceConfirmation, type Live
 import type { Ticket, Quote, Menu } from "@/shared/contracts";
 import { PUBLIC_DEMO_BEARER } from "@/shared/public-demo";
 import { createApiClient } from "@/shared/api-client";
+import { isVoiceMenuConversation } from "@/shared/live-conversation";
 import styles from "./voice.module.css";
 
 type Connection = Awaited<ReturnType<typeof connectLiveAudio>>;
@@ -71,12 +72,14 @@ export function HandsfreeVoiceTest({ publicDemo = false, inline = false, control
       });
       if (abort.signal.aborted) { await live.close(); return; }
       connection.current = live;
+      await live.waitUntilStarted();
+      await command({ action: "greet", voiceSessionId: live.voiceSessionId }, abort.signal);
       const seen = new Set<string>();
       while (!abort.signal.aborted) {
-        const status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
+        let status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
         if (!mounted.current || abort.signal.aborted) break;
         if (status.phase === "error" || status.phase === "closed") throw new Error(failureMessage(status));
-        if (status.phase === "collecting" && transcriptDraft.current.text && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
+        if (status.phase === "collecting" && transcriptDraft.current.text && !isVoiceMenuConversation(transcriptDraft.current.text) && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
           transcriptDraft.current.sent = transcriptDraft.current.text;
           await command({ action: "draft", voiceSessionId: live.voiceSessionId, text: transcriptDraft.current.text }, abort.signal);
         }
@@ -100,8 +103,8 @@ export function HandsfreeVoiceTest({ publicDemo = false, inline = false, control
           // Exact recording/id retry recovers uncertain transport without a new consent.
           if (abort.signal.aborted) break;
           spokenDispatched.current = true;
-          try { await command(body, abort.signal); }
-          catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; await command(body, abort.signal); }
+          try { status = await command<Status>(body, abort.signal); }
+          catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; status = await command<Status>(body, abort.signal); }
         }
         if (status.ticket) { setTicket(status.ticket); await stop(); setState("Order sent to kitchen · Pay at the stall"); break; }
         await new Promise<void>(resolve => setTimeout(resolve, 350));

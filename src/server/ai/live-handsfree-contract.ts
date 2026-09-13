@@ -7,7 +7,7 @@ export const HANDSFREE_RESPONSE_LIMIT = 5_500_000;
 export const HandsfreeCommand = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("draft"), voiceSessionId: Id, text: z.string().trim().min(1).max(4000) }),
   z.strictObject({ action: z.literal("start"), restaurantId: Id, sdp: z.string().startsWith("v=0").max(65536) }),
-  z.strictObject({ action: z.enum(["status", "close"]), voiceSessionId: Id }),
+  z.strictObject({ action: z.enum(["status", "close", "greet"]), voiceSessionId: Id }),
   z.strictObject({ action: z.enum(["audio", "playback"]), voiceSessionId: Id, readbackId: Id }),
   z.strictObject({ action: z.literal("confirm"), voiceSessionId: Id, readbackId: Id, audio: z.string().min(60).max(1_350_000).regex(/^[A-Za-z0-9+/]+={0,2}$/) }),
 ]);

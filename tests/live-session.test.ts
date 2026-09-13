@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createLiveSession, liveMenuInstructions, handsfreeMenuInstructions, LiveSessionError } from "../src/server/ai/live-session";
+import { QUOTE_VOICE } from "../src/server/ai/live-confirmation-audio";
 
 test("Live SDP exchange is server authenticated and cannot expose order tools", async () => {
   let requestBody: Record<string, unknown> = {};
@@ -15,6 +16,8 @@ test("Live SDP exchange is server authenticated and cannot expose order tools", 
   });
   const session = requestBody.session as Record<string, unknown>;
   assert.equal(session.model, "gpt-live-1");
+  assert.deepEqual(session.audio, { output: { voice: QUOTE_VOICE.voice } });
+  assert.equal(QUOTE_VOICE.voice, "marin");
   assert.equal(session.store, false);
   assert.equal(session.tools, undefined);
   assert.equal(session.delegation, undefined);
