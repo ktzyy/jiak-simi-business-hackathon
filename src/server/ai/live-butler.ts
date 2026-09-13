@@ -5,6 +5,7 @@ import type { Quote, Ticket } from "../../shared/contracts";
 import { HttpError } from "../http";
 import { explicitVoiceConfirmation, quoteReadback, validateConfirmationWav } from "./live-confirmation-audio";
 import { isVoiceMenuConversation } from "../../shared/live-conversation";
+import { HAWKER_VOICE_STYLE } from "./live-voice-style";
 
 export type VoiceReview = { quote: Quote; confirmationNonce: string; revision: number };
 type Phase = "collecting" | "preparing" | "readback" | "playing" | "confirming" | "transcribing" | "submitted" | "closed" | "error";
@@ -172,7 +173,7 @@ export class LiveButler {
         stage = "submit";
         const ticket = await this.hooks.submit(review.confirmationNonce);
         this.ticket = ticket; this.phase = "submitted";
-        this.send("session.commentary.append", `The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Acknowledge once, briefly in natural Singapore English: Can, order sent to the kitchen. Pay at the stall, thanks! Do not read the ticket ID or ask another question.`);
+        this.send("session.commentary.append", `${HAWKER_VOICE_STYLE} The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Acknowledge once: Can, your order sent already. Pay at the stall later, thanks! Do not read the ticket ID or ask another question.`);
       } catch (error) {
         this.diagnose(stage, error instanceof HttpError && /^[A-Z_]{1,64}$/.test(error.code) ? error.code : `VOICE_${stage.toUpperCase()}_FAILED`);
         // A known transcription failure happened before submission. Replay the

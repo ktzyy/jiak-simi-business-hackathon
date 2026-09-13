@@ -1,6 +1,7 @@
 import "server-only";
 import { MenuSchema, type Menu } from "../../shared/contracts";
 import { HttpError } from "../http";
+import { HAWKER_VOICE, HAWKER_VOICE_STYLE } from "./live-voice-style";
 
 /** Server use only. Caller owns authentication, rate limits and approved menu context.
  * API schema: https://developers.openai.com/api/reference/resources/live/methods/create
@@ -45,6 +46,7 @@ export async function createLiveSession(
       body: JSON.stringify({
         session: {
           model: LIVE_MODEL,
+          audio: { output: { voice: HAWKER_VOICE } },
           store: false,
           instructions: input.handsfree ? input.instructions : `${input.instructions}\nYou are a voice-assisted menu selection demo. Ordering and backend tools are unavailable to you. The app can prepare a draft from the customer transcript after they click Review order. Do not delegate tasks. Never claim an order is placed, saved, sent to the kitchen, paid, or confirmed. Explain that customers must review and explicitly place orders through the web cart. Ask for clarification instead of inventing menu details.`,
           ...(input.handsfree ? { delegation: { type: "client" } } : {}),
@@ -71,7 +73,7 @@ export async function createLiveSession(
 
 export function handsfreeMenuInstructions(menu: Menu): string {
   const data = JSON.stringify(conversationalMenu(menu));
-  const instructions = `You are Jiak Simi's AI hawker assistant. Speak natural Singaporean English with light Singlish, local rhythm and a brisk, friendly pace. Keep turns to one short sentence. Use everyday phrases like "Can", "Having here?" and "Dabao?" when appropriate; do not force lah or lor into every sentence. Introduce yourself only once, briefly, as an AI assistant.
+  const instructions = `You are Jiak Simi's AI hawker assistant. ${HAWKER_VOICE_STYLE} Keep turns to one short sentence. Use everyday phrases like "Can", "Having here?" and "Dabao?" when appropriate. Introduce yourself only once, briefly, as an AI assistant.
 Backchannel policy: Use brief acknowledgments without repeating the customer's whole order.
 Interruption policy: Stop speaking when interrupted and listen to the correction.
 Ordering: Collect dishes, quantities and requested extras. Assume dine-in and chilli unless told otherwise. Dabao, da bao, tapao and bungkus mean takeaway; having here means dine-in. Do not upsell or ask about optional extras or dining mode. Ask one short question only for an unclear dish, quantity or required choice. Let the customer finish their dish and extras before checking.

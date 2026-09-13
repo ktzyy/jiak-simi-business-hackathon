@@ -1,6 +1,6 @@
 # GPT Live voice refinement — 13 September 2026
 
-The hands-free flow continues to use `gpt-live-1`. Its prompt now asks for brisk Singaporean English with light Singlish, short turns and no repeated upselling. The separate exact quote voice uses `gpt-4o-mini-tts`, coral, Singaporean English instructions and speed 1.12. Accent is a style request, not a guaranteed native accent.
+The hands-free flow continues to use `gpt-live-1`. Its prompt now asks for brisk Singaporean English with light Singlish, short turns and no repeated upselling. The separate exact quote voice uses `gpt-4o-mini-tts`, marin, shared Singaporean English instructions and speed 1.12. GPT Live explicitly selects marin too. Readback uses “having here” and “dabao”; the final ticket acknowledgement repeats the same regional style. This fixes the former default-marin to coral handoff. The finite readback remains a separate model, so exact timbre and accent are still subject to human listening. Accent is a style request, not a guaranteed native accent.
 
 Voice-only dining aliases include dabao, da bao, tapao and bungkus (takeaway), and having here / makan here (dine-in). Negations and conflicting modes remain unresolved. Bare “packet” is not treated as dining mode. Web orders still require an explicit choice.
 

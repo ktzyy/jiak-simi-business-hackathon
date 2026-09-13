@@ -22,3 +22,16 @@ test("canonical quote asks for a short confirmation while preserving unpaid mean
   assert.match(text, /Pay at the stall/);
   assert.doesNotMatch(text, /say exactly|wait quietly|To change or cancel/);
 });
+
+test("confirmation readback uses local phrasing without changing the quoted order", () => {
+  for (const fulfillmentType of ["dine_in", "takeaway"] as const) {
+    const text = quoteReadback({ ...fixtureQuote, fulfillmentType });
+    assert.match(text, fulfillmentType === "dine_in" ? /Having here/ : /Dabao/);
+    for (const line of fixtureQuote.lines) {
+      assert.ok(text.includes(`${line.quantity} ${line.name}`));
+      for (const option of line.options) assert.ok(text.includes(option.name));
+    }
+    assert.match(text, /Pay at the stall later/);
+    assert.equal((text.match(/say confirm/g) ?? []).length, 1);
+  }
+});

@@ -1,12 +1,13 @@
 import "server-only";
 import type { Quote } from "../../shared/contracts";
 import { HttpError, readBoundedBody } from "../http";
+import { HAWKER_VOICE, HAWKER_VOICE_STYLE } from "./live-voice-style";
 
 export function quoteReadback(quote: Quote): string {
   const lines = quote.lines.map(line => `${line.quantity} ${line.name}${line.options.length ? ` with ${line.options.map(option => option.name).join(", ")}` : ""}`).join("; ");
   const dollars = Math.floor(quote.totalCents / 100), cents = quote.totalCents % 100;
   const amount = `${dollars} dollar${dollars === 1 ? "" : "s"}${cents ? ` ${cents} cents` : ""}`;
-  const text = `${lines}. ${quote.fulfillmentType === "dine_in" ? "Dine in" : "Takeaway"}. Total ${amount}. Pay at the stall. After the beep, say confirm.`;
+  const text = `Okay, ${lines}. ${quote.fulfillmentType === "dine_in" ? "Having here" : "Dabao"}. Total ${amount}. Pay at the stall later. After the beep, say confirm.`;
   if (text.length > 3500) throw new HttpError(422, "VOICE_ORDER_TOO_LONG", "This order is too long for voice confirmation.");
   return text;
 }
@@ -39,8 +40,8 @@ export function validateConfirmationWav(wav: Buffer): number {
   return size / (rate * 2);
 }
 
-export const QUOTE_VOICE = { model: "gpt-4o-mini-tts", voice: "coral", response_format: "wav", speed: 1.12,
-  instructions: "Read the supplied order exactly, in natural everyday Singaporean English, with local rhythm and pronunciation. Sound like a friendly hawker taking an order: brisk, clear and matter-of-fact, with short pauses. Avoid a formal announcer delivery or exaggerated accent. Do not add Singlish particles or any other words, and do not omit items, options, amounts or the confirmation instruction." } as const;
+export const QUOTE_VOICE = { model: "gpt-4o-mini-tts", voice: HAWKER_VOICE, response_format: "wav", speed: 1.12,
+  instructions: `${HAWKER_VOICE_STYLE} Read the supplied text faithfully, including its local phrasing. Do not add or omit words, items, options, amounts or the confirmation instruction.` } as const;
 
 export async function speakQuote(text: string, apiKey: string, fetcher = fetch): Promise<Buffer> {
   try {
