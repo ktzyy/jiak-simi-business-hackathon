@@ -7,19 +7,18 @@ import { MenuSchema, type Menu } from "@/shared/contracts";
 import type { StallDetails as SavedStallDetails } from "@/shared/stall-details";
 import { detailsInput, editorHours, sameDetailsInput, PendingPublicationSchema, matchesPublication } from "./hours-state";
 import { z } from "zod";
-import { dishPhotoSelectionSchema } from "@/shared/dish-photo";
+import { dishPhotoSelectionSchema, type PublishedDishPhoto } from "@/shared/dish-photo";
 import { DishPhotoPanel } from "./dish-photo-panel";
 import { useDishPhotos } from "./use-dish-photos";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
-import { OCR_DRAFT_FIXTURE } from "@/shared/ocr-fixtures";
+import { cropDish, normalizeMenuPhoto, mergeExtractions, type UploadedMenu, type DishCrop } from "./menu-images";
+import { allHoursMatch } from "./hours-presentation";
 import { PageShell } from "@/components/ui/page-shell";
 import { getStaffAccessToken } from "@/components/ui/staff-access";
 import { CustomerCart } from "@/components/ordering/customer-cart";
 import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
-import { DAYS, applyGlobalAddons, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, reviewedMenu, type DishEdit, type SourceDecision } from "./review-state";
-import { cleanDemoAddons, cleanDemoDishes, demoMenu } from "./demo-draft";
-import { PUBLIC_DEMO_RESTAURANT_ID } from "@/shared/public-demo";
+import { DAYS, applyGlobalAddons, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, menuFromEdits, type DishEdit } from "./review-state";
 import s from "./onboarding.module.css";
 
 const api = createApiClient();
@@ -34,26 +33,24 @@ function sameMenu(a: Menu, b: Menu) { return JSON.stringify(MenuSchema.parse(a))
 const needsReconciliation = (error: unknown) => !(error instanceof ApiError) || error.status === 0 || error.status >= 500 || error.code === "INVALID_RESPONSE";
 
 export function Onboarding({ restaurantId }: { restaurantId: string }) {
-  const quickDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true" && restaurantId === PUBLIC_DEMO_RESTAURANT_ID;
   const dishPhotos = useDishPhotos(restaurantId);
-  const [sourceImageId, setSourceImageId] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<UploadedMenu[]>([]);
+  const uploadRef = useRef<UploadedMenu[]>([]);
+  const [crops, setCrops] = useState<Record<string, DishCrop>>({});
+  const cropRef = useRef<Record<string, DishCrop>>({});
+  const [cropErrors, setCropErrors] = useState<Record<string, string>>({});
+  const [retainedPhotos, setRetainedPhotos] = useState<PublishedDishPhoto[]>([]);
   const [pendingPhotoSelections, setPendingPhotoSelections] = useState<PhotoSelection[]>([]);
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [hours, setHours] = useState(() => DAYS.map(emptyHours));
-  const [pageDetails, setPageDetails] = useState({ url: "", address: "", contact: "" });
-  const [sameHours, setSameHours] = useState(false);
+  const [sameHours, setSameHours] = useState(true);
   const [savedDetails, setSavedDetails] = useState<SavedStallDetails | null>(null);
   const [previewDetails, setPreviewDetails] = useState<SavedStallDetails | null>(null);
   const [pendingDetails, setPendingDetails] = useState<SavedStallDetails | null>(null);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<ExtractedMenuDraft | null>(null);
   const [anyExtras, setAnyExtras] = useState<Set<string>>(() => new Set());
   const [dishes, setDishes] = useState<DishEdit[]>([]);
-  const [sources, setSources] = useState<Record<string, SourceDecision>>({});
-  const [issues, setIssues] = useState<Record<string, string>>({});
-  const [sample, setSample] = useState(false);
   const [current, setCurrent] = useState<Menu | null>(null);
   const [menuRead, setMenuRead] = useState<"loading" | "ready" | "error">("loading");
   const [storageBlocked, setStorageBlocked] = useState(false);
@@ -64,7 +61,6 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   const [published, setPublished] = useState<Menu | null>(null);
   const [pending, setPending] = useState<Menu | null>(null);
   const [conflict, setConflict] = useState(false);
-  const [menuOnly, setMenuOnly] = useState(false);
   const inFlight = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const errorNode = useRef<HTMLDivElement>(null);
@@ -76,7 +72,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       if (!active) return;
       setCurrent(menu); setMenuRead("ready"); setSavedDetails(response.details);
       setName(response.details?.name ?? menu?.name ?? "");
-      if (response.details) { setHours(editorHours(response.details)); setSameHours(false); }
+      if (response.details) { setHours(editorHours(response.details)); setSameHours(allHoursMatch(editorHours(response.details))); }
     }).catch(e => {
       if (!active) return;
       setMenuRead("error"); setError(`We couldn’t load the current menu. ${errorText(e)} You can work on your draft, but publication needs this check.`);
@@ -88,7 +84,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
           const parsed = PendingWithPhotosSchema.safeParse(JSON.parse(saved));
           if (parsed.success && parsed.data.menu.restaurantId === restaurantId && parsed.data.details.restaurantId === restaurantId) {
             setPendingPhotoSelections(parsed.data.photoSelections ?? []);
-            setPending(parsed.data.menu); setPendingDetails(parsed.data.details); setPreview(parsed.data.menu); setPreviewDetails(parsed.data.details); setDishes(existingDishes(parsed.data.menu)); setName(parsed.data.details.name); setHours(editorHours(parsed.data.details)); setSameHours(false); setStep(3);
+            setPending(parsed.data.menu); setPendingDetails(parsed.data.details); setPreview(parsed.data.menu); setPreviewDetails(parsed.data.details); setDishes(existingDishes(parsed.data.menu)); setName(parsed.data.details.name); setHours(editorHours(parsed.data.details)); setSameHours(allHoursMatch(editorHours(parsed.data.details))); setStep(3);
             setNotice("A previous publish needs checking. Keep this page open and check its status before making another version.");
           } else throw new Error("The saved publication record could not be verified.");
         }
@@ -100,9 +96,17 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     return () => { active = false; };
   }, [restaurantId, pendingKey]);
 
-  useEffect(() => {
-    return () => { if (photoUrl) URL.revokeObjectURL(photoUrl); };
-  }, [photoUrl]);
+  useEffect(() => () => {
+    uploadRef.current.forEach(upload => URL.revokeObjectURL(upload.url));
+    Object.values(cropRef.current).forEach(crop => URL.revokeObjectURL(crop.url));
+  }, []);
+  function saveUploads(next: UploadedMenu[]) { uploadRef.current = next; setUploads(next); }
+  function saveCrop(id: string, crop: DishCrop) {
+    if (cropRef.current[id]) URL.revokeObjectURL(cropRef.current[id].url);
+    cropRef.current = { ...cropRef.current, [id]: crop }; setCrops(cropRef.current);
+    dishPhotos.remove(id);
+  }
+
 
   useEffect(() => { if (error) errorNode.current?.focus(); }, [error]);
   useEffect(() => { heading.current?.focus(); }, [step]);
@@ -116,73 +120,88 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     if (problem) { setError(problem); return false; }
     setError(""); return true;
   }
-  function loadDraft(next: ExtractedMenuDraft | null, kind: "sample" | "manual" | "current" | "photo") {
-    dishPhotos.reset();
-    const original = next ? draftDishes(next) : kind === "current" && current ? existingDishes(current) : [newDish()];
-    const readable = quickDemo && next ? original.filter(dish => {
-      const item = next.items.find(item => item.id === dish.draftItemId);
-      const source = next.sourceEntries?.find(source => source.id === item?.sourceEntryId);
-      return !source || source.currency === "SGD" && !source.priceUncertain;
-    }) : original;
-    let cleaned = quickDemo && kind !== "manual" ? cleanDemoDishes(readable).dishes : readable;
-    if (quickDemo && next && cleaned.length) {
-      const readableDraft = { ...next, sourceEntries: next.sourceEntries?.filter(entry => entry.currency === "SGD" && !entry.priceUncertain) };
-      const extras = cleanDemoAddons(globalAddonRows(readableDraft, cleaned));
-      if (extras.length) cleaned = applyGlobalAddons(cleaned, extras, crypto.randomUUID()).dishes;
+  function loadDraft(next: ExtractedMenuDraft | null) {
+    dishPhotos.reset(); setRetainedPhotos([]);
+    let nextDishes = next ? draftDishes(next) : current ? existingDishes(current) : [newDish()];
+    const extras = globalAddonRows(next, nextDishes);
+    // Apply readable shared extras once; uncertain rows remain editable below.
+    if (extras.length && nextDishes.length) {
+      try { nextDishes = applyGlobalAddons(nextDishes, extras, crypto.randomUUID()).dishes; } catch { /* Merchant resolves unclear extras. */ }
     }
-    setDraft(next); setDishes(cleaned); setAnyExtras(new Set());
-    setSources({}); setIssues({}); setSample(kind === "sample"); setPreview(null); setError("");
-    setNotice(quickDemo && original.length !== cleaned.length ? `${original.length - cleaned.length} unclear entries skipped. You can add them later.` : ""); setStep(2);
+    setDraft(next); setDishes(nextDishes); setAnyExtras(new Set()); setPreview(null); setError(""); setNotice(""); setStep(2);
   }
-  function selectPhoto(file: File | null) {
-    dishPhotos.reset(); setSourceImageId(file ? crypto.randomUUID() : null);
-    setError("");
-    if (file && (!file.size || file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
-      setPhoto(null); setPhotoUrl(null); setError("Choose a JPEG, PNG or WebP photo, up to 5 MiB. Your phone may need to export HEIC as JPEG first."); return;
+  async function editExisting() {
+    if (!current || inFlight.current || !mayContinue()) return;
+    inFlight.current = true; setBusy("existing");
+    try {
+      const photos = await api.readPublishedPhotos(restaurantId, current.id, current.version);
+      loadDraft(null); setRetainedPhotos(photos);
+    } catch (error) { setError(`Could not load your saved photos. ${errorText(error)}`); }
+    finally { inFlight.current = false; setBusy(""); }
+  }
+  function selectPhotos(files: File[]) {
+    if (uploads.length + files.length > 3) { setError("Choose up to 3 menu photos."); return; }
+    if (files.some(file => !file.size || file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
+      setError("Use JPEG, PNG or WebP photos, up to 5 MB each."); return;
     }
-    setPhoto(file); setPhotoUrl(file ? URL.createObjectURL(file) : null);
+    saveUploads([...uploads, ...files.map(file => ({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) }))]); setError("");
+  }
+  async function loadDemoImage() {
+    if (inFlight.current || uploads.length >= 3) return;
+    inFlight.current = true; setBusy("demo-image"); setError("");
+    try {
+      const response = await fetch("/demo/menu-photo.jpg");
+      if (!response.ok) throw new Error("The demo image could not be loaded.");
+      selectPhotos([new File([await response.blob()], "Charcoal-Char-Siew-menu.jpg", { type: "image/jpeg" })]);
+    } catch (error) { setError(errorText(error)); }
+    finally { inFlight.current = false; setBusy(""); }
+  }
+  function removeUpload(id: string) {
+    const upload = uploads.find(upload => upload.id === id);
+    if (upload) URL.revokeObjectURL(upload.url);
+    saveUploads(uploads.filter(upload => upload.id !== id));
   }
   async function extract() {
     if (inFlight.current || !mayContinue()) return;
-    if (!photo) { setError("Choose a clear menu photo first."); return; }
+    if (!uploads.length) { setError("Upload your menu first."); return; }
     inFlight.current = true; setBusy("extract");
-    try { const token = await getStaffAccessToken(); const next = await api.extract(photo, restaurantId, token); loadDraft(next, "photo"); }
-    catch (e) { setError(errorText(e)); }
+    try {
+      const token = await getStaffAccessToken();
+      const results = await Promise.allSettled(uploads.map(async upload => { if (upload.draft) return upload; const file = await normalizeMenuPhoto(upload.file); return { ...upload, file, draft: await api.extract(file, restaurantId, token) }; }));
+      const nextUploads = results.map((result, index) => result.status === "fulfilled" ? result.value : uploads[index]);
+      saveUploads(nextUploads);
+      const failed = results.findIndex(result => result.status === "rejected");
+      if (failed >= 0) throw new Error(`Menu ${failed + 1}: ${errorText((results[failed] as PromiseRejectedResult).reason)} Retry to read only the remaining photos.`);
+      const next = mergeExtractions(nextUploads);
+      Object.values(cropRef.current).forEach(crop => URL.revokeObjectURL(crop.url)); cropRef.current = {}; setCrops({}); setCropErrors({});
+      loadDraft(next);
+      for (const upload of nextUploads) for (const item of upload.draft!.items) {
+        const entry = upload.draft!.sourceEntries?.find(entry => entry.id === item.sourceEntryId);
+        if (!entry?.photoRegion) continue;
+        try { saveCrop(item.id, await cropDish(upload, entry.id, entry.photoRegion)); }
+        catch { setCropErrors(old => ({ ...old, [item.id]: "Choose the dish area to add its photo." })); }
+      }
+    } catch (e) { setError(errorText(e)); }
     finally { inFlight.current = false; setBusy(""); }
   }
   function changeDish(id: string, patch: Partial<DishEdit>) {
-    if (patch.name !== undefined || patch.included === false) dishPhotos.remove(id);
+    if (patch.name !== undefined || patch.included === false) { dishPhotos.remove(id); setRetainedPhotos(old => old.filter(photo => photo.dishId !== id)); }
     setDishes(old => old.map(d => d.id === id ? { ...d, ...patch, confirmed: false } : d));
-    setSources(old => Object.fromEntries(Object.entries(old).map(([key, value]) => [key, value.dishIds.includes(id) ? { ...value, confirmed: false } : value])));
     setPreview(null); setError("");
   }
   function confirmDishes(ids: string[]) {
-    const selected = dishes.filter(d => ids.includes(d.id));
-    for (const dish of selected) { const problem = quickDemo && !dish.included ? null : dishProblem(dish); if (problem) { setError(`${dish.name || "New dish"}: ${problem}`); return false; } }
-    const nextDishes = dishes.map(d => ids.includes(d.id) ? { ...d, confirmed: true, reason: d.included ? "Checked this dish’s name, price, availability and modifier rules." : d.reason.trim() } : d);
-    setDishes(nextDishes);
-    setSources(old => {
-      const next = { ...old };
-      for (const dish of selected) {
-        const item = draft?.items.find(i => i.id === dish.draftItemId);
-        if (!item?.sourceEntryId) continue;
-        const paired = nextDishes.filter(d => d.included && draft?.items.some(i => i.id === d.draftItemId && i.sourceEntryId === item.sourceEntryId));
-        next[item.sourceEntryId] = { dishIds: paired.map(d => d.id), reason: dish.included ? "Confirmed the extracted dish and its original printed source together." : `Excluded this original entry: ${dish.reason.trim()}`, confirmed: true };
-      }
-      return next;
-    });
+    for (const dish of dishes.filter(d => ids.includes(d.id) && d.included)) {
+      const problem = dishProblem(dish); if (problem) { setError(`${dish.name || "New dish"}: ${problem}`); return false; }
+    }
     setError(""); return true;
   }
   function removeDish(id: string) {
-    dishPhotos.remove(id);
-    setDishes(old => old.filter(d => d.id !== id));
-    setSources(old => Object.fromEntries(Object.entries(old).map(([key, value]) => [key, value.dishIds.includes(id) ? { ...value, dishIds: value.dishIds.filter(d => d !== id), confirmed: false } : value])));
-    setPreview(null);
+    dishPhotos.remove(id); setDishes(old => old.filter(d => d.id !== id)); setPreview(null);
   }
   async function reloadDetails() {
     if (inFlight.current) return;
     inFlight.current = true; setBusy("details"); setError("");
-    try { const response = await api.readStallDetails(restaurantId, await getStaffAccessToken()); setSavedDetails(response.details); setName(response.details?.name ?? current?.name ?? ""); setHours(response.details ? editorHours(response.details) : DAYS.map(emptyHours)); setSameHours(false); setPreview(null); setPreviewDetails(null); setNotice("Saved name and hours loaded. Review them before preparing a new preview."); }
+    try { const response = await api.readStallDetails(restaurantId, await getStaffAccessToken()); setSavedDetails(response.details); setName(response.details?.name ?? current?.name ?? ""); setHours(response.details ? editorHours(response.details) : DAYS.map(emptyHours)); setSameHours(response.details ? allHoursMatch(editorHours(response.details)) : true); setPreview(null); setPreviewDetails(null); setNotice("Saved name and hours loaded. Review them before preparing a new preview."); }
     catch (e) { setError(errorText(e)); } finally { inFlight.current = false; setBusy(""); }
   }
   async function refresh() {
@@ -196,18 +215,11 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     if (inFlight.current) return;
     const problem = stepOneProblem();
     if (problem) { setStep(1); setError(problem); return; }
-    if (quickDemo) {
-      for (const dish of candidateDishes.filter(dish => dish.included)) {
-        const issue = dishProblem(dish);
-        if (issue) { setError(`${dish.name || "New dish"}: ${issue}`); return; }
-      }
-    }
     inFlight.current = true; setBusy("preview"); setError("");
     try {
       const fresh = await readCurrent(restaurantId); setCurrent(fresh); setMenuRead("ready");
       const menuInput = { dishes: candidateDishes, id: fresh?.id ?? crypto.randomUUID(), restaurantId, version: (fresh?.version ?? 0) + 1, name };
-      const menu = quickDemo ? demoMenu(menuInput) : reviewedMenu({ ...menuInput, draft, sources, issues });
-      if (quickDemo) setDishes(cleanDemoDishes(candidateDishes).dishes);
+      const menu = menuFromEdits(menuInput);
       const input = detailsInput(name, hours, sameHours);
       const token = await getStaffAccessToken();
       let details = savedDetails;
@@ -215,14 +227,15 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
         details = (await api.saveStallDetails(restaurantId, { ...input, expectedVersion: details?.version ?? 0 }, token)).details;
         setSavedDetails(details);
       }
-      setPreviewDetails(details); setPreview(menu); setMenuOnly(false); setNotice(""); setStep(3);
+      setPreviewDetails(details); setPreview(menu);  setNotice(""); setStep(3);
     } catch (e) { setError(errorText(e)); }
     finally { inFlight.current = false; setBusy(""); }
   }
   function chosenPhotos(menu: Menu): PhotoSelection[] {
     return menu.dishes.flatMap(dish => {
-      const record = dishPhotos.records[dish.id];
-      return record?.selected && record.jobId && record.status === "ready" && record.request.dishName === dish.name ? [{ dishId: dish.id, jobId: record.jobId }] : [];
+      const record = dishPhotos.latestRecords()[dish.id];
+      const retained = retainedPhotos.find(photo => photo.dishId === dish.id && photo.dishName === dish.name);
+      return record?.selected && record.jobId && record.status === "ready" && record.request.dishName === dish.name ? [{ dishId: dish.id, jobId: record.jobId }] : retained ? [{ dishId: dish.id, jobId: retained.jobId }] : [];
     });
   }
   function remember(candidate: Menu, details: SavedStallDetails, photoSelections: PhotoSelection[]) {
@@ -271,7 +284,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   async function publish(retry = false) {
     const candidate = retry ? pending : preview;
     const details = retry ? pendingDetails : previewDetails;
-    if (!details || !candidate || candidate.restaurantId !== restaurantId || inFlight.current || (!retry && !menuOnly && !quickDemo) || conflict || storageBlocked) return;
+    if (!details || !candidate || candidate.restaurantId !== restaurantId || inFlight.current || conflict || storageBlocked) return;
     inFlight.current = true; setBusy("publish"); setError(""); setNotice("");
     let sent = false;
     try {
@@ -285,6 +298,17 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       const token = await getStaffAccessToken();
       const currentDetails = (await api.readStallDetails(restaurantId, token)).details;
       if (!currentDetails || JSON.stringify(currentDetails) !== JSON.stringify(details)) { if (retry) setConflict(true); throw new Error("Saved stall details changed. Reload the name and hours and prepare a fresh preview before publishing."); }
+      if (!retry) {
+        for (const dish of candidate.dishes) {
+          const record = dishPhotos.latestRecords()[dish.id];
+          if (record?.selected && record.status === "ready" && record.request.dishName === dish.name) continue;
+          const crop = crops[dish.id];
+          if (!crop) continue;
+          await dishPhotos.generate({ mode: "source_crop", dishId: dish.id, dishName: dish.name, sourceImageId: crop.sourceImageId, sourceEntryId: crop.sourceEntryId }, crop.file);
+          const saved = dishPhotos.latestRecords()[dish.id];
+          if (!saved?.selected || saved.status !== "ready") throw new Error(`The photo for ${dish.name} was not saved. Check its status in review before publishing.`);
+        }
+      }
       const selections = retry ? pendingPhotoSelections : chosenPhotos(candidate);
       remember(candidate, details, selections); sent = true;
       let result: Menu;
@@ -308,46 +332,52 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   }
   function returnAfterConflict() {
     try { sessionStorage.removeItem(pendingKey); } catch { setError("Your browser couldn’t clear the old publish record. Try again before making a new version."); return; }
-    setPendingPhotoSelections([]); setPending(null); setPreview(null); setConflict(false); setMenuOnly(false); setStep(2); setError(""); setNotice("The current live version has been checked. Reconfirm your draft and preview before publishing.");
+    setPendingPhotoSelections([]); setPending(null); setPreview(null); setConflict(false);  setStep(2); setError(""); setNotice("The current live version has been checked. Reconfirm your draft and preview before publishing.");
     setDishes(old => old.map(d => ({ ...d, confirmed: false })));
   }
 
   return <PageShell restaurantId={restaurantId} active="onboarding">
     <div className={s.onboarding}>
-      <header className={s.header}><p className="eyebrow">Your stall, ready to take orders</p><h1 ref={heading} tabIndex={-1}>{published ? "Your menu is live." : ["Let’s get your stall ready.", "Your menu. Just the way you sell it.", "Have a look from your customer’s side."][step - 1]}</h1><p>{published ? "One link for your customers. Every order in one place." : "A little setup now. More time for cooking later."}</p></header>
+      <header className={s.header}><h1 ref={heading} tabIndex={-1}>{published ? "Menu published" : ["Set up your stall", "Review menu", "Preview"][step - 1]}</h1></header>
       <ol className={s.steps} aria-label="Setup progress">{["Stall details", "Review menu", "Preview & publish"].map((label, index) => <li key={label} aria-current={step === index + 1 ? "step" : undefined} className={step >= index + 1 ? s.activeStep : ""}><span>{step > index + 1 ? "✓" : index + 1}</span>{label}</li>)}</ol>
       {error && <div className={`notice ${s.error}`} role="alert" ref={errorNode} tabIndex={-1}><strong>Let’s check that</strong><p>{error}</p>{menuRead === "error" && <button className="btn btn-outline" onClick={refresh} disabled={!!busy}>Check menu connection again</button>}<Link href="/login" className={s.signIn}>Staff sign in</Link></div>}
       {notice && <div className="notice" role="status">{notice}</div>}
       {storageBlocked && <p className="notice" role="status">Publishing is paused while the previous browser record needs checking. You can continue editing, but don’t clear that record or start another publication.</p>}
-      {busy && <p className={s.busy} role="status" aria-live="polite">{busy === "extract" ? "Reading the names and prices. Hang on to this page…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
+      {busy === "extract" && <div className={s.extracting} role="status"><div className={s.foodAnimation} aria-hidden="true"><span>🍜</span><span>🥟</span><span>🍵</span></div><h2>Reading your menu…</h2><p>About 30 seconds. Grab a drink; keep this page open.</p></div>}
+      {busy && busy !== "extract" && <p className={s.busy} role="status" aria-live="polite">{busy === "demo-image" ? "Adding demo image…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
-      {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes · version {published.version}</p><p>Menu names, prices, options and the reviewed opening hours are live. Address and contact import remain unavailable.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
-        {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} photo={photo} onPhoto={selectPhoto} photoUrl={photoUrl} busy={!!busy} onExtract={extract} onManual={() => { if (mayContinue()) loadDraft(null, "manual"); }} onExample={() => { if (mayContinue()) loadDraft(OCR_DRAFT_FIXTURE, "sample"); }} onExisting={() => { if (current && mayContinue()) loadDraft(null, "current"); }} currentMenu={current?.name ?? ""} existingAvailable={!!current} pageDetails={pageDetails} setPageDetails={setPageDetails} />}
-        {step === 2 && <MenuReview anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} restaurantId={restaurantId} quickDemo={quickDemo} dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} renderDishPhoto={dish => {
+      {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes</p><p>Your menu is live.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
+        {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} uploads={uploads} onPhotos={selectPhotos} onRemovePhoto={removeUpload} busy={!!busy} onExtract={extract} onDemoImage={loadDemoImage} onExisting={() => void editExisting()} existingAvailable={!!current} />}
+        {step === 2 && <MenuReview anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} dishes={dishes} draft={draft} uploads={draft ? uploads : []} renderDishPhoto={dish => {
           const item = draft?.items.find(item => item.id === dish.draftItemId);
+          const upload = uploads.find(upload => upload.draft?.items.some(item => item.id === dish.draftItemId));
+          const crop = crops[dish.id];
           const record = dishPhotos.records[dish.id]; const previewUrl = dishPhotos.previews[dish.id];
-          const sourceEntryId = item?.sourceEntryId;
-          return <div><DishPhotoPanel dishId={dish.id} dishName={dish.name} originalFile={!sample && draft ? photo : null} previewURL={photoUrl} sourceEntryId={sourceEntryId} currentCandidate={record?.candidate && previewUrl && record.request.dishName === dish.name ? { candidate: record.candidate, previewUrl } : null} selected={record?.selected} busy={dishPhotos.busy[dish.id]} error={dishPhotos.errors[dish.id] || dishPhotos.storageError} onGenerate={mode => {
-            if (mode === "enhance_visible") {
-              if (!photo || !sourceImageId || !sourceEntryId) return;
-              void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name, sourceImageId, sourceEntryId, merchantConfirmedVisible: true }, photo);
-            } else void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name });
-          }} onSelect={() => dishPhotos.select(dish.id)} onRemove={() => dishPhotos.remove(dish.id)} />
-          {record && <button type="button" className="btn btn-outline" disabled={dishPhotos.busy[dish.id]} onClick={() => void dishPhotos.check(dish.id)}>Check photo status</button>}</div>;
-        }} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onConfirmAll={() => confirmDishes(dishes.map(d => d.id))} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onSourceChange={(id, decision) => { setSources(old => ({ ...old, [id]: decision })); setPreview(null); }} onIssueChange={(id, value) => setIssues(old => ({ ...old, [id]: value }))} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
+          const retained = retainedPhotos.find(photo => photo.dishId === dish.id && photo.dishName === dish.name);
+          return <DishPhotoPanel savedPhoto={retained} dishId={dish.id} dishName={dish.name} crop={crop} upload={upload} sourceEntryId={item?.sourceEntryId} currentCandidate={record?.candidate && previewUrl && record.request.dishName === dish.name && record.request.mode !== "source_crop" ? { candidate: record.candidate, previewUrl } : null} selected={record?.selected} busy={dishPhotos.busy[dish.id]} error={cropErrors[dish.id] || dishPhotos.errors[dish.id] || dishPhotos.storageError} onCrop={region => {
+            if (!upload || !item?.sourceEntryId) return;
+            void cropDish(upload, item.sourceEntryId, region).then(crop => { saveCrop(dish.id, crop); setCropErrors(old => ({ ...old, [dish.id]: "" })); }).catch(() => setCropErrors(old => ({ ...old, [dish.id]: "Could not crop this photo. Try again." })));
+          }} onGenerate={mode => {
+            if (mode === "enhance_visible" && crop) void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name, sourceImageId: crop.sourceImageId, sourceEntryId: crop.sourceEntryId, merchantConfirmedVisible: true }, crop.file);
+            else if (mode === "generate_similar") void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name });
+          }} onSelect={() => dishPhotos.select(dish.id)} onRemove={() => dishPhotos.remove(dish.id)} onCheck={record?.status === "dispatch_unknown" ? () => void dishPhotos.check(dish.id) : undefined} />;
+        }} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
         {step === 3 && preview && <div className={s.stack}>
-          <div className={s.previewIntro}><p className="eyebrow">Customer preview</p><h2>This is what they’ll see.</h2><p>Scroll through the menu and tap “Add to order” to try the options. Preview orders won’t go to your kitchen.</p>{sample && <p className="notice">You are previewing the saved, unapproved extraction example.</p>}</div>
+          <div className={s.previewIntro}><p>Try an order. Nothing is sent.</p></div>
           <div className={s.phone}><div className={s.phoneTop} aria-hidden="true"><span>9:41</span><span className={s.island} /><span>● ▰</span></div><div className={s.phoneScreen}><CustomerCart key={JSON.stringify(preview)} restaurantId={restaurantId} previewMenu={preview} previewPhotos={preview.dishes.flatMap(dish => {
             const record = dishPhotos.records[dish.id]; const previewUrl = dishPhotos.previews[dish.id];
-            return record?.selected && record.candidate && previewUrl && record.request.dishName === dish.name ? [{ dishId: dish.id, dishName: dish.name, imageUrl: previewUrl, label: record.candidate.label }] : [];
+            const retained = retainedPhotos.find(photo => photo.dishId === dish.id && photo.dishName === dish.name);
+            return record?.selected && record.candidate && previewUrl && record.request.dishName === dish.name ? [{ dishId: dish.id, dishName: dish.name, imageUrl: previewUrl, label: record.candidate.label }] : crops[dish.id] ? [{ dishId: dish.id, dishName: dish.name, imageUrl: crops[dish.id].url, label: "Original photo" as const }] : retained ? [{ dishId: dish.id, dishName: dish.name, imageUrl: retained.imageUrl, label: retained.candidate.label }] : [];
           })} previewHours={hoursProblem(hours, sameHours) ? undefined : hoursSummary(hours, sameHours)} /></div><div className={s.phoneBottom} aria-hidden="true" /></div>
-          <section className={`card ${s.section}`}><h2>{pending ? "Check your publication" : "Ready to put your menu up?"}</h2><p>Version {preview.version} · reviewed stall details version {previewDetails?.version ?? pendingDetails?.version} · {preview.dishes.filter(d => d.available).length} dishes available to order</p>
-            <p className="notice">Publishing saves this menu with the reviewed stall name and opening hours. Selected dish photos and their AI labels are saved with this menu version. Photos are optional. Address and contact import are not saved yet.</p>
-            {!pending ? <>{!quickDemo && <label className={s.check}><input type="checkbox" checked={menuOnly} onChange={e => setMenuOnly(e.target.checked)} />I’ve checked the preview. Publish this menu for the test.</label>}<div className={s.actions}><button className="btn btn-outline" onClick={() => { setStep(2); setPreview(null); }}>← Back to editing</button><button className="btn btn-primary" disabled={(!quickDemo && !menuOnly) || storageBlocked} onClick={() => publish()}>Publish menu →</button></div></> : <><p>Keep this page open until we can confirm what’s live. Retrying uses this same menu and version.</p><div className={s.actions}><button className="btn btn-teal" onClick={reconcile}>Check publication status</button>{conflict ? <button className="btn btn-outline" onClick={returnAfterConflict}>Return to review</button> : <button className="btn btn-outline" disabled={storageBlocked} onClick={() => publish(true)}>Retry this exact publish</button>}</div></>}
+          <section className={`card ${s.section}`}>
+            {pending ? <><h2>Check publication</h2><p>Keep this page open until publication is confirmed.</p><div className={s.actions}><button className="btn btn-teal" onClick={reconcile}>Check status</button>{conflict ? <button className="btn btn-outline" onClick={returnAfterConflict}>Return to review</button> : <button className="btn btn-outline" disabled={storageBlocked} onClick={() => publish(true)}>Retry publish</button>}</div></> : <>
+              <p>{preview.dishes.filter(d => d.available).length} dishes · Name, hours and selected photos will go live.</p>
+              <div className={s.actions}><button className="btn btn-outline" onClick={() => { setStep(2); setPreview(null); }}>← Edit</button><button className="btn btn-primary" disabled={storageBlocked || Object.values(dishPhotos.busy).some(Boolean)} onClick={() => publish()}>Publish →</button></div>
+            </>}
           </section>
         </div>}
       </fieldset>}
-      {!published && <p className={s.draftNote}>Your draft stays on this page until you publish. Keep it open while reviewing.</p>}
+      {!published && <p className={s.draftNote}>Keep this page open to save your draft.</p>}
     </div>
   </PageShell>;
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { Id, MenuSchema } from "../shared/contracts";
 import { dishPhotoCandidateSchema, dishPhotoJobSchema, dishPhotoRequestSchema, dishPhotoSelectionSchema, publishedDishPhotosSchema, MAX_DISH_PHOTO_BYTES } from "../shared/dish-photo";
@@ -83,12 +83,13 @@ export function dishPhotoHandlers(deps: { backend?:()=>BackendClient; storage?:(
    let input:unknown;try{input=JSON.parse(String(form.get('request')));}catch{throw new HttpError(400,'INVALID_REQUEST','Photo details must be JSON.');}
    const photoRequest=parsed(dishPhotoRequestSchema,input);
    const apiKey=(deps.apiKey??(()=>process.env.OPENAI_API_KEY))();
-   if(!apiKey)throw new HttpError(503,'NOT_CONFIGURED','Photo generation is not configured.');
+   if(photoRequest.mode !== 'source_crop' && !apiKey)throw new HttpError(503,'NOT_CONFIGURED','Photo generation is not configured.');
    let source:null|{sourceImageId:string;bytes:Uint8Array;mimeType:string}=null;
    const file=form.get('source');
-   if(photoRequest.mode==='enhance_visible'){
+   if(photoRequest.mode==='enhance_visible'||photoRequest.mode==='source_crop'){
     if(!file||typeof file==='string'||file.size>5*1024*1024)throw new HttpError(400,'INVALID_IMAGE','Choose the original menu photo.');
     const sourceBytes=new Uint8Array(await file.arrayBuffer());validateMenuImage(sourceBytes,file.type);
+    if(photoRequest.mode==='source_crop'&&file.type!=='image/jpeg')throw new HttpError(400,'INVALID_IMAGE','Original crops must be JPEG.');
     source={sourceImageId:photoRequest.sourceImageId,bytes:sourceBytes,mimeType:file.type};
    }else if(file)throw new HttpError(400,'INVALID_REQUEST','Illustration generation does not take an original photo.');
    const sourceMetadata=source?{sourceImageId:source.sourceImageId,objectKey:`${restaurantId}/sources/${source.sourceImageId}`,sha256:digest(source.bytes),mimeType:source.mimeType,sizeBytes:source.bytes.length}:null;
@@ -98,8 +99,16 @@ export function dishPhotoHandlers(deps: { backend?:()=>BackendClient; storage?:(
    try{
     const objects=storage(client);
     if(source&&sourceMetadata)await objects.upload(sourceMetadata.objectKey,source.bytes,source.mimeType);
-    dispatched=true;
-    const output=await (deps.create??createDishPhoto)(photoRequest,{apiKey,sourceImage:source??undefined,signal:AbortSignal.any([request.signal,AbortSignal.timeout(185000)])});
+    dispatched=photoRequest.mode !== 'source_crop';
+    const output=photoRequest.mode === 'source_crop' && source ? {
+     imageBase64: Buffer.from(source.bytes).toString('base64'),
+     candidate: {
+      id:randomUUID(),dishId:photoRequest.dishId,status:'needs_review',mode:'source_crop',label:'Original photo',disclosureRequired:false,
+      mimeType:'image/jpeg',imageSha256:digest(source.bytes),sourceImageSha256:digest(source.bytes),
+      sourceImageId:photoRequest.sourceImageId,sourceEntryId:photoRequest.sourceEntryId,region:null,
+      model:null,quality:null,size:null,promptSha256:digest(new TextEncoder().encode('original crop; no AI generation')),createdAt:new Date().toISOString(),
+     },
+    } : await (deps.create??createDishPhoto)(photoRequest,{apiKey:apiKey!,sourceImage:source??undefined,signal:AbortSignal.any([request.signal,AbortSignal.timeout(185000)])});
     const candidate=dishPhotoCandidateSchema.parse(output.candidate);
     const image=new Uint8Array(Buffer.from(output.imageBase64,'base64'));
     if(image.length>MAX_DISH_PHOTO_BYTES||image.length<3||image[0]!==255||image[1]!==216||image[2]!==255||digest(image)!==candidate.imageSha256)throw new HttpError(502,'INVALID_RESPONSE','Generated photo validation failed.');

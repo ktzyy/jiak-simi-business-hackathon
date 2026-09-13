@@ -46,7 +46,7 @@ function BottomSheet({ children, onClose, preview, label }: { children: ReactNod
   </div>;
 }
 
-export function CustomerCart({ restaurantId, previewMenu, previewHours, previewPhotos = [] }: { restaurantId: string; previewMenu?: Menu; previewHours?: string; previewPhotos?: DisplayDishPhoto[] }) {
+export function CustomerCart({ restaurantId, previewMenu, previewHours, previewPhotos = [], showStaffTools = false }: { restaurantId: string; previewMenu?: Menu; previewHours?: string; previewPhotos?: DisplayDishPhoto[]; showStaffTools?: boolean }) {
   const preview = previewMenu !== undefined;
   const api = useMemo(() => createApiClient(), []);
   const storageKey = `jiak-order-v1:${restaurantId}`;
@@ -231,9 +231,9 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
     <div className={styles.receipt}>
       <div className={styles.receiptMark} aria-hidden="true">✓</div>
       <p className="eyebrow">{previewReceipt ? "Preview only" : "Order received"}</p>
-      <h1>{previewReceipt ? "That’s how ordering works." : "Your order is with the stall."}</h1>
+      <h1>{previewReceipt ? "Preview complete" : "Your order is with the stall."}</h1>
       <p>{currentReceipt.fulfillmentType === "dine_in" ? "Dine-in" : currentReceipt.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</p>
-      <p>{previewReceipt ? "This is a practice order. Nothing was sent and no payment was taken." : "Sit tight. Show this confirmation at the stall when collecting your food."}</p>
+      <p>{previewReceipt ? "Preview only. No order sent or payment taken." : "Show this confirmation when collecting."}</p>
       {receipt && <><div className={styles.receivedBadge}>Received by the stall</div><p className={styles.muted}>Received {new Date(receipt.createdAt).toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Singapore" })} · Payment due at stall</p><small className={styles.reference}>Order reference: {receipt.id}</small></>}
       {currentReceipt.lines.map((line, i) => <div className={styles.reviewLine} key={i}><div><strong>{line.quantity} × {line.name}</strong>{line.options.map(option => <small key={option.id}>{option.name}</small>)}</div><span>{money(line.lineTotalCents)}</span></div>)}
       <div className={styles.total}><strong>Total</strong><strong>{money(currentReceipt.totalCents)}</strong></div>
@@ -244,15 +244,13 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
 
   return <div className={`${styles.customer} ${preview ? styles.preview : ""}`}>
     {preview && <div className={styles.previewLabel}>CUSTOMER PREVIEW · NO ORDERS SENT</div>}
+    {showStaffTools && !preview && <header className={styles.adminHeader} aria-label="Stall admin"><span>Stall admin</span><nav aria-label="Staff tools"><Link href={`/?restaurantId=${restaurantId}`}>Overview</Link><Link href={`/onboarding?restaurantId=${restaurantId}`}>Edit menu</Link><Link href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode →</Link></nav></header>}
     <header className={styles.header}>
       <Link href="/" className={styles.brand}><Image src="/brand/jiak-simi.png" alt="Jiak Simi" width={144} height={35} style={{ width: 144, height: "auto" }} /></Link>
       {restaurantId === DEMO_RESTAURANT_ID && !preview && <nav className={styles.demoActions} aria-label="Try the ordering demo">
         <a className="btn btn-teal" href="https://t.me/blackcharsiewbot" target="_blank" rel="noopener noreferrer">Order on Telegram ↗</a>
         <Link className="btn btn-outline" href="/voice-test">Speak with GPT Live</Link>
-        <Link className="btn btn-outline" href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode</Link>
-        <p>Speak, message, or order below. Then open Cook mode to see your order arrive.</p>
       </nav>}
-      <p className="eyebrow">Good food, less waiting</p>
       <h1>{menu?.name ?? "Your stall’s menu"}</h1>
       {publishedDetails ? <details className={styles.hours}><summary>Opening hours · Singapore time</summary>{formatPublishedHours(publishedDetails).map(day => <p key={day}>{day}</p>)}</details> : <p className={styles.hours}>{previewHours || "Opening hours · Please check with the stall"}</p>}
       <div className={styles.dining} role="group" aria-label="Choose dine-in or takeaway">
@@ -260,18 +258,11 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       </div>
     </header>
     <div className={styles.menuContent}>
-      {restaurantId === DEMO_RESTAURANT_ID && !preview && <details className={styles.sourcePhoto}>
-        <summary>View menu photo · original source</summary>
-        <Image src="/demo/menu-photo.jpg" alt="Original roast-meat menu photograph, including the dishes and additional ingredients panel" width={4032} height={3024} unoptimized />
-        <p>Photographed printed menu. Reviewed prices and options below are authoritative; covered prices were confirmed separately for this demo.</p>
-        <a href="/demo/menu-photo.jpg" target="_blank" rel="noopener noreferrer">Open full menu photo ↗</a>
-      </details>}
       {storageError && <div className={`${styles.alert} ${styles.error}`} role="alert"><strong>Saved order needs checking</strong><p>{storageError}</p><button className="btn btn-outline" onClick={() => setBoot(value => value + 1)}>Try loading again</button></div>}
       {message && !cartOpen && <div className={`${styles.alert} ${message.kind === "info" ? "" : styles.error}`} role={message.kind === "info" ? "status" : "alert"}><strong>{message.kind === "notSent" ? "Not sent" : message.kind === "unknown" ? "Waiting for confirmation" : message.kind === "error" ? "Please check" : ""}</strong><p>{message.text}</p></div>}
       {loading && <div role="status" className={styles.loading}><span className={styles.loader} />Getting the menu ready…</div>}
       {!loading && !menu && !storageError && <div className={styles.empty}><h2>The menu isn’t ready just yet.</h2><p>Please try again, or ask the stall for help.</p><button className="btn btn-teal" disabled={!!pending} onClick={() => setBoot(value => value + 1)}>Try again</button></div>}
       {menu && <><div className={styles.sectionHeading}><h2>What would you like?</h2><span>{menu.dishes.length} dishes</span></div>
-        <p className={styles.muted}>Pick a dish, add your extras, then check your order.</p>
         <div className={styles.dishes}>{menu.dishes.map(item => <article className={`${styles.dish} ${!item.available ? styles.soldOut : ""}`} key={item.id}>
           <MenuDishPhoto restaurantId={menu.restaurantId} dish={item} photo={(preview ? previewPhotos : publishedPhotos.filter(photo => photo.menuId === menu.id && photo.menuVersion === menu.version)).find(photo => photo.dishId === item.id && photo.dishName === item.name)} />
           <div className={styles.dishBody}><h3>{item.name}</h3><strong className={styles.price}>{money(item.priceCents)}</strong>{item.modifierGroups.length > 0 && <p className={styles.modifierHint}>Make it yours · extras available</p>}

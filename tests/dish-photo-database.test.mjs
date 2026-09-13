@@ -16,6 +16,7 @@ test('photo migration: scoped jobs, durable budgets and immutable reviewed publi
  const applied=await readFile(new URL('../supabase/migrations/'+migration,import.meta.url),'utf8');
  assert.equal(applied,await readFile(new URL('../docs/dish-photo-extension.sql',import.meta.url),'utf8'));
  await db.exec(applied);
+ await db.exec(await readFile(new URL("../docs/original-dish-crops-proposal.sql",import.meta.url),"utf8"));
  await db.exec(`insert into auth.users(id) values('${actor}'),('${other}');insert into public.restaurants(id,name,slug) values('${restaurant}','Photos','photos');insert into public.restaurant_memberships values('${restaurant}','${actor}','owner',true,now());`);
  const details={name:'Photo test',timezone:'Asia/Singapore',weeklyHours:Array.from({length:7},(_,n)=>({weekday:n+1,closed:true,intervals:[]}))};
  await rpc(db,'save_stall_details',[actor,restaurant,0,j(details)]);
@@ -53,6 +54,17 @@ test('photo migration: scoped jobs, durable budgets and immutable reviewed publi
  await db.exec("update private.dish_photo_jobs set created_at=now()-interval '20 minutes'");
  for(let n=0;n<40;n++){await rpc(db,'reserve_dish_photo_job',[actor,restaurant,randomUUID(),j(request),null]);await db.exec("update private.dish_photo_jobs set created_at=now()-interval '20 minutes'");}
  await assert.rejects(rpc(db,'reserve_dish_photo_job',[actor,restaurant,randomUUID(),j(request),null]),/RATE_LIMITED/);
+ // Original crops still work after AI budget exhaustion, remain scoped, and publish exact bytes.
+ const cropRequest={mode:'source_crop',dishId:request.dishId,dishName:'Rice',sourceImageId:sourceId,sourceEntryId:entryId};
+ const source={sourceImageId:sourceId,objectKey:`${restaurant}/sources/${sourceId}`,sha256:'c'.repeat(64),mimeType:'image/jpeg',sizeBytes:1000};
+ await assert.rejects(rpc(db,'reserve_dish_photo_job',[other,restaurant,randomUUID(),j(cropRequest),j(source)]),/FORBIDDEN/);
+ const cropJob=await rpc(db,'reserve_dish_photo_job',[actor,restaurant,randomUUID(),j(cropRequest),j(source)]);
+ const cropResult={...result,objectKey:`${restaurant}/candidates/${cropJob.jobId}`,candidate:{...result.candidate,mode:'source_crop',label:'Original photo',disclosureRequired:false,sourceImageId:sourceId,sourceEntryId:entryId,sourceImageSha256:source.sha256,model:null,quality:null,size:null}};
+ await assert.rejects(rpc(db,'finish_dish_photo_job',[actor,restaurant,cropJob.jobId,j({...cropResult,candidate:{...cropResult.candidate,label:'AI-enhanced source photo'}})]),/INVALID_REQUEST/);
+ await rpc(db,'finish_dish_photo_job',[actor,restaurant,cropJob.jobId,j(cropResult)]);
+ const cropPublication=await rpc(db,'publish_menu_with_photos',[restaurant,actor,j({...menu,version:3}),1,j([{dishId:request.dishId,jobId:cropJob.jobId}])]);
+ assert.equal(cropPublication.photos[0].candidate.label,'Original photo');
+ assert.equal((await rpc(db,'read_published_photos',[restaurant,menu.id,3]))[0].jobId,cropJob.jobId);
  await db.exec('set role anon');
  await assert.rejects(rpc(db,'read_published_photos',[restaurant,menu.id,1]),/permission denied/);
  await assert.rejects(db.query('select * from private.dish_photo_jobs'),/permission denied/);

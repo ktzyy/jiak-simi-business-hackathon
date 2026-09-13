@@ -161,3 +161,20 @@
 
 .sourceReference { color: #686658; font-size: 16px; }
 .sourceReference summary { padding: 12px 0; cursor: pointer; }
+
+.uploadedPhotos { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); width: 100%; gap: 16px; }
+.uploadedPhotos figure { margin: 0; min-width: 0; display: grid; gap: 10px; justify-items: center; }
+.uploadedPhotos img { width: 100%; height: 150px; object-fit: contain; border-radius: 12px; }
+.uploadedPhotos figcaption { max-width: 100%; font-size: 14px; overflow-wrap: anywhere; }
+.textAction { color: #20564b; background: none; border: none; font: inherit; font-weight: 700; text-decoration: underline; padding: 12px 0; cursor: pointer; }
+.addDish { width: 100%; justify-self: stretch; }
+.extracting { padding: 48px 24px; text-align: center; background: #f5f3e8; border-radius: 24px; margin-bottom: 24px; }
+.extracting h2 { color: #20564b; margin: 16px 0 8px; }
+.extracting p { margin: 0; color: #686658; }
+.foodAnimation { display: flex; justify-content: center; gap: 16px; font-size: 46px; }
+.foodAnimation span { animation: foodBounce 1.5s ease-in-out infinite; }
+.foodAnimation span:nth-child(2) { animation-delay: .2s; }
+.foodAnimation span:nth-child(3) { animation-delay: .4s; }
+@keyframes foodBounce { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-12px) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .foodAnimation span { animation: none; } }
+.dishOverview { display: block; }

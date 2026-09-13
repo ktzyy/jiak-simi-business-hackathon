@@ -73,6 +73,15 @@ export function previewQuote(menu: Menu, lines: CartRequest["lines"], fulfillmen
 
 
 export function formatPublishedHours(details: StallDetails): string[] {
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  return [...details.weeklyHours].sort((a, b) => a.weekday - b.weekday).map(day => `${days[day.weekday - 1]}: ${day.closed ? "Closed" : day.intervals.map(interval => `${interval.opens}–${interval.closes}${interval.closesNextDay ? " (next day)" : ""}`).join(", ")}`);
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const time = (value: string) => { const hour = Number(value.slice(0, 2)); return `${hour % 12 || 12}:${value.slice(3)} ${hour < 12 ? "am" : "pm"}`; };
+  const week = [...details.weeklyHours].sort((a, b) => a.weekday - b.weekday);
+  const descriptions = week.map(day => day.closed ? "Closed" : day.intervals.map(period => `${time(period.opens)}–${time(period.closes)}${period.closesNextDay ? " next day" : ""}`).join(", "));
+  const result: string[] = [];
+  for (let start = 0; start < week.length;) {
+    let end = start;
+    while (end + 1 < week.length && descriptions[end + 1] === descriptions[start]) end++;
+    result.push(`${days[start]}${end > start ? `–${days[end]}` : ""} ${descriptions[start]}`); start = end + 1;
+  }
+  return result;
 }

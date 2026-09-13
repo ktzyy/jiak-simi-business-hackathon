@@ -11,6 +11,6 @@ export function MenuDishPhoto({ restaurantId, dish, photo }: { restaurantId: str
   if (!photo || photo.dishId !== dish.id || photo.dishName !== dish.name) return <DemoDishPhoto restaurantId={restaurantId} dish={dish} />;
   return <figure style={{ margin: 0 }}>
     {failed === photo.imageUrl ? <div className={styles.photo}><small>Photo unavailable</small></div> : <div className={`${styles.photo} ${styles.hasPhoto}`}><img src={photo.imageUrl} alt={`${photo.label} of ${dish.name}`} className={styles.dishImage} onError={() => setFailed(photo.imageUrl)} /></div>}
-    <figcaption style={{ padding: "6px 12px", fontSize: "0.72rem", color: "#52645d", background: "#f7f5ef" }}>{photo.label}</figcaption>
+    {photo.label !== "Original photo" && <figcaption style={{ padding: "6px 12px", fontSize: "0.72rem", color: "#52645d", background: "#f7f5ef" }}>{photo.label}</figcaption>}
   </figure>;
 }

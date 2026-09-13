@@ -43,6 +43,7 @@ export async function createDishPhoto(
   const parsed = dishPhotoRequestSchema.safeParse(request);
   if (!parsed.success) throw new DishPhotoError("invalid_request", "Choose a dish photo mode and confirm the source dish when enhancing.");
   const input = parsed.data;
+  if (input.mode === "source_crop") throw new DishPhotoError("invalid_request", "Original crops are saved without image generation.");
   if (!options.apiKey) throw new DishPhotoError("not_configured", "Dish photo generation is not configured.");
   let sourceImageSha256: string | null = null;
   if (input.mode === "enhance_visible") {

@@ -11,7 +11,7 @@ export function Landing({ demo = false }: { demo?: boolean }) {
     <header className={`site-header ${styles.header}`}><Brand /><Link className={styles.login} href="/login">Log in</Link></header>
     <main className={styles.landing}>
       <section className={styles.hero}>
-        <div className={styles.heroCopy}><p className="eyebrow">AI-powered help for your stall</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p className={styles.description}>Short of hands? Start with a photo of your menu. Customers order on their phones, and you see clearly what to cook next.</p><p className={styles.setupTime}>Your stall online in about 15 minutes</p><div className={styles.heroActions}><Link className="btn btn-primary" href={startHref}>Get started →</Link><Link className="btn btn-teal" href={menuHref}>See Demo</Link></div><p className={styles.caption}>Your menu. Your dishes. You’re in control.</p></div>
+        <div className={styles.heroCopy}><p className="eyebrow">AI-powered help for your stall</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p className={styles.description}>Upload your menu. Take phone orders. See what to cook next.</p><p className={styles.setupTime}>Your stall online in about 15 minutes</p><div className={styles.heroActions}><Link className="btn btn-primary" href={startHref}>Get started →</Link><Link className="btn btn-teal" href={menuHref}>See Demo</Link></div></div>
         <div className={styles.phoneStage} aria-label="Example customer menu and cook ticket">
           <div className={styles.phone}>
             <div className={styles.speaker} aria-hidden="true" />
@@ -21,9 +21,9 @@ export function Landing({ demo = false }: { demo?: boolean }) {
         </div>
       </section>
       <section className={styles.benefits} aria-label="How it works">
-        {[['01','Start with one photo','No need to type out your whole menu. Just upload a clear photo.'],['02','Have a quick look','Check the prices, add your options and choose your dish photos.'],['03','See what to cook next','Clear orders, all in one place. Less back-and-forth at the stall.']].map(([n,title,copy]) => <article key={n}><span className={styles.stepNumber}>{n}</span><h2>{title}</h2><p>{copy}</p></article>)}
+        {[['01','Upload your menu','Up to three menu photos.'],['02','Review your dishes','Check prices, extras and photos.'],['03','See what to cook next','Clear tickets, in order.']].map(([n,title,copy]) => <article key={n}><span className={styles.stepNumber}>{n}</span><h2>{title}</h2><p>{copy}</p></article>)}
       </section>
-      <section className={styles.closing}><div><h2>Made for the neighbourhood stall.</h2><p>A little less admin. A little more time for your food.</p></div><Link className="btn btn-primary" href={startHref}>Let’s get started</Link></section>
+      <section className={styles.closing}><div><h2>Made for the neighbourhood stall.</h2><p>A little less admin. A little more time for your food.</p></div><Link className="btn btn-primary" href={startHref}>Get started</Link></section>
     </main><footer className="site-footer"><strong>Jiak Simi for Business</strong><span>AI that works for hawkers.</span></footer>
   </>;
 }

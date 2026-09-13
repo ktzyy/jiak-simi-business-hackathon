@@ -34,3 +34,8 @@ export function openingPeriods(day: HourDay): NonNullable<HourDay["intervals"]> 
     ? [{ opens: day.start, closes: day.breakStart, closesNextDay: false }, { opens: day.breakEnd, closes: day.end, closesNextDay: day.nextDay }]
     : [{ opens: day.start, closes: day.end, closesNextDay: day.nextDay }];
 }
+
+export function allHoursMatch(hours: HourDay[]): boolean {
+  const signature = (day: HourDay) => JSON.stringify(day.closed ? { closed: true } : openingPeriods(day));
+  return hours.length === 7 && hours.every(day => signature(day) === signature(hours[0]));
+}

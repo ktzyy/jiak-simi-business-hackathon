@@ -4,7 +4,7 @@ import { extractMenu, MAX_MENU_IMAGE_BYTES, MenuExtractionError, parseMenuPriceC
 
 const image = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10, 1]);
 const input = { image, mimeType: "image/png" };
-const entry = { kind: "item", name: "Chicken rice", category: null, description: null, itemNumber: "1", menuLabel: null, region: "top left", rawPriceText: "$4.50", currency: "SGD", priceUncertain: false, uncertainty: null };
+const entry = { kind: "item", name: "Chicken rice", category: null, description: null, itemNumber: "1", menuLabel: null, region: "top left", photoRegion: null, rawPriceText: "$4.50", currency: "SGD", priceUncertain: false, uncertainty: null };
 const body = (menu: unknown) => ({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(menu) }] }] });
 function fakeFetch(responses: Response[]) {
   const requests: { url: string; body: Record<string, unknown> }[] = [];

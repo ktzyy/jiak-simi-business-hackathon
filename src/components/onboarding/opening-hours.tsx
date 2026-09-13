@@ -24,7 +24,6 @@ export function OpeningHours({ hours, setHours, sameHours, setSameHours, busy, o
   function openAdvanced(index: number) { setAdvancedDays(old => old.includes(index) ? old : [...old, index]); setMoreOptions(true); }
   return <div className={s.hours}>
     <h3>When you’re open <span className={s.required}>Required</span></h3>
-    <p className={s.help}>Let customers know when they can come by.</p>
     <label className={s.check}><input type="checkbox" checked={sameHours} onChange={e => toggleSame(e.target.checked)} />Same hours every day</label>
     <div className={s.days}>
       {visibleDays.map((day, index) => {
@@ -48,7 +47,7 @@ export function OpeningHours({ hours, setHours, sameHours, setSameHours, busy, o
     </div>
     <p className={s.hoursSummary}>{hoursSummary(hours, sameHours)}</p>
     <div className={s.footer}>
-      <p className={s.help}>Singapore time · Saved when you preview your menu.</p>
+      <p className={s.help}>Singapore time</p>
       <button type="button" className={s.textButton} aria-expanded={moreOptions} aria-controls="extra-hours-options" onClick={() => setMoreOptions(!moreOptions)}>More hours options {moreOptions ? "−" : "+"}</button>
     </div>
     {moreOptions && <div id="extra-hours-options" className={s.moreOptions}>
@@ -70,7 +69,7 @@ export function OpeningHours({ hours, setHours, sameHours, setSameHours, busy, o
         </div>;
       })}
       <button type="button" className={s.textButton} onClick={onReloadDetails} disabled={busy}>Reload saved name and hours</button>
-      <p className={s.help}>Reload replaces your edits with the last saved details. Customers see your changes after you publish.</p>
+      <p className={s.help}>Replaces your unsaved hours.</p>
     </div>}
   </div>;
 }

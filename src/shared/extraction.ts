@@ -21,6 +21,12 @@ const itemSchema = z.strictObject({
   modifierGroups: z.array(groupSchema).max(20),
 });
 
+export const menuPhotoRegionSchema = z.strictObject({
+  x: z.number().min(0).max(1), y: z.number().min(0).max(1),
+  width: z.number().positive().max(1), height: z.number().positive().max(1),
+});
+export type MenuPhotoRegion = z.infer<typeof menuPhotoRegionSchema>;
+
 const sourceEntrySchema = z.strictObject({
   kind: z.enum(["item", "addon", "fee", "category"]),
   name,
@@ -29,6 +35,7 @@ const sourceEntrySchema = z.strictObject({
   itemNumber: z.string().max(40).nullable(),
   menuLabel: name,
   region: z.string().min(1).max(300).describe("Location of this entry within the supplied image, such as top row, second dish from left. This is an image region, never a country or geographic location. It is not a verified crop rectangle."),
+  photoRegion: menuPhotoRegionSchema.nullable().optional(),
   rawPriceText,
   currency: z.enum(["SGD", "other", "unknown"]),
   priceUncertain: z.boolean(),
@@ -37,7 +44,7 @@ const sourceEntrySchema = z.strictObject({
 
 /** Model only transcribes evidence. Prices, IDs, dish filtering, and review status are server-owned. */
 export const modelMenuExtractionSchema = z.strictObject({
-  entries: z.array(sourceEntrySchema).max(250),
+  entries: z.array(sourceEntrySchema.extend({ photoRegion: menuPhotoRegionSchema.nullable() })).max(250),
   issues: z.array(z.strictObject({
     message: z.string().trim().min(1).max(1000),
     entryIndex: z.number().int().min(0).max(249).nullable(),

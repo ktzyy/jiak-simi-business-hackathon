@@ -99,3 +99,59 @@
   .sectionHeading { align-items: flex-start; }
   .sectionHeading span { font-size: 16px; }
 }
+
+/* Tablet working surface: actions remain visible; long tickets scroll internally. */
+.kitchen { padding: 18px; }
+.header { align-items: center; margin-bottom: 12px; }
+.header h1 { font-size: 32px; margin: 0; }
+.connection { flex-direction: row; align-items: center; padding: 0; gap: 14px; }
+.connection button { min-height: 44px; padding: 10px 18px; }
+.queueSummary { margin-bottom: 12px; }
+.queueSummary strong { font-size: 20px; }
+.queueSummary span { font-size: 15px; }
+.cookLayout { gap: 16px; }
+.preparingHeading, .sectionHeading { min-height: 38px; margin-bottom: 10px; gap: 8px; }
+.preparingHeading h2, .sectionHeading h2 { font-size: 23px; }
+.sectionHeading span { font-size: 14px; }
+.serviceBadge { font-size: 19px; padding: 7px 12px; border-width: 2px; }
+.serviceBadge[data-service="unknown"] { font-size: 15px; }
+.currentTop { padding: 12px 18px; }
+.ticketReference { font-size: 28px; }
+.received { font-size: 15px; margin-top: 5px; }
+.paymentBadge { font-size: 14px; padding: 6px 10px; }
+.ticketBody { padding: 0 18px 14px; }
+.dishLines > li { padding: 16px 0; }
+.dishName { font-size: 27px; }
+.quantity { font-size: 32px; min-width: 40px; }
+.dishHeading { gap: 12px; }
+.modifiers { margin: 8px 0 0 52px; gap: 6px; }
+.modifiers li { font-size: 20px; }
+.orderTotal { padding: 10px 0; font-size: 18px; }
+.orderTotal strong { font-size: 26px; }
+.orderActions { margin-top: 4px; }
+.doneButton { min-height: 58px; font-size: 24px !important; }
+.completionNote { margin-top: 7px; font-size: 14px; }
+.viewActions { margin-top: 10px; }
+.viewActions button { min-height: 44px; padding: 8px 15px; font-size: 16px; }
+.fullId { margin: 0; }
+.fullId summary { padding: 6px 0; min-height: 32px; }
+.previewGrid { gap: 10px; }
+.previewCard { padding: 14px; }
+.previewHeader { align-items: center; }
+.previewHeader h3 { font-size: 20px; }
+.previewCard .serviceBadge { padding: 5px 8px; font-size: 15px; }
+.compactLines { margin-top: 8px; }
+.compactLines > li { padding: 10px 0; }
+.compactLines .dishName { font-size: 19px; }
+.compactLines .quantity { font-size: 22px; min-width: 28px; }
+.compactLines .modifiers { margin-left: 40px; }
+.compactLines .modifiers li { font-size: 16px; }
+.previewCard button { min-height: 40px; padding: 8px 12px; margin-top: 6px; font-size: 15px; }
+.moreOrders { padding: 10px; margin: 10px 0 0; font-size: 16px; }
+@media (min-width: 740px) {
+  .cookLayout { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+  .upNext { margin-top: 0; }
+  .currentLines { max-height: max(96px, calc(100dvh - 640px)); overflow-y: auto; overscroll-behavior: contain; }
+  .nextLines { max-height: max(70px, calc((100dvh - 590px) / 2)); overflow-y: auto; overscroll-behavior: contain; }
+}
+@media (max-width: 739px) { .header { gap: 10px; } .connection { flex-wrap: wrap; } .cookLayout { grid-template-columns: 1fr; } }

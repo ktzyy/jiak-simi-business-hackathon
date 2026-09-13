@@ -75,7 +75,15 @@ export function timeLabel(value: string) {
 }
 export function hoursSummary(hours: HourDay[], same: boolean) {
   const describe = (day: HourDay) => day.closed ? "Closed" : day.intervals ? day.intervals.map(period => `${timeLabel(period.opens)}–${timeLabel(period.closes)}${period.closesNextDay ? " next day" : ""}`).join(", ") : `${timeLabel(day.start)}–${timeLabel(day.end)}${day.nextDay ? " next day" : ""}${day.hasBreak ? ` (break ${timeLabel(day.breakStart)}–${timeLabel(day.breakEnd)})` : ""}`;
-  return same ? `Mon–Sun ${describe(hours[0])}` : hours.map((day, i) => `${DAYS[i]} ${describe(day)}`).join(" · ");
+  const descriptions = (same ? DAYS.map(() => hours[0]) : hours).map(describe);
+  const groups: string[] = [];
+  for (let start = 0; start < descriptions.length;) {
+    let end = start;
+    while (end + 1 < descriptions.length && descriptions[end + 1] === descriptions[start]) end++;
+    groups.push(`${DAYS[start]}${end > start ? `–${DAYS[end]}` : ""} ${descriptions[start]}`);
+    start = end + 1;
+  }
+  return groups.join(" · ");
 }
 
 export type GlobalAddonEdit = { id: string; name: string; price: string; included: boolean; sourceIds: string[] };
@@ -110,4 +118,16 @@ export function applyGlobalAddons(dishes: DishEdit[], rows: GlobalAddonEdit[], g
   const sources: Record<string, SourceDecision> = {};
   for (const row of rows) for (const sourceId of row.sourceIds) sources[sourceId] = row.included ? { dishIds: affected.map(dish => dish.id), confirmed: true, reason: `Reviewed ${row.name} at S$${Number(row.price).toFixed(2)} as an optional add-on for every included dish; each add-on can be selected once.` } : { dishIds: [], confirmed: true, reason: `Explicitly left ${row.name || "this printed add-on"} out of the shared add-on list.` };
   return { dishes: updated, sources };
+}
+
+/** Preview validates the visible edits; the Publish button is the merchant's approval. */
+export function menuFromEdits(input: { dishes: DishEdit[]; id: string; restaurantId: string; version: number; name: string }): Menu {
+  for (const dish of input.dishes.filter(d => d.included)) {
+    const problem = dishProblem(dish);
+    if (problem) throw new Error(`${dish.name || "New dish"}: ${problem}`);
+  }
+  return MenuSchema.parse({ ...input, currency: "SGD", name: input.name.trim(), dishes: input.dishes.filter(d => d.included).map(d => ({
+    id: d.id, name: d.name.trim(), priceCents: amount(d.price), available: d.available,
+    modifierGroups: d.groups.map(g => ({ id: g.id, name: g.name.trim(), minSelections: Number(g.min), maxSelections: Number(g.max), options: g.options.map(o => ({ id: o.id, name: o.name.trim(), priceDeltaCents: amount(o.price, true) })) })),
+  })) });
 }

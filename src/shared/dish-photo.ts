@@ -9,6 +9,7 @@ export const dishPhotoRegionSchema = z.strictObject({
 const dish = { dishId: z.string().min(1).max(200), dishName: z.string().trim().min(1).max(200), description: z.string().max(1000).optional() };
 export const dishPhotoRequestSchema = z.discriminatedUnion("mode", [
   z.strictObject({ ...dish, mode: z.literal("generate_similar") }),
+  z.strictObject({ ...dish, mode: z.literal("source_crop"), sourceImageId: z.string().uuid(), sourceEntryId: z.string().uuid() }),
   z.strictObject({
     ...dish, mode: z.literal("enhance_visible"), merchantConfirmedVisible: z.literal(true),
     sourceImageId: z.string().uuid(), sourceEntryId: z.string().uuid(),
@@ -18,16 +19,22 @@ export const dishPhotoRequestSchema = z.discriminatedUnion("mode", [
 ]);
 export const dishPhotoCandidateSchema = z.strictObject({
   id: z.string().uuid(), dishId: z.string(), status: z.literal("needs_review"),
-  mode: z.enum(["generate_similar", "enhance_visible"]),
-  label: z.enum(["AI-generated illustration", "AI-enhanced source photo"]),
-  disclosureRequired: z.literal(true),
+  mode: z.enum(["generate_similar", "enhance_visible", "source_crop"]),
+  label: z.enum(["AI-generated illustration", "AI-enhanced source photo", "Original photo"]),
+  disclosureRequired: z.boolean(),
   mimeType: z.literal("image/jpeg"), imageSha256: z.string().regex(/^[a-f0-9]{64}$/),
   sourceImageId: z.string().uuid().nullable(), sourceEntryId: z.string().uuid().nullable(),
   sourceImageSha256: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
   region: dishPhotoRegionSchema.nullable(),
-  model: z.enum(["gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]),
-  quality: z.literal("low"), size: z.literal("1024x1024"),
+  model: z.enum(["gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]).nullable(),
+  quality: z.literal("low").nullable(), size: z.literal("1024x1024").nullable(),
   promptSha256: z.string().regex(/^[a-f0-9]{64}$/), createdAt: z.string().datetime(),
+}).superRefine((photo, ctx) => {
+  const original = photo.mode === "source_crop";
+  if (original ? photo.label !== "Original photo" || photo.disclosureRequired || photo.model !== null || photo.quality !== null || photo.size !== null
+    : photo.label !== (photo.mode === "enhance_visible" ? "AI-enhanced source photo" : "AI-generated illustration") || !photo.disclosureRequired || photo.model === null || photo.quality !== "low" || photo.size !== "1024x1024") {
+    ctx.addIssue({ code: "custom", message: "Photo provenance does not match its mode." });
+  }
 });
 export const dishPhotoResponseSchema = z.strictObject({
   candidate: dishPhotoCandidateSchema,

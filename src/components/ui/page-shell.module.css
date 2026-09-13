@@ -2,3 +2,7 @@
   nav.workspaceNav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 4px; overflow: visible; }
   nav.workspaceNav a { min-height: 44px; display: flex; align-items: center; justify-content: center; white-space: normal; padding: 10px 12px; font-size: 16px; }
 }
+
+.cookHeader { padding-block: 12px; }
+.cookMain { width: min(1360px, 100%); padding: 16px 20px; }
+@media (min-width: 740px) and (max-width: 1050px) { .cookHeader { gap: 10px; padding-inline: 20px; } .cookHeader nav a { padding: 8px 12px; font-size: 16px; } }

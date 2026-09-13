@@ -71,6 +71,8 @@ test("published hours retain closed days and overnight labels in weekday order",
   details.weeklyHours.reverse();
   details.weeklyHours.find(day => day.weekday === 1)!.intervals = [{ opens: "22:00", closes: "02:00", closesNextDay: true }];
   const display = formatPublishedHours(details);
-  assert.equal(display[0], "Monday: 22:00–02:00 (next day)");
-  assert.equal(display[6], "Sunday: Closed");
+  assert.equal(display[0], "Mon 10:00 pm–2:00 am next day");
+  assert.equal(display[1], "Tue–Fri 9:00 am–6:00 pm");
+  assert.equal(display[2], "Sat–Sun Closed");
+  assert.equal(display.length, 3);
 });
