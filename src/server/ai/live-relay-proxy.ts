@@ -22,16 +22,51 @@ export function hostedHandsfreeProxy(fetcher = fetch) {
       catch { throw new HttpError(400, "INVALID_REQUEST", "Invalid voice command."); }
       if (command.action === "start" && command.restaurantId !== PUBLIC_DEMO_RESTAURANT_ID) throw new HttpError(403, "FORBIDDEN", "Voice is restricted to the dummy stall.");
       let response: Response;
+      let stage = "SIGNAL";
+      let upstreamStatus: number | null = null;
+      let upstreamType = "missing";
+      const requestSignalNative = request.signal instanceof AbortSignal;
+      const controller = new AbortController();
+      const abort = () => controller.abort();
+      const timer = setTimeout(abort, 45_000);
       try {
+        if (request.signal.aborted) abort();
+        else request.signal.addEventListener("abort", abort, { once: true });
+        stage = "FETCH";
         response = await fetcher(`${voiceRelayOrigin(process.env.VOICE_BACKEND_URL)}${HANDSFREE_PATH}`, {
           method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.VOICE_BACKEND_TOKEN}` },
-          body: JSON.stringify(command), redirect: "error", cache: "no-store", signal: AbortSignal.any([request.signal, AbortSignal.timeout(45_000)]),
+          body: JSON.stringify(command), redirect: "error", cache: "no-store", signal: controller.signal,
         });
-        if (response.headers.get("content-type")?.split(";")[0].trim() !== "application/json") throw new Error();
-        const output = await readBoundedBody(new Request("https://relay-response.invalid", { method: "POST", body: response.body, duplex: "half" } as RequestInit), HANDSFREE_RESPONSE_LIMIT);
+        stage = "CONTENT_TYPE";
+        upstreamStatus = Number.isInteger(response.status) && response.status >= 100 && response.status <= 599 ? response.status : null;
+        const mime = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+        upstreamType = !mime ? "missing" : ["application/json", "text/html", "text/plain", "application/octet-stream"].includes(mime) ? mime : "other";
+        if (mime !== "application/json") throw new Error();
+        stage = "RESPONSE_BODY";
+        if (!response.body) throw new Error();
+        const reader = response.body.getReader(), chunks: Uint8Array[] = [];
+        let size = 0;
+        try {
+          for (;;) {
+            const part = await reader.read(); if (part.done) break;
+            size += part.value.byteLength;
+            if (size > HANDSFREE_RESPONSE_LIMIT) { await reader.cancel(); throw new Error(); }
+            chunks.push(part.value);
+          }
+        } finally { reader.releaseLock(); }
+        const output = new Uint8Array(size); let offset = 0;
+        for (const part of chunks) { output.set(part, offset); offset += part.byteLength; }
+        stage = "JSON";
         JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(output));
+        stage = "RESPONSE";
         return new Response(new Uint8Array(output), { status: response.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-      } catch { throw new HttpError(502, "VOICE_RELAY_UNAVAILABLE", "The voice device could not confirm this step. Check the kitchen queue before retrying an order."); }
+      } catch (error) {
+        // Fixed stage + allowlisted class only. Never expose message, URL, body,
+        // request headers, bearer or stack from a Worker/network exception.
+        const name = error instanceof Error && ["TypeError", "AbortError", "TimeoutError", "SyntaxError"].includes(error.name) ? error.name.toUpperCase() : "ERROR";
+        console.error("voice_relay_diagnostic", { stage, errorClass: name, upstreamStatus, upstreamType, requestSignalNative });
+        throw new HttpError(502, `VOICE_RELAY_${stage}_${name}`, "The voice device could not confirm this step. Check the kitchen queue before retrying an order.");
+      } finally { clearTimeout(timer); request.signal.removeEventListener("abort", abort); }
     } catch (error) { return errorResponse(error); }
   };
 }
