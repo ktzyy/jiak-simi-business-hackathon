@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { TelegramAudioSchema } from "./audio";
+import { PUBLIC_DEMO_RESTAURANT_ID } from "../../shared/public-demo";
 import { HttpError } from "../http";
 import { DEMO_PAYMENT_LOADING, DEMO_PAYMENT_VERIFIED, type IncomingMessage, type MessagingReply, type SendResult } from "./core";
 
@@ -18,7 +19,7 @@ export function authenticateTelegramWebhook(request: Request, secret: string) {
   const expected = Buffer.from(secret), supplied = Buffer.from(request.headers.get("x-telegram-bot-api-secret-token") ?? "");
   if (expected.length < 32 || expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) throw new HttpError(401, "UNAUTHORIZED", "Webhook authentication failed.");
 }
-export function decodeTelegramUpdate(input: unknown, allowedChatIds: ReadonlySet<string>): IncomingMessage | null {
+export function decodeTelegramUpdate(input: unknown, allowedChatIds: ReadonlySet<string>, publicDemo?: { enabled: boolean; restaurantId: string }): IncomingMessage | null {
   // Unknown Telegram update kinds, groups and bot senders are ignored without
   // creating a conversation, spending model tokens or sending a reply.
   const parsed = telegramUpdate.safeParse(input);
@@ -27,7 +28,7 @@ export function decodeTelegramUpdate(input: unknown, allowedChatIds: ReadonlySet
   if (value.message && value.callback_query) return null;
   const payload = value.message ?? value.callback_query;
   const chat = value.message?.chat ?? value.callback_query?.message.chat;
-  if (!payload || !chat || payload.from.id !== chat.id || !allowedChatIds.has(String(chat.id))) return null;
+  if (!payload || !chat || payload.from.id !== chat.id || !(allowedChatIds.has(String(chat.id)) || (publicDemo?.enabled === true && publicDemo.restaurantId === PUBLIC_DEMO_RESTAURANT_ID))) return null;
   const base = { updateId: String(value.update_id), recipientId: String(chat.id) };
   if (value.callback_query) {
     const nonce = value.callback_query.data?.startsWith("confirm:") ? value.callback_query.data.slice(8) : null;

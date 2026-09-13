@@ -7,6 +7,84 @@ export interface LiveSessionAnswer {
   expiresAt?: string;
 }
 
+/** Finite playback on a context unlocked by staff Start. Abort never counts as ended. */
+export async function playVoiceReadback(context: AudioContext, bytes: Uint8Array, signal: AbortSignal) {
+  if (signal.aborted) throw new Error("Voice stopped.");
+  const buffer = await context.decodeAudioData(new Uint8Array(bytes).buffer);
+  if (signal.aborted || context.state !== "running" || buffer.duration <= 0 || buffer.duration > 120) throw new Error("Voice playback is unavailable.");
+  await new Promise<void>((resolve, reject) => {
+    const source = context.createBufferSource(); source.buffer = buffer; source.connect(context.destination);
+    let stopped = false;
+    const cleanup = () => { clearTimeout(timer); signal.removeEventListener("abort", abort); source.disconnect(); };
+    const abort = () => { if (stopped) return; stopped = true; source.onended = null; try { source.stop(); } catch {} cleanup(); reject(new Error("Voice playback interrupted.")); };
+    const timer = setTimeout(abort, (buffer.duration + 5) * 1000);
+    source.onended = () => { if (stopped) return; stopped = true; cleanup(); if (signal.aborted || context.state !== "running") reject(new Error("Voice playback interrupted.")); else resolve(); };
+    signal.addEventListener("abort", abort, { once: true }); source.start();
+  });
+}
+
+/** Audio-level framing, never a semantic approval or a GPT-Live turn event. */
+export function voiceCaptureBoundary(rate: number) {
+  let offset = 0, voiced = 0, lastVoice = 0;
+  return {
+    push(input: Float32Array): boolean {
+      const length = Math.min(input.length, rate * 8 - offset);
+      // Ignore the short capture cue before detecting customer speech.
+      const begin = Math.max(0, Math.ceil(rate * 0.4 - offset));
+      let energy = 0;
+      for (let i = begin; i < length; i++) energy += input[i] ** 2;
+      offset += length;
+      if (length > begin && Math.sqrt(energy / (length - begin)) > 0.015) { voiced += length - begin; lastVoice = offset; }
+      return offset >= rate * 8 || (offset >= rate * 1.25 && voiced >= rate * 0.2 && offset - lastVoice >= rate);
+    },
+  };
+}
+
+/** Capture a separately framed answer: speech followed by one second of quiet,
+ * at most eight seconds. Only the resulting complete file is transcribed. */
+export async function recordVoiceConfirmation(context: AudioContext, signal: AbortSignal): Promise<Uint8Array> {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+  if (signal.aborted) { stream.getTracks().forEach(track => track.stop()); throw new Error("Voice stopped."); }
+  try {
+    return await new Promise<Uint8Array>((resolve, reject) => {
+      const rate = context.sampleRate, count = rate * 8, samples = new Int16Array(count);
+      let offset = 0, done = false;
+      const boundary = voiceCaptureBoundary(rate);
+      const source = context.createMediaStreamSource(stream);
+      // Local operator harness: ScriptProcessor permits bounded PCM capture without
+      // loading an unversioned worklet. Replace with an AudioWorklet for deployment.
+      const processor = context.createScriptProcessor(4096, 1, 1), silent = context.createGain(); silent.gain.value = 0;
+      const cleanup = () => { clearTimeout(timer); signal.removeEventListener("abort", abort); processor.onaudioprocess = null; source.disconnect(); processor.disconnect(); silent.disconnect(); };
+      const abort = () => { if (done) return; done = true; cleanup(); reject(new Error("The answer recording was interrupted.")); };
+      const timer = setTimeout(abort, 11_000);
+      signal.addEventListener("abort", abort, { once: true });
+      processor.onaudioprocess = event => {
+        if (done) return;
+        if (signal.aborted || context.state !== "running") { abort(); return; }
+        const input = event.inputBuffer.getChannelData(0);
+        for (let i = 0; i < input.length && offset < count; i++) samples[offset++] = Math.max(-32768, Math.min(32767, Math.round(input[i] * 32767)));
+        if (boundary.push(input)) {
+          done = true; cleanup();
+          const captured = samples.subarray(0, offset);
+          const wav = new Uint8Array(44 + captured.byteLength), view = new DataView(wav.buffer);
+          const word = (at: number, text: string) => { for (let i = 0; i < text.length; i++) wav[at + i] = text.charCodeAt(i); };
+          word(0, "RIFF"); view.setUint32(4, wav.length - 8, true); word(8, "WAVE"); word(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); word(36, "data"); view.setUint32(40, captured.byteLength, true);
+          for (let i = 0; i < captured.length; i++) view.setInt16(44 + i * 2, captured[i], true);
+          resolve(wav);
+        }
+      };
+      source.connect(processor); processor.connect(silent); silent.connect(context.destination);
+      // Audible capture cue avoids losing the answer while a fresh microphone
+      // stream is opening. This short tone is not an approval or model event.
+      const cue = context.createOscillator(), volume = context.createGain();
+      cue.frequency.value = 660; volume.gain.value = 0.06;
+      cue.connect(volume); volume.connect(context.destination);
+      cue.onended = () => { cue.disconnect(); volume.disconnect(); };
+      cue.start(context.currentTime + 0.1); cue.stop(context.currentTime + 0.22);
+    });
+  } finally { stream.getTracks().forEach(track => track.stop()); }
+}
+
 export interface LiveAudioOptions {
   signal?: AbortSignal;
   onState?: (state: "connecting" | "listening" | "closed" | "error") => void;

@@ -11,10 +11,13 @@ import { CartRequestSchema } from "../src/shared/contracts";
 async function main() {
   assert.equal(process.argv[2], "--place-demo-order");
   const origin = process.env.TEST_APP_ORIGIN || "http://localhost:3000";
-  assert.ok(new URL(origin).origin === origin);
+  assert.ok(["http://localhost:3000", "https://jiak-simi-business-demo.elsenyong.chatgpt.site"].includes(origin));
   const supabaseUrl = "https://mikpepfrumtglwweolzq.supabase.co";
   assert.equal(process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseUrl);
-  const statePath = "artifacts/joint-test/web-order-session.json";
+  const runId = process.env.TEST_RUN_ID || "";
+  assert.match(runId, /^[a-z0-9-]{0,60}$/);
+  const directory = `artifacts/joint-test${runId ? `/${runId}` : ""}`;
+  const statePath = `${directory}/web-order-session.json`;
   let cookie = "";
   const transport: typeof fetch = async (input, init) => {
     const headers = new Headers(init?.headers); headers.set("Origin", origin);
@@ -25,8 +28,8 @@ async function main() {
     return response;
   };
   const api = createApiClient(origin, transport);
-  let state: { cookie: string; cart: ReturnType<typeof CartRequestSchema.parse>; submitKey: string; completionKey: string };
-  try { state = JSON.parse(await readFile(statePath, "utf8")); cookie = state.cookie; CartRequestSchema.parse(state.cart); }
+  let state: { origin?: string; cookie: string; cart: ReturnType<typeof CartRequestSchema.parse>; submitKey: string; completionKey: string };
+  try { state = JSON.parse(await readFile(statePath, "utf8")); assert.equal(state.origin ?? "http://localhost:3000", origin); cookie = state.cookie; CartRequestSchema.parse(state.cart); }
   catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
     const menu = await api.readMenu(DEMO_RESTAURANT_ID);
@@ -34,9 +37,9 @@ async function main() {
     const pork = menu.dishes.find(dish => dish.name === "Braised Pork Knuckle Rice");
     assert.ok(rice && pork);
     await api.startGuest(DEMO_RESTAURANT_ID); assert.ok(cookie);
-    state = { cookie, cart: { restaurantId: DEMO_RESTAURANT_ID, menuId: menu.id, menuVersion: menu.version, fulfillmentType: "dine_in",
+    state = { origin, cookie, cart: { restaurantId: DEMO_RESTAURANT_ID, menuId: menu.id, menuVersion: menu.version, fulfillmentType: "dine_in",
       lines: [{ dishId: rice.id, quantity: 2, optionIds: [] }, { dishId: pork.id, quantity: 1, optionIds: [] }] }, submitKey: randomUUID(), completionKey: randomUUID() };
-    await mkdir("artifacts/joint-test", { recursive: true });
+    await mkdir(directory, { recursive: true });
     await writeFile(statePath, JSON.stringify(state), { flag: "wx", mode: 0o600 });
   }
   const quote = await api.quote(state.cart); assert.equal(quote.totalCents, 1400);
@@ -60,7 +63,7 @@ async function main() {
   assert.equal(after.counts.total, after.counts.received + after.counts.done);
   await auth.auth.signOut();
   const evidence = { passed: true, restaurantId: DEMO_RESTAURANT_ID, ticketId: ticket.id, totalCents: 1400, fulfillmentType: "dine_in", paymentStatus: "unpaid", sameKeyReplay: "one ticket", completionReplay: "same acknowledgement", queueCounts: after.counts };
-  await writeFile("artifacts/joint-test/web-order-result.json", JSON.stringify(evidence, null, 2), { mode: 0o600 });
+  await writeFile(`${directory}/web-order-result.json`, JSON.stringify({ origin, ...evidence }, null, 2), { mode: 0o600 });
   console.log(JSON.stringify(evidence));
 }
 main().catch(() => { console.error("Web acceptance check stopped. Preserve the saved attempt and inspect its outcome before retrying; no credentials displayed."); process.exitCode = 1; });

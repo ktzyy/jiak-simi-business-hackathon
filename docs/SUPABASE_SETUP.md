@@ -17,11 +17,11 @@ Never put a secret key, legacy service-role key, database password, or personal 
 
 The portal uses Supabase email/password Auth. In the hackathon project's **Authentication → URL Configuration** settings:
 
-1. Set the Site URL to the staging deployment origin (use `http://localhost:3000` while developing locally).
+1. Keep this shared hackathon project’s Site URL on the staging deployment origin. Local development uses its explicit localhost callback and local `NEXT_PUBLIC_SITE_URL`.
 2. Add both `http://localhost:3000/auth/confirm` and the staging deployment's `/auth/confirm` URL to Redirect URLs.
-3. Keep email confirmation enabled for staging unless the demo specifically requires immediate account creation.
+3. Keep email confirmation enabled; the URL update does not modify confirmation behavior.
 
-The reserved staging origin is `https://jiak-simi-business-demo.zesty-crown-3337.chatgpt.site`; its callback is that origin plus `/auth/confirm`. Sites registration is private and unpublished, and the remote Auth URL configuration has not yet been changed. See [SITES-READINESS.md](SITES-READINESS.md).
+The user-approved staging Auth URLs were configured and read back on 13 September 2026 at 06:24 UTC for `mikpepfrumtglwweolzq`: Site URL `https://jiak-simi-business-demo.elsenyong.chatgpt.site`; exact redirect URLs `https://jiak-simi-business-demo.elsenyong.chatgpt.site/auth/confirm` and `http://localhost:3000/auth/confirm`. The canonical origin above was returned by successful Sites deployment `appgdep_6aa640aebfac81919eeb26593431c32f`. The former reserved origin `https://jiak-simi-business-demo.zesty-crown-3337.chatgpt.site` is not canonical; its `/auth/confirm` allow-list entry was preserved along with localhost. The latest update retained both existing entries and added the canonical callback. The updater preserves existing entries on future runs. Only `site_url` and `uri_allow_list` were patched. Email-confirmation settings were unchanged and no email was sent. Evidence: `artifacts/deployment/staging-auth-urls.json`; guarded updater: `scripts/configure-staging-auth.mjs --apply`. See [SITES-READINESS.md](SITES-READINESS.md) for deployment status; URL configuration alone does not establish a successful browser login or email callback.
 
 The root restaurant workspace is protected twice: the Next.js request proxy performs an early redirect, and the page validates signed JWT claims before returning restaurant content. The proxy is not the authorization boundary for restaurant data; database access must still use restaurant-membership RLS policies.
 
@@ -65,7 +65,7 @@ The existing shared API client takes the signed-in user's access token for `publ
 
 All restaurant portal pages are protected by default. `/login` supports entry, `/auth/confirm` is the public callback, and API routes retain their purpose-specific authorization (including restaurant-scoped guest sessions for customer ordering). Each staff page and data boundary must still verify identity and restaurant membership; the proxy is only an early redirect and is not sufficient for data authorization.
 
-The public Auth settings were verified remotely: email/password is enabled, signup is enabled, and email confirmation is required. Site URL, exact local/staging redirect allow-list entries, and the confirmation email template are dashboard-managed settings that still need visual confirmation before deployment. No real signup or email was sent during automated verification. Verify sign-in, sign-out, expired-session refresh, anonymous redirect, forged JWT denial and cross-restaurant API denial against staging before claiming the full end-to-end deployment flow is complete.
+The public Auth settings were verified remotely: email/password is enabled, signup is enabled, and email confirmation is required. Site URL and exact local/staging redirect allow-list entries were verified through the Management API as recorded above. The confirmation email template remains unchanged and has not been verified by sending an email. No real signup or email was sent during automated verification. Verify sign-in, sign-out, expired-session refresh, anonymous redirect, forged JWT denial and cross-restaurant API denial against staging before claiming the full end-to-end deployment flow is complete.
 
 Implementation references: [Supabase SSR client and verified claims](https://supabase.com/docs/guides/auth/server-side/creating-a-client) and the installed Next.js authentication guide in `node_modules/next/dist/docs/01-app/02-guides/authentication.md`.
 

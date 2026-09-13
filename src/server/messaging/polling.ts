@@ -7,12 +7,12 @@ const updateSchema = z.object({ update_id: z.number().int().nonnegative().max(Nu
 const batchSchema = z.object({ ok: z.literal(true), result: z.array(updateSchema).max(100) });
 // A batch advances offset only after durable processing. If an update fails,
 // callers retain the old offset and the database deduplicates preceding updates.
-export async function processTelegramBatch(input: unknown, binding: MessagingBinding, allowedChatIds: ReadonlySet<string>, deps: MessagingDependencies, offset: number): Promise<number> {
+export async function processTelegramBatch(input: unknown, binding: MessagingBinding, allowedChatIds: ReadonlySet<string>, deps: MessagingDependencies, offset: number, publicDemo = false): Promise<number> {
   const batch = batchSchema.parse(input);
   let nextOffset = offset;
   for (const update of batch.result.toSorted((a, b) => a.update_id - b.update_id)) {
     if (update.update_id < offset) continue;
-    const incoming = decodeTelegramUpdate(update, allowedChatIds);
+    const incoming = decodeTelegramUpdate(update, allowedChatIds, { enabled: publicDemo, restaurantId: binding.restaurantId });
     if (incoming) await processMessagingUpdate(binding, incoming, deps);
     nextOffset = Math.max(nextOffset, update.update_id + 1);
   }

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createTelegramDependencies, telegramSettings } from "../src/server/messaging/handler";
 import { processTelegramBatch } from "../src/server/messaging/polling";
 
-// This runner receives and replies to allowlisted real Telegram customers.
+// This runner replies to allowlisted customers, or private chats in explicitly enabled public dummy mode.
 // Start only after the user authorizes live demo operation. Never log token URLs.
 async function main() {
   const settings = telegramSettings();
@@ -29,11 +29,11 @@ async function main() {
     const webhook = z.object({ ok: z.literal(true), result: z.object({ url: z.string() }) }).parse(await api("getWebhookInfo", {}, 15_000));
     if (webhook.result.url) throw new Error("A Telegram webhook is active. Disable it intentionally before using polling; this runner will not delete it.");
     let offset = 0;
-    console.log("Telegram polling started for the configured allowlisted demo. Press Ctrl+C to stop.");
+    console.log(`Telegram polling started for the ${settings.publicDemo ? "public private-chat dummy stall" : "allowlisted demo"}. Press Ctrl+C to stop.`);
     while (!controller.signal.aborted) {
       try {
         const batch = await api("getUpdates", { offset, timeout: 25, limit: 20, allowed_updates: ["message", "callback_query"] }, 35_000);
-        offset = await processTelegramBatch(batch, { provider: "telegram", accountId: settings.accountId, restaurantId: settings.restaurantId }, new Set(settings.allowedChatIds), dependencies, offset);
+        offset = await processTelegramBatch(batch, { provider: "telegram", accountId: settings.accountId, restaurantId: settings.restaurantId }, new Set(settings.allowedChatIds), dependencies, offset, settings.publicDemo === true);
       } catch {
         if (controller.signal.aborted) break;
         console.error("An update is pending recovery. Retaining its offset and retrying shortly.");
