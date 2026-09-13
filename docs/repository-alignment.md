@@ -7,7 +7,7 @@ The approved build brief and the existing repository documents differ. This file
 | Area | Repository today | Approved build brief / proposed reconciliation |
 |---|---|---|
 | Framework | Next.js 16.3.4 with src/app/; initial marketing/demand placeholder | Preserve starter. Kimberley's route boundary is src/app/ excluding src/app/api/; components may live under src/components/. Replace placeholder when API handoff is ready |
-| Database | Supabase dependencies/helpers; separate hackathon project documented | Plan proposed Neon. Recommend reuse already-established non-production Supabase if Elsen confirms it satisfies the contract; do not add a second database or alter either service from Kimberley's lane |
+| Database | Supabase dependencies/helpers; separate hackathon project documented | Kimberley confirmed Supabase is already set up. Reuse the existing hackathon Supabase project; do not provision a second database. Elsen owns schema, permissions and integration. |
 | Hosting | Conventional Next.js; no registered Site manifest in fetched tree | Sites first remains confirmed; Elsen owns compatibility/provisioning and Vercel fallback |
 | Branches | kim/front-of-house and husband/ai-butler already exist | Use existing named lanes instead of creating duplicate kim/ui and elsen/backend branches |
 | Kitchen UI | TEAM_WORKFLOW assigns kitchen display to husband | Approved plan assigns UI to Kimberley, backend to Elsen. Confirm transfer in shared workflow before either edits kitchen UI |
@@ -19,7 +19,7 @@ The approved build brief and the existing repository documents differ. This file
 
 ## Copy-paste update for Elsen
 
-“Kimberley's task cloned the starter at fbc7c52 and prepared the UI spec, verified Figma tokens, 90-second script and QA checklist. Before frontend coding, please return the typed API client and success/error fixtures, and reconcile PRODUCT_CONTRACT/TEAM_WORKFLOW with the approved unpaid-order flow, versioning/idempotency and kitchen UI ownership. The repo already uses Supabase; reusing the hackathon instance looks simpler than introducing Neon, provided you confirm it meets the contract. Sites first remains confirmed. Existing kim/front-of-house and husband/ai-butler lanes are preserved. No backend, dependency, payment or database changes were made by this task.”
+“Kimberley's task cloned the starter at fbc7c52 and prepared the UI spec, verified Figma tokens, 90-second script and QA checklist. Before frontend coding, please return the typed API client and success/error fixtures, and reconcile PRODUCT_CONTRACT/TEAM_WORKFLOW with the approved unpaid-order flow, versioning/idempotency and kitchen UI ownership. Supabase is confirmed by Kimberley; use the existing hackathon setup. There is no database-provider decision pending. Sites first remains confirmed. Existing kim/front-of-house and husband/ai-butler lanes are preserved. No backend, dependency, payment or database changes were made by this task.”
 
 ## Readiness gate
 

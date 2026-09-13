@@ -20,7 +20,7 @@ This pack executes the independent preparation work approved by Kimberley. It is
 
 - Elsen's Next.js starter is available. All three remote branches currently share the initial scaffold commit. The repository has a product-shape document but no API handlers, shared typed client or response fixtures.
 - The original menu photographs have not been attached to this task. No dish, price or modifier is claimed to be verified.
-- Runtime API/model access, Neon access, Sites public hosting and Vercel fallback have not been tested.
+- The existing Supabase setup is confirmed by Kimberley. Runtime API/model access, public Sites hosting, Vercel fallback and live database permissions have not been verified by this task.
 - The user supplied the GitHub repository. No live deployment, recorded video or submission has been produced or verified by this task.
 
 ## Confirmed decisions

@@ -15,7 +15,7 @@ A merchant captures/uploads one real menu photo. AI extracts dishes, prices and 
 ## Defaults and implementation guardrails
 
 - One stall, roughly 8–12 dishes, SGD, English/Singlish. Use only facts from the supplied photo and explicit merchant review. Use the wanton-mee example only if the chosen menu supports it.
-- Sites first with its Next-compatible starter, TypeScript, React/Tailwind, Zod and Neon Postgres. Test conventional Next.js/Vercel portability early using the same database; it is not assumed to work without checking.
+- Sites first with its Next-compatible starter, TypeScript, React/Tailwind, Zod and the existing hackathon Supabase project (Postgres). Test conventional Next.js/Vercel portability early using the same database; it is not assumed to work without checking.
 - Use Astra for engineering. Initially use `gpt-4o-mini` for extraction/parsing, with one `gpt-5.4-mini` retry for technical/schema failure. Unclear source content requires clarification, not repeated guessing. Optional `gpt-4o-mini-transcribe` feeds the typed-order flow.
 - Runtime model access must be verified separately from Astra development credits. Keep keys server-side; never expose them in chat, browser bundles, repository or recordings.
 - Structured model output is untrusted. Unknown prices block publishing. Unknown items/options, conflicts, invalid quantities, stale versions and unresolved requests block submission. No authoritative totals or payment flags come from AI or the client.

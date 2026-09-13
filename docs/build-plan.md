@@ -4,7 +4,7 @@
 
 Implementation is authorized in Kimberley's task, within the ownership boundaries below. This handoff pack completes independent preparation; frontend implementation waits for Elsen's frozen API contract/client/fixtures. The existing starter has been cloned at fbc7c52. Elsen remains the sole repository/Site setup, backend and deployment owner. His receiving session should establish authorization before taking infrastructure actions.
 
-Repository reconciliation note: the provided starter uses Supabase, src/app/, kim/front-of-house and husband/ai-butler, and an older payment/kitchen contract. Preserve that setup pending Elsen's contract reconciliation; see docs/repository-alignment.md. The original architectural defaults below are not permission to create a second database or override shared files.
+Repository reconciliation note: the provided starter uses Supabase, src/app/, kim/front-of-house and husband/ai-butler, and an older payment/kitchen contract. Supabase is confirmed; preserve that setup while Elsen reconciles the remaining contract details; see docs/repository-alignment.md. The original architectural defaults below are not permission to create a second database or override shared files.
 
 Deliver a publicly deployed working app, a public GitHub repository and an exactly 90-second public demo video before 3:30pm Singapore time. The build is a five-hour hackathon demonstration, not a production restaurant deployment.
 
@@ -18,9 +18,9 @@ Exclude payment integration, delivery, inventory, POS/printers, analytics, multi
 
 ## Architecture and model routing
 
-TypeScript, React, Tailwind, Sites' Next-compatible starter, server route handlers, Zod shared contracts and Neon Postgres. Persist approved versioned menus and order snapshots. Transiently handle photographs for extraction; do not retain originals in the application or public Git history by default. Kitchen polls every two seconds.
+TypeScript, React, Tailwind, Sites' Next-compatible starter, server route handlers, Zod shared contracts and the existing hackathon Supabase project (Postgres). Persist approved versioned menus and order snapshots. Transiently handle photographs for extraction; do not retain originals in the application or public Git history by default. Kitchen polls every two seconds.
 
-Sites first. Keep business logic and database access independent of Sites-native storage. Prove a conventional Next.js build for Vercel early; use the same database on fallback. Do not claim compatibility until built and smoke-tested. Runtime credentials, model availability, public Sites access and Neon/Vercel access are unverified dependencies.
+Sites first. Keep business logic and database access independent of Sites-native storage. Prove a conventional Next.js build for Vercel early; use the same database on fallback. Do not claim compatibility until built and smoke-tested. Supabase is confirmed and already set up. Runtime model credentials/availability, public Sites access, Vercel fallback and live Supabase permissions remain unverified by this task.
 
 Astra assists architecture, schemas, prompts, integration and adversarial tests. Start runtime extraction/parsing with `gpt-4o-mini`; allow one `gpt-5.4-mini` retry for technical/schema failure. Do not retry ambiguous content into a guess: request human clarification. Optional `gpt-4o-mini-transcribe` produces editable text for the existing parser. Use strict structured output and deterministic schema/business checks. Astra development credits do not establish API access.
 
