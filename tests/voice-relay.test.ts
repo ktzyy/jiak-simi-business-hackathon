@@ -19,7 +19,7 @@ test("hosted proxy scopes commands and sends only machine authorization to fixed
   t.after(() => { for (const [key, value] of Object.entries(old)) if (value === undefined) delete process.env[key]; else process.env[key] = value; });
   let calls = 0;
   const proxy = hostedHandsfreeProxy(async (url, init) => {
-    calls++; assert.equal(String(url), `https://example-voice.trycloudflare.com${HANDSFREE_PATH}`); assert.equal(init?.redirect, "error");
+    calls++; assert.equal(String(url), `https://example-voice.trycloudflare.com${HANDSFREE_PATH}`); assert.equal(init?.redirect, "manual"); assert.equal(init?.cache, undefined);
     const headers = new Headers(init?.headers); assert.equal(headers.get("authorization"), `Bearer ${machine}`); assert.equal(headers.get("cookie"), null); assert.equal(headers.get("x-upstream-url"), null);
     assert.deepEqual(JSON.parse(String(init?.body)), command);
     return Response.json({ ok: true }, { headers: { "Set-Cookie": "private=discard" } });
@@ -70,4 +70,7 @@ test("hosted proxy diagnostics identify stage and exception class without leakin
   assert.equal((await html.json()).error.code, "VOICE_RELAY_CONTENT_TYPE_ERROR");
   const invalidJson = await hostedHandsfreeProxy(async () => new Response("broken-secret", { headers: { "Content-Type": "application/json" } }))(request());
   assert.equal((await invalidJson.json()).error.code, "VOICE_RELAY_JSON_SYNTAXERROR");
+  let redirects = 0;
+  const redirected = await hostedHandsfreeProxy(async (_url, init) => { redirects++; assert.equal(init?.redirect, "manual"); return new Response("", { status: 302, headers: { Location: "https://untrusted.example/receive", "Content-Type": "application/json" } }); })(request());
+  assert.equal((await redirected.json()).error.code, "VOICE_RELAY_REDIRECT_ERROR"); assert.equal(redirects, 1); assert.equal(redirected.headers.get("location"), null);
 });

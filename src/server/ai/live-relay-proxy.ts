@@ -35,8 +35,12 @@ export function hostedHandsfreeProxy(fetcher = fetch) {
         stage = "FETCH";
         response = await fetcher(`${voiceRelayOrigin(process.env.VOICE_BACKEND_URL)}${HANDSFREE_PATH}`, {
           method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.VOICE_BACKEND_TOKEN}` },
-          body: JSON.stringify(command), redirect: "error", cache: "no-store", signal: controller.signal,
+          // workerd supports only manual/follow. Never follow a redirect carrying
+          // the machine bearer; reject the response explicitly below instead.
+          body: JSON.stringify(command), redirect: "manual", signal: controller.signal,
         });
+        stage = "REDIRECT";
+        if (response.status >= 300 && response.status < 400) { await response.body?.cancel(); throw new Error(); }
         stage = "CONTENT_TYPE";
         upstreamStatus = Number.isInteger(response.status) && response.status >= 100 && response.status <= 599 ? response.status : null;
         const mime = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
