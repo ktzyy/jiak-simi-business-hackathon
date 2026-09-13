@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 export function Brand() {
   return <Link href="/" className="brand" aria-label="Jiak Simi for Business home">
-    <Image src="/brand/jiak-simi.png" alt="Jiak Simi" width={126} height={45} style={{ height: "auto" }} priority />
+    <Image src="/brand/jiak-simi.png" alt="Jiak Simi" width={144} height={35} style={{ width: 126, height: "auto" }} priority />
     <span>FOR BUSINESS</span>
   </Link>;
 }
