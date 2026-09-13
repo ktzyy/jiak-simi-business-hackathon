@@ -8,7 +8,8 @@ import { DishOptions } from "./dish-options";
 import { withSharedExtras } from "./shared-extras";
 import s from "./onboarding.module.css";
 
-export function MenuReview({ sharedRows, setSharedRows, excludedExtras, setExcludedExtras, anyExtras, onAnyExtrasChange, dishes, draft, uploads, onDishChange, onConfirmDish, onAddDish, onRemoveDish, onContinue, onBack, renderDishPhoto }: {
+export function MenuReview({ manageAvailability = false, sharedRows, setSharedRows, excludedExtras, setExcludedExtras, anyExtras, onAnyExtrasChange, dishes, draft, uploads, onDishChange, onConfirmDish, onAddDish, onRemoveDish, onContinue, onBack, renderDishPhoto }: {
+  manageAvailability?: boolean;
   sharedRows: GlobalAddonEdit[]; setSharedRows: (rows: GlobalAddonEdit[]) => void; excludedExtras: string[]; setExcludedExtras: (ids: string[]) => void;
   anyExtras: ReadonlySet<string>; onAnyExtrasChange: (id: string, enabled: boolean) => void;
   dishes: DishEdit[]; draft: ExtractedMenuDraft | null; uploads: UploadedMenu[];
@@ -73,7 +74,7 @@ export function MenuReview({ sharedRows, setSharedRows, excludedExtras, setExclu
           {dish.included && <>
             <label className="field">Dish name<input aria-invalid={attempted && badName(dish.name)} value={dish.name} maxLength={120} onChange={e => onDishChange(dish.id, { name: e.target.value })} /></label>
             <label className="field">Price (S$)<input aria-invalid={attempted && badPrice(dish.price)} value={dish.price} inputMode="decimal" placeholder="4.50" onChange={e => onDishChange(dish.id, { price: e.target.value })} /></label>
-            <label className={s.check}><input type="checkbox" checked={!dish.available} onChange={e => onDishChange(dish.id, { available: !e.target.checked })} />Sold out</label>
+            {manageAvailability && <label className={s.check}><input type="checkbox" checked={!dish.available} onChange={e => onDishChange(dish.id, { available: !e.target.checked })} />Sold out</label>}
             <DishOptions showErrors={attempted} anyExtras={anyExtras} onAnyExtrasChange={onAnyExtrasChange} groups={dish.groups} onChange={groups => onDishChange(dish.id, { groups })} />
           </>}
           {attempted && dishProblem(dish) && <p className={s.fieldError} role="alert">{dishProblem(dish)}</p>}
