@@ -1,0 +1,45 @@
+.hours { display: grid; gap: 16px; border-top: 1px solid #efe6d2; padding-top: 24px; margin-top: 8px; }
+.hours h3 { margin: 0; }
+.hours p { margin: 0; }
+.required { margin-left: 10px; color: #686658; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.help { color: #686658; font-size: 16px; line-height: 1.5; }
+.check { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; line-height: 1.35; cursor: pointer; min-height: 44px; }
+.check input { width: 24px; height: 24px; margin: 0; flex: none; accent-color: #20564b; }
+.days { display: grid; gap: 12px; }
+.day { padding: 16px 18px; border: 2px solid #efe6d2; border-radius: 20px; background: #fffbf5; min-width: 0; }
+.mainRow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.dayToggle { flex: 0 0 88px; }
+.times { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.times > span { color: #686658; font-size: 18px; }
+.timeField { min-width: 0; }
+.timeField select { width: 145px; max-width: 100%; min-height: 58px; padding: 12px 14px; border: 2px solid #efe6d2; border-radius: 16px; background: #fbf2e6; color: #1e1e1e; font: inherit; font-size: 20px; font-weight: 700; }
+.textButton { border: 0; background: transparent; color: #20564b; padding: 8px 0; min-height: 44px; font: inherit; font-weight: 700; font-size: 18px; cursor: pointer; border-radius: 999px; text-align: left; }
+.textButton:disabled { opacity: .5; cursor: default; }
+.mainRow > .textButton { margin-left: auto; }
+.breakRow { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; border-top: 1px solid #efe6d2; padding-top: 14px; margin-top: 14px; }
+.breakLabel { color: #686658; font-weight: 700; font-size: 16px; }
+.hoursSummary { color: #20564b; font-weight: 700; font-size: 18px; line-height: 1.5; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; }
+.footer .textButton { font-size: 16px; }
+.closed { color: #686658; font-size: 18px; }
+.overnight { color: #20564b; font-size: 14px; font-weight: 700; }
+.periodSummary { flex: 1; min-width: 180px; font-size: 18px; line-height: 1.5; color: #20564b; }
+.moreOptions { border-top: 1px solid #efe6d2; padding-top: 4px; }
+.advancedDay { padding: 16px 0; border-bottom: 1px solid #efe6d2; }
+.advancedHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; }
+.advancedHeader > strong { font-size: 20px; color: #20564b; }
+.periodRow { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.periodRow .check { font-size: 16px; }
+.remove { border: 0; border-radius: 999px; width: 44px; height: 44px; background: #ef2626; color: white; font: inherit; font-size: 28px; cursor: pointer; margin-left: auto; }
+.remove:disabled { opacity: .4; cursor: default; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 760px) {
+  .day { padding: 14px; }
+  .dayToggle { flex-basis: 100%; }
+  .mainRow > .textButton { margin-left: 0; }
+  .times { flex: 1 1 auto; }
+  .timeField { flex: 1; }
+  .timeField select { width: 100%; min-width: 0; font-size: 18px; padding: 12px 10px; }
+  .periodRow .times, .breakRow .times { flex-basis: 100%; }
+  .required { font-size: 12px; margin-left: 6px; }
+}

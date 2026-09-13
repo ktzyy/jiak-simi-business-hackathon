@@ -9,5 +9,10 @@
 @media(max-width:400px){.header,.menuContent{padding-inline:20px}.dish{grid-template-columns:110px 1fr;min-height:170px}.dishBody{padding:16px 13px}.dishBody h3{font-size:18px}.dishBody button{font-size:12px;padding:10px 14px}.sectionHeading h2{font-size:21px}.sheet{padding-inline:20px}.receipt{padding:34px 22px}.receipt h1{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.loader{animation:none}}
 
-.dining button:not(:disabled){cursor:pointer}.dining button[aria-pressed="true"]{background:var(--teal,#16756a);color:white}.dining button:focus-visible{outline:3px solid #1b6258;outline-offset:2px}.dining button:disabled{opacity:.65}
+.dining button:not(:disabled){cursor:pointer}.dining button[aria-pressed="true"]{background:var(--green);color:white}.dining button:focus-visible{outline:3px solid var(--green);outline-offset:2px}.dining button:disabled{opacity:.65}
+
+/* Source-matched photos in the demo menu, also used by the phone preview. */
+.hasPhoto{position:relative;overflow:hidden;background:#f4ede4}
+.dishImage{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+@media(min-width:650px){.customer:not(.preview) .hasPhoto{aspect-ratio:4/3}.customer:not(.preview) .dishImage{object-fit:contain}}
 .demoActions{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 24px}.demoActions :global(.btn){font-size:12px;padding:11px 15px;min-height:44px}.demoActions p{font-size:12px;line-height:1.5;color:#687068;margin:0}.sourcePhoto{border:1px solid var(--line);border-radius:18px;padding:15px;background:var(--paper);margin-bottom:24px}.sourcePhoto summary{font-weight:700;color:var(--green);cursor:pointer}.sourcePhoto img{display:block;width:100%;height:auto;border-radius:12px;margin-top:14px}.sourcePhoto p,.sourcePhoto a{font-size:12px;line-height:1.5}.sourcePhoto a{color:var(--green);text-decoration:underline}.sourceDishPhoto{display:flex;flex-direction:column;justify-content:center;background:#e9ddc7;min-width:0;overflow:hidden}.cropFrame{width:100%;aspect-ratio:4/3;background-image:url('/demo/menu-photo.jpg');background-size:500% 500%;background-repeat:no-repeat}.sourceDishPhoto small{font-size:10px;line-height:1.4;padding:8px;text-align:center;color:#5c5648}

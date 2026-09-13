@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import styles from "./page-shell.module.css";
 
 export function Brand() {
   return <Link href="/" className="brand" aria-label="Jiak Simi for Business home">
@@ -13,7 +14,7 @@ export function PageShell({ children, restaurantId, active }: { children: ReactN
   const links = [["dashboard", "/", "Overview"], ["onboarding", "/onboarding", "My menu"], ["storefront", "/storefront", "Menu & QR"], ["kitchen", "/kitchen", "Cook mode"]];
   return <>
     <a href="#main" className="skip-link">Skip to content</a>
-    <header className="site-header"><Brand /><nav aria-label="Stall workspace">
+    <header className="site-header"><Brand /><nav className={styles.workspaceNav} aria-label="Stall workspace">
       {links.map(([key, path, label]) => <Link key={key} href={`${path}${query}`} aria-current={active === key ? "page" : undefined}>{label}</Link>)}
     </nav></header>
     <main id="main" className="page-main">{children}</main>
