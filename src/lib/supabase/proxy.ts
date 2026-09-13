@@ -3,8 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getPublicSupabaseConfig } from "./config";
 
+// One public customer page only; nested merchant/admin paths stay protected.
+export function isPublicCustomerPath(pathname: string): boolean {
+  return /^\/order\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i.test(pathname);
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  if (isPublicCustomerPath(request.nextUrl.pathname)) {
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
   const { url, publishableKey } = getPublicSupabaseConfig();
 
   const supabase = createServerClient(url, publishableKey, {
