@@ -29,3 +29,5 @@
 .actionRow { display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px; }
 .polishButton { color:var(--red);border-color:var(--red);display:inline-flex;align-items:center;gap:8px; }.polishButton:hover{color:var(--red);background:#fff0ec;border-color:var(--red);}.polishButton img{width:23px;height:23px;}
 .cropEditor { max-width:550px; }.cropEditor > button{width:100%;}
+
+.actionRow > button:last-child { margin-left:auto; }

@@ -231,3 +231,10 @@
 .inlinePrice input,.inlinePrice input:hover,.inlinePrice input:focus { border:0;outline:0;background:transparent;padding:4px 0;box-shadow:none; }
 .inlinePrice:has(input[aria-invalid="true"]) { border-color:var(--red);outline:2px solid var(--red);background:#fff5f2; }
 .inlinePrice input[aria-invalid="true"] { outline:0;border:0; }
+
+.bulkPolish { display:grid;gap:10px; }.bulkPolish > span{color:var(--red);text-align:center;}
+.polishAll { width:100%;color:var(--red);border-color:var(--red);display:flex;justify-content:center;align-items:center;gap:10px; }
+.polishAll:hover { color:var(--red);border-color:var(--red);background:#fff0ec; }
+.polishingSparkle { animation:polishPulse .8s ease-in-out infinite alternate; }
+@keyframes polishPulse { to { transform:scale(.7) rotate(20deg);opacity:.5; } }
+@media(prefers-reduced-motion:reduce){.polishingSparkle{animation:none;}}

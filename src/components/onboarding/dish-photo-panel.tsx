@@ -39,7 +39,7 @@ export function DishPhotoPanel({ addonsAction, onCancel, savedPhoto, dishId, dis
       {photo && <div className={s.photoColumn}><figure><img src={photo.previewUrl} alt={`${photo.candidate.mode === "generate_similar" ? "Generated" : "Polished"} ${dishName}`} /><figcaption>{`${photo.candidate.mode === "generate_similar" ? "AI-generated" : "AI-enhanced"}${selected ? " · selected" : ""}`}</figcaption></figure><p className={s.cropHint}>Check ingredients and portion.</p><button type="button" className={selected ? s.textButton : "btn btn-teal"} disabled={busy} onClick={selected ? onRemove : onSelect}>{selected ? crop ? "Revert to original" : "Remove photo" : photo.candidate.mode === "generate_similar" ? "Use photo" : "Use polished"}</button></div>}
     </div>
     <div className={s.actionRow}>
-        {crop ? <button type="button" className={`btn btn-outline ${s.polishButton}`} disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("enhance_visible")}><img src="/brand/sparkle_coral.svg" width={23} height={23} alt="" />{busy ? "Polishing…" : "Polish image"}</button> : <button type="button" className={`btn btn-outline ${s.polishButton}`} disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("generate_similar")}>Generate photo</button>}
+        {!crop && <button type="button" className={`btn btn-outline ${s.polishButton}`} disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("generate_similar")}>Generate photo</button>}
       {addonsAction}
     </div>
     {!crop && !photo && <p className={s.hint}>Generated photos are labelled AI-generated.</p>}

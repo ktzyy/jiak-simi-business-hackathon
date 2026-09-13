@@ -8,8 +8,8 @@ import { DishOptions } from "./dish-options";
 import { withSharedExtras } from "./shared-extras";
 import s from "./onboarding.module.css";
 
-export function MenuReview({ manageAvailability = false, sharedRows, setSharedRows, excludedExtras, setExcludedExtras, anyExtras, onAnyExtrasChange, dishes, draft, uploads, onDishChange, onConfirmDish, onAddDish, onRemoveDish, onContinue, onBack, renderDishPhoto }: {
-  manageAvailability?: boolean;
+export function MenuReview({ polishing = false, polishAction, manageAvailability = false, sharedRows, setSharedRows, excludedExtras, setExcludedExtras, anyExtras, onAnyExtrasChange, dishes, draft, uploads, onDishChange, onConfirmDish, onAddDish, onRemoveDish, onContinue, onBack, renderDishPhoto }: {
+  polishing?: boolean; polishAction?: ReactNode; manageAvailability?: boolean;
   sharedRows: GlobalAddonEdit[]; setSharedRows: (rows: GlobalAddonEdit[]) => void; excludedExtras: string[]; setExcludedExtras: (ids: string[]) => void;
   anyExtras: ReadonlySet<string>; onAnyExtrasChange: (id: string, enabled: boolean) => void;
   dishes: DishEdit[]; draft: ExtractedMenuDraft | null; uploads: UploadedMenu[];
@@ -52,7 +52,7 @@ export function MenuReview({ manageAvailability = false, sharedRows, setSharedRo
     catch (error) { setGlobalMessage(error instanceof Error ? error.message : "Check your extras."); setFocusRequest(n => n + 1); }
   }
   return <div className={s.stack} ref={root}>
-    <div className={s.reviewHeading}><span className={s.progress}>{dishes.filter(d => d.included).length} dishes</span></div>
+    <fieldset className={`${s.work} ${s.stack}`} disabled={polishing}><div className={s.reviewHeading}><span className={s.progress}>{dishes.filter(d => d.included).length} dishes</span></div>
     {!!uploads.length && <details className={s.original} open><summary>Your uploaded menu</summary>{uploads.map((upload, index) => <img key={upload.id} src={upload.url} alt={`Your uploaded menu ${index + 1}`} />)}</details>}
     {!dishes.length && <p className="notice">No dishes found. Add a dish or try a clearer photo.</p>}
     {draft?.issues.filter(issue => issue.itemId === null && !["human_review_required", "source_mapping_required", "unknown_price", "empty_menu"].includes(issue.code)).map(issue => <p className="notice" key={issue.id}>{issue.message}</p>)}
@@ -79,6 +79,9 @@ export function MenuReview({ manageAvailability = false, sharedRows, setSharedRo
         </div>}
       </article>;
     })}</div>
+    </fieldset>
+    {polishAction}
+    <fieldset className={`${s.work} ${s.stack}`} disabled={polishing}>
     <button className={`btn btn-teal ${s.addDish}`} disabled={dishes.length >= 100} onClick={() => setExpanded(onAddDish())}>+ Add a dish</button>
     <section className={`card ${s.section}`}>
       <h2>Extras for all dishes</h2>
@@ -94,6 +97,7 @@ export function MenuReview({ manageAvailability = false, sharedRows, setSharedRo
       {globalMessage && <p className={s.fieldError} role="alert">{globalMessage}</p>}
     </section>
     <div className={s.actions}><button className="btn btn-outline" onClick={onBack}>← Back</button><button className="btn btn-primary" onClick={next}>Next →</button></div>
+    </fieldset>
     <dialog ref={dialog} className={s.deleteDialog} onCancel={() => setDeleting(null)}><h2>Delete this dish?</h2><p>{deleting?.name || "New dish"}</p><div className={s.actions}><button type="button" className="btn btn-outline" onClick={() => setDeleting(null)}>Keep dish</button><button type="button" className="btn btn-primary" onClick={() => { if (deleting) onRemoveDish(deleting.id); setDeleting(null); }}>Delete dish</button></div></dialog>
   </div>;
 }
