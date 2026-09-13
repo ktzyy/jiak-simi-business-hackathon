@@ -1,10 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { handsfreeHandler } from "../src/server/ai/live-handsfree";
+import { applyVoiceDefaults, handsfreeHandler } from "../src/server/ai/live-handsfree";
+import { DEMO_MENU_WITH_EXTRAS } from "../src/shared/demo-menu";
 import { PUBLIC_DEMO_RESTAURANT_ID, PUBLIC_DEMO_BEARER } from "../src/shared/public-demo";
 import { fixtureMenu, fixtureCart, fixtureQuote, fixtureTicket } from "../src/shared/fixtures";
 import { LiveButler } from "../src/server/ai/live-butler";
 import type { BackendClient } from "../src/server/supabase-backend";
+
+test("voice-only defaults choose dine-in and free chilli without overriding explicit choices", () => {
+  const menu = DEMO_MENU_WITH_EXTRAS, dish = menu.dishes[0], group = dish.modifierGroups[1];
+  const chilli = group.options.find(option => option.name === "Chilli")!, noChilli = group.options.find(option => option.name === "No chilli")!;
+  const intent = { restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType: null, lines: [{ dishId: dish.id, quantity: 1, optionIds: [] as string[] }], issues: [{ code: "FULFILLMENT_REQUIRED", message: "Choose mode", lineIndex: null }] };
+  const defaulted = applyVoiceDefaults(intent, menu, "one char siew rice");
+  assert.equal(defaulted.fulfillmentType, "dine_in"); assert.deepEqual(defaulted.lines[0].optionIds, [chilli.id]); assert.deepEqual(defaulted.issues, []);
+  assert.equal(intent.fulfillmentType, null); assert.deepEqual(intent.lines[0].optionIds, []);
+  const explicit = applyVoiceDefaults({ ...intent, fulfillmentType: "takeaway", lines: [{ ...intent.lines[0], optionIds: [noChilli.id] }] }, menu, "one char siew rice takeaway no chilli");
+  assert.equal(explicit.fulfillmentType, "takeaway"); assert.deepEqual(explicit.lines[0].optionIds, [noChilli.id]);
+  assert.deepEqual(applyVoiceDefaults(intent, menu, "one char siew rice without chilli").lines[0].optionIds, []);
+  const unresolved = applyVoiceDefaults(intent, menu, "one char siew rice not takeaway");
+  assert.equal(unresolved.fulfillmentType, null); assert.equal(unresolved.issues[0].code, "FULFILLMENT_REQUIRED");
+  const otherIssue = applyVoiceDefaults({ ...intent, issues: [{ code: "UNKNOWN_DISH", message: "Unknown dish", lineIndex: null }] }, menu, "something else");
+  assert.equal(otherIssue.issues[0].code, "UNKNOWN_DISH");
+});
 
 test("handsfree HTTP start is local-only, authorizes scope before provider and hides private session state", async t => {
   const prior = { OPENAI_API_KEY: process.env.OPENAI_API_KEY, NODE_ENV: process.env.NODE_ENV, APP_ORIGIN: process.env.APP_ORIGIN, DEMO_MODE: process.env.DEMO_MODE };

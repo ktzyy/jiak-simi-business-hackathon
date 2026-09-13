@@ -75,7 +75,7 @@ test("status exposes only the fresh canonical quote during review and clears it 
 });
 
 test("short complete audio can confirm promptly without waiting eight seconds", async () => {
-  const s = setup(), id = await ready(s);
+  const s = setup("confirm"), id = await ready(s);
   const audio = Buffer.from(wav().subarray(0, 44 + 16000 * 2 * 3.1));
   audio.writeUInt32LE(audio.length - 8, 4); audio.writeUInt32LE(audio.length - 44, 40);
   assert.equal(validateConfirmationWav(audio), 3.1);
@@ -93,7 +93,7 @@ test("stale id, interrupted audio and expired confirmation never transcribe or s
   assert.equal(s.counts().transcribed, 0); await s.butler.stop(); await assert.rejects(s.butler.confirm(id, wav()));
 });
 test("confirmation guard accepts only complete exact affirmative; audio must contain speech and quiet tail", () => {
-  for (const value of ["yes", "okay", "yes place this order but no chilli", "don't place this order", "not yes place this order", "Yes place this order? Actually no."]) assert.equal(explicitVoiceConfirmation(value), false);
+  for (const value of ["okay", "yes place this order but no chilli", "don't place this order", "not yes place this order", "Yes place this order? Actually no."]) assert.equal(explicitVoiceConfirmation(value), false);
   assert.equal(explicitVoiceConfirmation("Yes, place this order!"), true);
   validateConfirmationWav(wav()); assert.throws(() => validateConfirmationWav(wav(true))); assert.throws(() => validateConfirmationWav(Buffer.alloc(100)));
   const silence = wav(); silence.fill(0, 44); assert.throws(() => validateConfirmationWav(silence));

@@ -30,6 +30,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
   const command = <T,>(body: object, signal?: AbortSignal) => sendCommand<T>(body, signal, publicDemo);
   const audio = useRef<HTMLAudioElement>(null), connection = useRef<Connection | null>(null), controller = useRef<AbortController | null>(null), context = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
+  const transcriptDraft = useRef({ text: "", at: 0, sent: "" });
   const [state, setState] = useState("Ready"), [running, setRunning] = useState(false), [text, setText] = useState(""), [error, setError] = useState(""), [ticket, setTicket] = useState<Ticket | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
@@ -46,13 +47,14 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
   async function start() {
     if (controller.current || !audio.current) return;
     const abort = new AbortController(); controller.current = abort;
+    transcriptDraft.current = { text: "", at: 0, sent: "" };
     setRunning(true); setError(""); setTicket(null); setQuote(null); setText(""); setState("Connecting GPT-Live");
     const ctx = new AudioContext(); context.current = ctx;
     try {
       await ctx.resume(); audio.current.muted = false;
       const live = await connectLiveAudio(audio.current, (sdp, signal) => command<LiveSessionAnswer>({ action: "start", restaurantId: DEMO_RESTAURANT_ID, sdp }, signal), {
         signal: abort.signal,
-        onTranscript: value => { if (mounted.current) setText(value); },
+        onTranscript: value => { transcriptDraft.current.text = value; transcriptDraft.current.at = Date.now(); if (mounted.current) setText(value); },
         onPlaybackBlocked: () => { abort.abort(); if (mounted.current) setError("Audio playback was blocked. Stop and start again with speaker access enabled."); },
         endSession: answer => command({ action: "close", voiceSessionId: answer.voiceSessionId }).then(() => undefined),
       });
@@ -63,6 +65,10 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
         const status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
         if (!mounted.current || abort.signal.aborted) break;
         if (status.phase === "error" || status.phase === "closed") throw new Error("The voice session ended before completion. Check the kitchen queue before starting a new order.");
+        if (status.phase === "collecting" && transcriptDraft.current.text && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
+          transcriptDraft.current.sent = transcriptDraft.current.text;
+          await command({ action: "draft", voiceSessionId: live.voiceSessionId, text: transcriptDraft.current.text }, abort.signal);
+        }
         setQuote(status.quote ?? null);
         live.setMicrophoneEnabled(status.phase === "collecting");
         audio.current!.muted = !["collecting", "submitted"].includes(status.phase);
@@ -93,13 +99,13 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
   const summary = ticket?.cart ?? quote;
   return <main className={styles.page}>
     <Link href="/">← Portal</Link>
-    <header className={styles.header}><p className="eyebrow">Jiak Simi · Voice ordering</p><h1>Tell us what you’d like.</h1><p>Order with GPT Live. Say your dish, any extras, and dine-in or takeaway. The voice is AI-generated.</p></header>
+    <header className={styles.header}><p className="eyebrow">Jiak Simi · Voice ordering</p><h1>Tell us what you’d like.</h1><p>Order with GPT Live. Say your dish and any extras. We assume dine-in and chilli unless you say otherwise. The voice is AI-generated.</p></header>
     <div className={styles.grid}>
       <section className={`card ${styles.panel}`} aria-labelledby="voice-guide"><h2 id="voice-guide">What can I order?</h2>
         {menu ? <ul className={styles.menu}>{menu.dishes.filter(dish => dish.available).map(dish => <li key={dish.id}><strong>{dish.name}</strong><span>{money(dish.priceCents)}</span></li>)}</ul> : <p>Loading today’s menu…</p>}
         <p>Add egg, char siew or shao rou. Ask for chilli or no chilli.</p>
         <div className={styles.example}><strong>Try saying</strong><p>“One Char Siew Rice, add egg, no chilli, takeaway.”</p></div>
-        <p>Listen to the summary. After the beep, say <strong>“Yes, place this order.”</strong></p>
+        <p>Listen to the summary. After the beep, say <strong>“Confirm.”</strong></p>
         <div className="actions"><button className="btn btn-primary" onClick={() => { void start(); }} disabled={running}>Start device</button><button className="btn btn-outline" onClick={() => { void stop(); }} disabled={!running}>Stop device</button></div>
         <p role="status" className={styles.state}>{state}</p>{error && <p role="alert" className={styles.error}>{error}</p>}
       </section>

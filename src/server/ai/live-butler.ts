@@ -35,11 +35,17 @@ export class LiveButler {
   private attempts = 0;
   private mute?: { id: string; resolve: () => void; reject: () => void };
   private now: () => number;
+  private draftTimer?: ReturnType<typeof setTimeout>;
   constructor(readonly actor: string, readonly sessionId: string, private hooks: ButlerHooks) { this.now = hooks.now ?? Date.now; }
 
   status() {
     const showQuote = ["readback", "playing", "confirming", "transcribing"].includes(this.phase);
     return { phase: this.phase, readbackId: this.readbackId, ticket: this.ticket, ...(showQuote && this.review ? { quote: this.review.quote } : {}) };
+  }
+  previewTranscript(text: string) {
+    if (this.phase !== "collecting" || !text.trim() || text.length > 4000) return;
+    this.text = text; this.generation++;
+    void this.prepare(null);
   }
   private send(type: string, content: string, delegationId: string | null = null) {
     this.hooks.send({ type, event_id: randomUUID(), delegation_id: delegationId, content });
@@ -54,6 +60,9 @@ export class LiveButler {
     if (event.type === "session.input_transcript.delta" && typeof event.delta === "string") {
       if (this.phase !== "collecting" && this.phase !== "preparing") return;
       this.text += event.delta; this.generation++;
+      // Quiet transcript starts a reversible quote only, never order consent.
+      if (this.draftTimer) clearTimeout(this.draftTimer);
+      if (this.phase === "collecting") { this.draftTimer = setTimeout(() => { if (this.phase === "collecting" && this.text.trim()) void this.prepare(null); }, 1200); this.draftTimer.unref?.(); }
       if (this.text.length > 4000) await this.stop(true);
     }
     if (event.type === "session.delegation.created" && this.phase === "collecting") {
@@ -63,7 +72,7 @@ export class LiveButler {
   }
   private async muteInput() {
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => { this.mute = undefined; reject(new Error("Microphone control failed.")); }, 5000);
+      const timer = setTimeout(() => { this.mute = undefined; resolve(); }, 500);
       const id = randomUUID();
       this.mute = { id, resolve: () => { clearTimeout(timer); this.mute = undefined; resolve(); }, reject: () => { clearTimeout(timer); this.mute = undefined; reject(new Error("Closed.")); } };
       try { this.hooks.send({ type: "session.input_audio.mute", event_id: id }); } catch { this.mute?.reject(); }
@@ -77,7 +86,8 @@ export class LiveButler {
     this.send("session.instructions.append", message);
     this.hooks.send({ type: "session.input_audio.unmute", event_id: randomUUID() });
   }
-  private async prepare(delegationId: string) {
+  private async prepare(delegationId: string | null) {
+    if (this.draftTimer) clearTimeout(this.draftTimer);
     this.phase = "preparing";
     let generation = this.generation;
     try {
@@ -95,7 +105,7 @@ export class LiveButler {
       if (this.phase !== "preparing" || generation !== this.generation) { if (this.phase === "preparing") await this.resume("Please repeat the final order; it changed during checking."); return; }
       this.review = review; this.audio = audio; this.readbackId = randomUUID(); this.phase = "readback";
       // Model receives authoritative facts but stays quiet while finite TTS plays.
-      this.send("session.thinking.append", `Authoritative quote: ${text.slice(0, 1600)} Application handles readback and confirmation; remain silent. No order has been placed.`, delegationId);
+      this.send(delegationId ? "session.thinking.append" : "session.instructions.append", `Authoritative quote: ${text.slice(0, 1600)} Application handles readback and confirmation; remain silent. No order has been placed.`, delegationId);
     } catch { await this.stop(true); }
   }
   takeAudio(id: string) {
@@ -134,6 +144,7 @@ export class LiveButler {
   }
   async stop(error = false) {
     if (this.phase === "closed" || this.phase === "error") return;
+    if (this.draftTimer) clearTimeout(this.draftTimer);
     this.phase = error ? "error" : "closed"; this.generation++; this.mute?.reject(); this.audio = undefined;
     await this.hooks.close().catch(() => undefined);
   }

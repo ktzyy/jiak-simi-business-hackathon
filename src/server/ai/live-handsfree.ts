@@ -1,12 +1,12 @@
 import "server-only";
 import { z } from "zod";
-import { Id, CartRequestSchema, MenuSchema, QuoteSchema, TicketSchema } from "../../shared/contracts";
+import { Id, CartRequestSchema, MenuSchema, QuoteSchema, TicketSchema, type Intent, type Menu } from "../../shared/contracts";
 import { databaseRpc, getBackendClient, requireSameOrigin, verifiedActor, type BackendClient } from "../supabase-backend";
 import { errorResponse, HttpError, readBoundedBody } from "../http";
 import { createLiveSession, handsfreeMenuInstructions } from "./live-session";
 import { closeLiveSession } from "./live-close";
 import { LiveButler, attachButler } from "./live-butler";
-import { parseOrderIntent } from "./order-intent";
+import { explicitFulfillmentType, parseOrderIntent } from "./order-intent";
 import { speakQuote, transcribeConfirmation } from "./live-confirmation-audio";
 import { PUBLIC_DEMO_RESTAURANT_ID } from "../../shared/public-demo";
 import { HandsfreeCommand as Command, HANDSFREE_BODY_LIMIT } from "./live-handsfree-contract";
@@ -17,6 +17,25 @@ const Review = z.strictObject({ quote: QuoteSchema, confirmationNonce: Id, revis
 // loses confirmation authority; the old database session cannot be re-armed.
 const host = globalThis as typeof globalThis & { jiakLocalButlers?: Map<string, LiveButler> };
 const registry = host.jiakLocalButlers ??= new Map<string, LiveButler>();
+
+const mentionsDiningMode = (text: string) => /\b(?:dine[ -]?in|for here|eat here|take[ -]?away|to go)\b/i.test(text);
+/** Explicitly approved defaults for this voice demo only. Never alter web carts. */
+export function applyVoiceDefaults(intent: Intent, menu: Menu, text: string): Intent {
+  const fulfillmentType = intent.fulfillmentType ?? (!mentionsDiningMode(text) ? "dine_in" : null);
+  const avoidChilli = /\b(?:no|without|less)\s+chill?i\b|\bnot\s+spicy\b/i.test(text);
+  return {
+    ...intent, fulfillmentType,
+    issues: fulfillmentType ? intent.issues.filter(issue => issue.code !== "FULFILLMENT_REQUIRED") : intent.issues,
+    lines: intent.lines.map(line => {
+      const optionIds = [...line.optionIds];
+      if (!avoidChilli) for (const group of menu.dishes.find(dish => dish.id === line.dishId)?.modifierGroups ?? []) {
+        const chilli = group.options.find(option => /^chill?i$/i.test(option.name.trim()) && option.priceDeltaCents === 0);
+        if (chilli && group.minSelections === 0 && group.maxSelections >= 1 && !group.options.some(option => optionIds.includes(option.id))) optionIds.push(chilli.id);
+      }
+      return { ...line, optionIds };
+    }),
+  };
+}
 
 export function handsfreeHandler(deps: { backend?: () => BackendClient; create?: typeof createLiveSession; attach?: typeof attachButler; speech?: typeof speakQuote; transcribe?: typeof transcribeConfirmation; parse?: typeof parseOrderIntent; close?: typeof closeLiveSession; sessions?: Map<string, LiveButler>; now?: () => number } = {}) {
   const sessions = deps.sessions ?? registry;
@@ -54,7 +73,9 @@ export function handsfreeHandler(deps: { backend?: () => BackendClient; create?:
               const current = await databaseRpc(client, "read_published_menu", { p_restaurant_id: session.restaurantId }, MenuSchema);
               if (current.restaurantId !== session.restaurantId) throw new Error("Menu mismatch.");
               await budget();
-              const intent = await (deps.parse ?? parseOrderIntent)(current, text, { apiKey: key, signal: AbortSignal.timeout(25000) });
+              const selectedMode = explicitFulfillmentType(text) ?? (!mentionsDiningMode(text) ? "dine_in" : undefined);
+              const parsed = await (deps.parse ?? parseOrderIntent)(current, text, { apiKey: key, signal: AbortSignal.timeout(25000), fulfillmentType: selectedMode });
+              const intent = applyVoiceDefaults(parsed, current, text);
               if (intent.issues.length || !intent.lines.length || !intent.fulfillmentType) return null;
               const cart = CartRequestSchema.parse({ restaurantId: current.restaurantId, menuId: current.id, menuVersion: current.version, fulfillmentType: intent.fulfillmentType, lines: intent.lines });
               return databaseRpc(client, "save_voice_review", { ...args, p_cart: cart, p_revision: revision }, Review);
@@ -83,6 +104,7 @@ export function handsfreeHandler(deps: { backend?: () => BackendClient; create?:
       if (session.restaurantId !== PUBLIC_DEMO_RESTAURANT_ID || session.id !== input.voiceSessionId) throw new HttpError(403, "FORBIDDEN", "This voice session is outside the dummy stall.");
       if (input.action === "close") { await butler.stop(); return json({ ok: true }); }
       if (session.status !== "active" || Date.parse(session.expiresAt) <= Date.now()) { await butler.stop(); throw new HttpError(409, "VOICE_SESSION_EXPIRED", "Start a new voice session."); }
+      if (input.action === "draft") butler.previewTranscript(input.text);
       if (input.action === "audio") return json({ audio: butler.takeAudio(input.readbackId).toString("base64") });
       if (input.action === "playback") butler.playbackEnded(input.readbackId);
       if (input.action === "confirm") await butler.confirm(input.readbackId, Buffer.from(input.audio, "base64"));

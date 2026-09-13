@@ -5,6 +5,7 @@ export const HANDSFREE_PATH = "/api/v1/live/handsfree";
 export const HANDSFREE_BODY_LIMIT = 1_400_000;
 export const HANDSFREE_RESPONSE_LIMIT = 5_500_000;
 export const HandsfreeCommand = z.discriminatedUnion("action", [
+  z.strictObject({ action: z.literal("draft"), voiceSessionId: Id, text: z.string().trim().min(1).max(4000) }),
   z.strictObject({ action: z.literal("start"), restaurantId: Id, sdp: z.string().startsWith("v=0").max(65536) }),
   z.strictObject({ action: z.enum(["status", "close"]), voiceSessionId: Id }),
   z.strictObject({ action: z.enum(["audio", "playback"]), voiceSessionId: Id, readbackId: Id }),

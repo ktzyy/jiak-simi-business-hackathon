@@ -6,14 +6,15 @@ export function quoteReadback(quote: Quote): string {
   const lines = quote.lines.map(line => `${line.quantity} ${line.name}${line.options.length ? ` with ${line.options.map(option => option.name).join(", ")}` : ""}`).join("; ");
   const dollars = Math.floor(quote.totalCents / 100), cents = quote.totalCents % 100;
   const amount = `${dollars} Singapore dollars${cents ? ` and ${cents} cents` : ""}`;
-  const text = `Your order is ${lines}. ${quote.fulfillmentType === "dine_in" ? "Dine in" : "Takeaway"}. The total is ${amount}. Payment is still due at the stall. After the beep, say exactly: Yes, place this order. Then wait quietly. To change or cancel, say so instead.`;
+  const text = `${lines}. ${quote.fulfillmentType === "dine_in" ? "Dine in" : "Takeaway"}. Total ${amount}. Payment is still due at the stall. After the beep, say confirm.`;
   if (text.length > 3500) throw new HttpError(422, "VOICE_ORDER_TOO_LONG", "This order is too long for voice confirmation.");
   return text;
 }
 
 export function explicitVoiceConfirmation(text: string): boolean {
-  // Whole recording, exact phrase. Never substring-match yes or accept a model boolean.
-  return text.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim() === "yes place this order";
+  // Whole completed recording only: never match an affirmative inside an edit or negation.
+  const answer = text.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
+  return ["confirm", "yes", "yes confirm", "confirm order", "yes place order", "yes place this order"].includes(answer);
 }
 
 /** Canonical WAV from our staff device: 1.25–8 seconds, PCM16, quiet final second.
