@@ -2,9 +2,9 @@
 
 Site: https://jiak-simi-business-demo.elsenyong.chatgpt.site
 
-The existing Site is public. In demo mode the root opens the customer menu; Telegram, GPT Live and Cook Mode are linked together. Anonymous edit/publish/completion actions are restricted to restaurant `ba2ad996-da84-4653-89a9-c028d77c050d`. Other stalls retain API authorization. No real payments are processed.
+The existing Site is public. Kimberley’s latest landing page is restored; See Demo opens the customer menu. Telegram, GPT Live and Cook Mode are linked together. Anonymous edit/publish/completion actions are restricted to restaurant `ba2ad996-da84-4653-89a9-c028d77c050d`. Other stalls retain API authorization. No real payments are processed.
 
-Kim UI commits 2fce99e and 1ec0918 are integrated. Please send the forthcoming photo branch and commit; preserve your approved layouts when integrating those assets. The customer page currently exposes the photographed source menu and labelled source crops.
+Kim UI commits 2fce99e, 1ec0918 and 11de90572639a2b05524db8cd484899965e35734 are integrated. Her ten polished photos, compact opening-hours editor and layouts are preserved. Original source-photo assets remain available.
 
 ## Active backend contracts
 
@@ -16,9 +16,9 @@ Menu review now has “Set your extras once”: edit shared names/prices and app
 
 ## Evidence and operational limits
 
-The previously deployed recording revision 7220433 passed the hosted S$14 dine-in quote → unpaid submission → same-key replay → one persisted ticket → Done/replay check. Hosted read/quote negative checks cover missing fulfillment, stale menus, invalid modifiers, cross-origin access, invalid staff tokens and cross-stall demo scope. Full OCR, required-modifier and real expired-session hosted acceptance remain outstanding. No real microphone/speaker acceptance has been claimed.
+The previously deployed recording revision 7220433 passed the hosted S$14 dine-in quote → unpaid submission → same-key replay → one persisted ticket → Done/replay check. Hosted read/quote negative checks cover missing fulfillment, stale menus, invalid modifiers, cross-origin access, invalid staff tokens and cross-stall demo scope. Full OCR and real expired-session hosted browser acceptance remain outstanding. Required-modifier enforcement passed hosted database quotes. No real microphone/speaker acceptance has been claimed.
 
-193 tests have passing coverage across the full run and a loopback-permitted relay rerun; TypeScript passed. Lint has no errors (one ignored verification-script warning). Customer-first release f3489349d3fbb865f4adfc477005a5a6043ffa28 is deployed. Root redirect, channel buttons, source photo and voice page passed hosted HTTP checks. The hosted voice proxy currently returns 502 for a valid status request; investigation is in progress. Direct authenticated relay checks pass.
+193 tests have passing coverage across the full run and a loopback-permitted relay rerun; TypeScript passed. Lint has no errors (one ignored verification-script warning). Deployed commit: c8bf859cf88cb419b63624220cc22322e431e132. Landing, See Demo, photo asset and voice page return HTTP 200. The hosted voice API now reaches the authenticated laptop relay and returns the expected VOICE_SESSION_NOT_FOUND for a nonexistent session. The Worker-specific redirect incompatibility is fixed using manual redirects with explicit rejection. Full microphone-to-persisted-ticket acceptance remains outstanding.
 
 Telegram @blackcharsiewbot accepts private human chats in public demo mode, with dummy-stall isolation and shared AI budgets. Its polling process must stay running. GPT Live uses the supervised laptop relay; the laptop, Next server, relay and Quick Tunnel must all remain running. See HANDSFREE-VOICE.md for verbal confirmation and retry behavior.
 

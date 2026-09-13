@@ -29,3 +29,7 @@ The laptop, dev server, relay and tunnel must stay running; this is a supervised
 Validation: mocked provider protocol, complete HTTP/RPC sequence, exact replay, negation/corrections, stale review, wrong restaurant, production gate, cutoff/silence, playback interruption and microphone cleanup. No paid provider or real microphone/speaker test was run during implementation.
 
 Official references: [Live delegation](https://developers.openai.com/api/docs/guides/live-delegation), [Live timing limitations](https://developers.openai.com/api/docs/guides/live-conversations), [speech generation](https://developers.openai.com/api/docs/guides/text-to-speech), [completed file transcription](https://developers.openai.com/api/docs/guides/speech-to-text).
+
+## Hosted connection verification — 13 September 2026
+
+Deployed c8bf859cf88cb419b63624220cc22322e431e132 at https://jiak-simi-business-demo.elsenyong.chatgpt.site/voice-test. The page returns 200 and its same-origin API reaches the authenticated relay (expected 404 for an invented session). workerd rejects `redirect: "error"`; the hosted proxy uses `manual` and explicitly rejects 3xx without following or forwarding credentials. Local Node relay keeps its fixed upstream and redirect rejection. This verifies transport only; a real microphone-to-ticket test still needs the operator device.
