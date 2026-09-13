@@ -1,0 +1,45 @@
+{
+  "name": "Jiak Simi for Business",
+  "source": {
+    "url": "https://www.figma.com/design/ItlJWuBatnVMXGkrIjocfw/Jiak-Simi-Beta?node-id=0-1",
+    "collection": "Jiak Simi Tokens",
+    "status": "Read from Figma variables, text styles and component surfaces; business adaptations identified separately"
+  },
+  "verified": {
+    "fontFamily": "League Spartan",
+    "colors": {
+      "bg/cream": "#FBF2E6",
+      "bg/white": "#FFFBF5",
+      "text/primary": "#1E1E1E",
+      "text/secondary": "#353535",
+      "text/tertiary": "#696452",
+      "accent/coral": "#EF2626",
+      "accent/coral-soft": "#F98F8E",
+      "accent/coral-light": "#FFC1C2",
+      "accent/teal": "#20564B",
+      "accent/teal-soft": "#7AC5AD",
+      "accent/teal-light": "#A8E0D3",
+      "card/beige": "#EFE6D2",
+      "accent/deep": "#0A2533"
+    },
+    "radiiPx": { "card": 18, "input": 10, "primaryButton": 20 },
+    "cardShadow": { "offsetXPx": 0, "offsetYPx": 6, "blurPx": 16, "spreadPx": 0, "colorRgba": [61, 46, 26, 0.08] },
+    "evidenceNodes": { "cardSurface": "3953:5066", "primaryButtonSurface": "3106:2949", "inputSurface": "2366:1744" }
+  },
+  "businessAdaptations": {
+    "fontFallback": "system-ui, sans-serif",
+    "fontWeights": { "body": 400, "label": 600, "heading": 700 },
+    "fontSizesPx": { "pageTitle": 26, "sectionTitle": 20, "body": 16, "input": 16, "label": 14, "primaryButton": 20, "videoTitle": 40 },
+    "lineHeights": { "body": 1.5, "heading": 1.2, "label": 1.4 },
+    "minimumTouchTargetPx": 44,
+    "mobileGutterPx": 20,
+    "spacingPx": [8, 12, 16, 24],
+    "modifierChipRadiusPx": 999,
+    "primaryButtonWeight": 700,
+    "primaryButtonTextColor": "#FFFBF5",
+    "selectedModifierTextColor": "#20564B",
+    "selectedModifierBackground": "#A8E0D3",
+    "textLockup": ["Jiak Simi", "for Business"]
+  },
+  "excluded": ["custom illustrations", "mascots", "gradients", "generated food photography", "consumer discovery navigation", "ratings", "palate quizzes"]
+}
