@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { HandsfreeVoiceTest } from "./handsfree-voice-test";
 import { voiceRelayConfigured } from "@/server/ai/live-relay-proxy";
 
+export const dynamic = "force-dynamic";
+
 export default async function VoiceTestPage() {
   if (process.env.NODE_ENV === "production" && !voiceRelayConfigured()) notFound();
   if (process.env.DEMO_MODE === "true") return <HandsfreeVoiceTest publicDemo />;
