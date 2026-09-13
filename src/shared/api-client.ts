@@ -35,10 +35,10 @@ export function createApiClient(baseUrl = "", fetcher: typeof fetch = fetch) {
     return parsed.data;
   }
   return {
-    createDishPhoto: (restaurantId: string, key: string, request: DishPhotoRequest, staffAccessToken: string, source?: File) => {
+    createDishPhoto: (restaurantId: string, key: string, request: DishPhotoRequest, staffAccessToken: string, source?: File, signal?: AbortSignal) => {
       const form = new FormData(); form.set("restaurantId", restaurantId); form.set("key", z.uuid().parse(key)); form.set("request", JSON.stringify(dishPhotoRequestSchema.parse(request)));
       if (source) form.set("source", source);
-      return call("/dish-photos", dishPhotoJobSchema, { method: "POST", body: form, headers: { Authorization: `Bearer ${staffAccessToken}` }, signal: AbortSignal.timeout(185_000) });
+      return call("/dish-photos", dishPhotoJobSchema, { method: "POST", body: form, headers: { Authorization: `Bearer ${staffAccessToken}` }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(185_000)]) : AbortSignal.timeout(185_000) });
     },
     readDishPhoto: (restaurantId: string, jobId: string, staffAccessToken: string) => call(`/dish-photos/${encodeURIComponent(jobId)}?restaurantId=${encodeURIComponent(restaurantId)}`, dishPhotoJobSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
     findDishPhoto: (restaurantId: string, key: string, staffAccessToken: string) => call(`/dish-photos/by-key/${encodeURIComponent(key)}?restaurantId=${encodeURIComponent(restaurantId)}`, dishPhotoJobSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),

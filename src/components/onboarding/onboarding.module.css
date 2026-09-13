@@ -214,3 +214,13 @@
 .excludeExtras { margin-bottom:18px;position:relative; }
 .excludeExtras summary { border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;color:var(--green);font-weight:600; }
 .excludeExtras > div { max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:white;padding:12px;display:grid;gap:12px; }
+
+.dishSummary { cursor:default; }.dishSummary:hover { background:transparent; }
+.inlineName, .inlinePrice input { width:100%; min-width:0; background:transparent; border:1px solid transparent; border-radius:6px; padding:6px 2px; font-family:inherit;font-weight:700;font-size:23px;line-height:1.3; color:var(--ink); }
+.inlineName { font-family:inherit;font-size:23px;font-weight:700; }
+.inlineName:hover,.inlinePrice input:hover { border-bottom-color:var(--line); }
+.inlineName:focus,.inlinePrice input:focus { background:white;border-color:var(--green);outline:2px solid var(--green); }
+.inlinePrice { display:flex;align-items:center;font-size:21px;font-weight:700;flex:0 0 130px; }.inlinePrice input { font-family:inherit;font-size:21px;font-weight:700; }
+.availability { margin:0 24px 16px; }
+.sharedOptionRow,.sharedTableHeading { grid-template-columns:32px minmax(0,1fr) 170px;align-items:center; }.sharedTableHeading span:first-child{width:auto;}.sharedOptionRow > label:first-child { grid-column:auto; }
+@media(max-width:600px){ .inlineName{font-size:19px;}.inlinePrice{flex-basis:95px;font-size:18px;}.inlinePrice input{font-size:18px;}.sharedOptionRow{grid-template-columns:28px minmax(0,1fr) 80px;} }

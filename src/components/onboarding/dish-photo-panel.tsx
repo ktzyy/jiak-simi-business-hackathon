@@ -1,12 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Local crop and authenticated candidate previews. */
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type ReactNode, type PointerEvent } from "react";
 import type { MenuPhotoRegion } from "@/shared/extraction";
 import type { DishPhotoCandidate, PublishedDishPhoto } from "@/shared/dish-photo";
 import type { DishCrop, UploadedMenu } from "./menu-images";
 import s from "./dish-photo-panel.module.css";
 
-export function DishPhotoPanel({ savedPhoto, dishId, dishName, crop, upload, sourceEntryId, currentCandidate, selected, busy, error, onCrop, onGenerate, onSelect, onRemove, onCheck }: {
+export function DishPhotoPanel({ addonsAction, onCancel, savedPhoto, dishId, dishName, crop, upload, sourceEntryId, currentCandidate, selected, busy, error, onCrop, onGenerate, onSelect, onRemove, onCheck }: {
+  addonsAction: ReactNode; onCancel: () => void;
   savedPhoto?: PublishedDishPhoto; dishId: string; dishName: string; crop?: DishCrop; upload?: UploadedMenu; sourceEntryId?: string;
   currentCandidate?: { candidate: DishPhotoCandidate; previewUrl: string } | null; selected?: boolean; busy?: boolean; error?: string;
   onCrop: (region: MenuPhotoRegion) => void; onGenerate: (mode: "enhance_visible" | "generate_similar") => void;
@@ -33,9 +34,13 @@ export function DishPhotoPanel({ savedPhoto, dishId, dishName, crop, upload, sou
       <div className={s.photoColumn}>
         {crop ? <figure><img src={crop.url} alt={`Original crop of ${dishName}`} /><figcaption>{selected && photo ? "Original" : "Original · selected"}</figcaption></figure> : savedPhoto ? <figure><img src={savedPhoto.imageUrl} alt={dishName} /><figcaption>Current photo</figcaption></figure> : <div className={s.noPhoto}>No dish photo found</div>}
         {upload && sourceEntryId && <p className={s.cropHint}>Not showing the right dish? <button type="button" className={s.textButton} disabled={busy} onClick={() => { setRegion(crop?.region ?? region); setEditing(!editing); }}>Adjust crop.</button></p>}
-        {crop ? <button type="button" className="btn btn-outline" disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("enhance_visible")}>{busy ? "Polishing…" : "Polish image ✨"}</button> : <button type="button" className="btn btn-outline" disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("generate_similar")}>Generate photo</button>}
+
       </div>
       {photo && <div className={s.photoColumn}><figure><img src={photo.previewUrl} alt={`${photo.candidate.mode === "generate_similar" ? "Generated" : "Polished"} ${dishName}`} /><figcaption>{`${photo.candidate.mode === "generate_similar" ? "AI-generated" : "AI-enhanced"}${selected ? " · selected" : ""}`}</figcaption></figure><p className={s.cropHint}>Check ingredients and portion.</p><button type="button" className={selected ? s.textButton : "btn btn-teal"} disabled={busy} onClick={selected ? onRemove : onSelect}>{selected ? crop ? "Revert to original" : "Remove photo" : photo.candidate.mode === "generate_similar" ? "Use photo" : "Use polished"}</button></div>}
+    </div>
+    <div className={s.actionRow}>
+        {crop ? <button type="button" className={`btn btn-outline ${s.polishButton}`} disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("enhance_visible")}><img src="/brand/sparkle_coral.svg" width={23} height={23} alt="" />{busy ? "Polishing…" : "Polish image"}</button> : <button type="button" className={`btn btn-outline ${s.polishButton}`} disabled={busy || !dishName.trim() || !!onCheck} onClick={() => onGenerate("generate_similar")}>Generate photo</button>}
+      {addonsAction}
     </div>
     {!crop && !photo && <p className={s.hint}>Generated photos are labelled AI-generated.</p>}
     {editing && upload && <div className={s.cropEditor}>
@@ -43,11 +48,14 @@ export function DishPhotoPanel({ savedPhoto, dishId, dishName, crop, upload, sou
         const step = event.shiftKey ? .05 : .01;
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
         event.preventDefault(); setRegion(old => ({ ...old, x: Math.max(0, Math.min(1 - old.width, old.x + (event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0))), y: Math.max(0, Math.min(1 - old.height, old.y + (event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0))) }));
-      }} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}><div className={s.resizeHandle} aria-label="Drag to resize crop" onPointerDown={event => startDrag(event, true)} onPointerMove={event => { event.stopPropagation(); moveDrag(event); }} onPointerUp={() => { drag.current = null; }} /></div></div>
-      <div className={s.sliders}>{([['x', 'Left'], ['y', 'Top'], ['width', 'Width'], ['height', 'Height']] as const).map(([key, label]) => <label key={key}>{label}<input type="range" aria-label={`${dishName} crop ${label.toLowerCase()}`} min={key === 'x' || key === 'y' ? 0 : 0.01} max={key === 'x' ? 1 - region.width : key === 'y' ? 1 - region.height : key === 'width' ? 1 - region.x : 1 - region.y} step="0.005" value={region[key]} onChange={e => setRegion({ ...region, [key]: Number(e.target.value) })} /></label>)}</div>
+      }} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}><div className={s.resizeHandle} role="group" tabIndex={0} aria-label="Resize crop with arrow keys or drag" onKeyDown={event => {
+        if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+        event.preventDefault(); event.stopPropagation(); const step = event.shiftKey ? .05 : .01;
+        setRegion(old => ({ ...old, width: Math.max(.03, Math.min(1 - old.x, old.width + (event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0))), height: Math.max(.03, Math.min(1 - old.y, old.height + (event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0))) }));
+      }} onPointerDown={event => startDrag(event, true)} onPointerMove={event => { event.stopPropagation(); moveDrag(event); }} onPointerUp={() => { drag.current = null; }} /></div></div>
       <button type="button" className="btn btn-teal" onClick={() => { onCrop(region); setEditing(false); }}>Use crop</button>
     </div>}
-    {busy && <p role="status" className={s.hint}>Preparing your photo…</p>}
+    {busy && <p role="status" className={s.hint}>Polishing… <button type="button" className={s.textButton} onClick={onCancel}>Cancel (Esc)</button></p>}
     {error && <p role="alert" className={s.error}>{error}</p>}
     {onCheck && <button type="button" className="btn btn-outline" disabled={busy} onClick={onCheck}>Check photo status</button>}
   </section>;

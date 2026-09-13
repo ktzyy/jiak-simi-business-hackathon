@@ -45,3 +45,22 @@ test("preview downloads require the JPEG contract and use staff auth", async () 
   await assert.rejects(api.dishPhotoPreview(fixtureMenu.restaurantId, randomUUID(), "test"), { code: "INVALID_RESPONSE" });
   assert.equal(authorization, "Bearer test");
 });
+
+
+test("cancelling a polish request aborts transport without redispatching", async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  let transportSignal: AbortSignal | null | undefined;
+  const api = createApiClient("", async (_url, init) => {
+    calls++;
+    transportSignal = init?.signal;
+    return await new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+    });
+  });
+  const pending = api.createDishPhoto(fixtureMenu.restaurantId, randomUUID(), { mode: "generate_similar", dishId: fixtureMenu.dishes[0].id, dishName: fixtureMenu.dishes[0].name }, "test", undefined, controller.signal);
+  controller.abort();
+  await assert.rejects(pending, { code: "ACKNOWLEDGEMENT_UNKNOWN" });
+  assert.equal(transportSignal?.aborted, true);
+  assert.equal(calls, 1);
+});

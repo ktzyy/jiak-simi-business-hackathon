@@ -6,7 +6,7 @@ import { ApiError, createApiClient } from "@/shared/api-client";
 import { dishPhotoCandidateSchema, dishPhotoRequestSchema, type DishPhotoRequest, type DishPhotoJob } from "@/shared/dish-photo";
 import { getStaffAccessToken } from "@/components/ui/staff-access";
 
-const recordSchema = z.strictObject({ key: z.uuid(), request: dishPhotoRequestSchema, jobId: z.uuid().optional(), status: z.enum(["dispatch_unknown", "ready", "failed"]), selected: z.boolean(), candidate: dishPhotoCandidateSchema.optional() });
+const recordSchema = z.strictObject({ key: z.uuid(), request: dishPhotoRequestSchema, jobId: z.uuid().optional(), status: z.enum(["dispatch_unknown", "ready", "failed"]), selected: z.boolean(), cancelled: z.boolean().optional(), candidate: dishPhotoCandidateSchema.optional() });
 type PhotoRecord = z.infer<typeof recordSchema>;
 const recordsSchema = z.record(z.string(), recordSchema);
 const api = createApiClient();
@@ -22,6 +22,7 @@ export function useDishPhotos(restaurantId: string) {
   const [storageError, setStorageError] = useState("");
   const inFlight = useRef(new Set<string>());
   const generation = useRef(0);
+  const controllers = useRef(new Map<string, AbortController>());
 
   function commit(next: Record<string, PhotoRecord>) {
     sessionStorage.setItem(storageKey, JSON.stringify(next));
@@ -35,7 +36,7 @@ export function useDishPhotos(restaurantId: string) {
   async function accept(id: string, record: PhotoRecord, job: DishPhotoJob, token: string, epoch: number) {
     if (epoch !== generation.current || recordsRef.current[id]?.key !== record.key) return;
     if (job.candidate && (job.candidate.dishId !== record.request.dishId || job.candidate.mode !== record.request.mode)) throw new Error("The returned photo does not match this dish.");
-    const next = { ...record, selected: job.status === "ready" && record.status !== "ready" ? true : record.selected, jobId: job.jobId, status: job.status, candidate: job.candidate ?? undefined };
+    const next = { ...record, selected: record.cancelled ? false : job.status === "ready" && record.status !== "ready" ? true : record.selected, jobId: job.jobId, status: job.status, candidate: job.candidate ?? undefined };
     update(id, next);
     if (job.status === "ready" && job.candidate) {
       const blob = await api.dishPhotoPreview(restaurantId, job.jobId, token);
@@ -84,9 +85,11 @@ export function useDishPhotos(restaurantId: string) {
   async function generate(request: DishPhotoRequest, source?: File) {
     const id = request.dishId;
     if (inFlight.current.has(id) || storageError) return;
-    if (recordsRef.current[id]?.status === "dispatch_unknown") { await check(id); return; }
+    if (recordsRef.current[id]?.status === "dispatch_unknown" && !(recordsRef.current[id]?.cancelled && request.mode === "source_crop")) { await check(id); return; }
     const epoch = generation.current;
     let dispatchedHTTP = false;
+    const controller = new AbortController();
+    controllers.current.set(id, controller);
     const record: PhotoRecord = { key: crypto.randomUUID(), request: dishPhotoRequestSchema.parse(request), status: "dispatch_unknown", selected: false };
     inFlight.current.add(id); setBusy(old => ({ ...old, [id]: true })); setErrors(old => ({ ...old, [id]: "" }));
     try {
@@ -94,19 +97,40 @@ export function useDishPhotos(restaurantId: string) {
       update(id, record);
       if (urls.current[id]) { URL.revokeObjectURL(urls.current[id]); delete urls.current[id]; setPreviews({ ...urls.current }); }
       const token = await getStaffAccessToken();
+      controller.signal.throwIfAborted();
       dispatchedHTTP = true;
-      const job = await api.createDishPhoto(restaurantId, record.key, record.request, token, source);
+      const job = await api.createDishPhoto(restaurantId, record.key, record.request, token, source, controller.signal);
+      controller.signal.throwIfAborted();
       await accept(id, record, job, token, epoch);
     } catch (error) {
       if (epoch === generation.current) {
+        if (controller.signal.aborted) {
+          try { update(id, { ...record, cancelled: true, selected: false, status: dispatchedHTTP ? "dispatch_unknown" : "failed" }); } catch { /* Keep the saved request for reconciliation. */ }
+          setErrors(old => ({ ...old, [id]: dispatchedHTTP ? "Cancelled. Processing may already have started; any result will stay unselected." : "Cancelled." }));
+          return;
+        }
         if (!dispatchedHTTP || error instanceof ApiError && ([400, 401, 403, 413, 422, 429].includes(error.status) || error.status === 503 && error.code === "NOT_CONFIGURED")) {
           try { update(id, { ...record, status: "failed" }); } catch { /* Preserve the original frozen record if storage is unavailable. */ }
         }
         setErrors(old => ({ ...old, [id]: error instanceof Error ? error.message : "Photo result unknown. Check the same request's status." }));
       }
     }
-    finally { inFlight.current.delete(id); if (epoch === generation.current) setBusy(old => ({ ...old, [id]: false })); }
+    finally { controllers.current.delete(id); inFlight.current.delete(id); if (epoch === generation.current) setBusy(old => ({ ...old, [id]: false })); }
   }
+  function cancel(id: string) {
+    controllers.current.get(id)?.abort();
+  }
+  useEffect(() => {
+    function escape(event: KeyboardEvent) {
+      if (event.key !== "Escape" || !controllers.current.size) return;
+      event.preventDefault();
+      for (const [id, controller] of controllers.current) {
+        if (recordsRef.current[id]?.request.mode !== "source_crop") controller.abort();
+      }
+    }
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, []);
   function select(id: string) {
     const record = recordsRef.current[id];
     if (!record || record.status !== "ready" || !record.candidate || !previews[id]) return;
@@ -119,8 +143,10 @@ export function useDishPhotos(restaurantId: string) {
   }
   function reset() {
     generation.current += 1;
+    for (const controller of controllers.current.values()) controller.abort();
+    controllers.current.clear();
     try { commit({}); } catch { setStorageError("Photo selections could not be reset in browser storage. Continue without photos until storage is available."); }
     Object.values(urls.current).forEach(url => URL.revokeObjectURL(url)); urls.current = {}; setPreviews({}); setBusy({}); setErrors({});
   }
-  return { latestRecords: () => recordsRef.current, records, previews, busy, errors, storageError, generate, check, select, remove, reset };
+  return { latestRecords: () => recordsRef.current, records, previews, busy, errors, storageError, generate, cancel, check, select, remove, reset };
 }
