@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
 import { connectLiveAudio, playVoiceReadback, recordVoiceConfirmation, type LiveSessionAnswer } from "@/shared/live-client";
@@ -34,12 +34,14 @@ async function sendCommand<T>(body: object, signal?: AbortSignal, publicDemo = f
 }
 const encode = (bytes: Uint8Array) => { let text = ""; for (let i = 0; i < bytes.length; i += 8192) text += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(text); };
 
-export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolean }) {
+export type VoiceControls = { start: () => void; stop: () => void };
+export function HandsfreeVoiceTest({ publicDemo = false, inline = false, controlsRef, onActiveChange }: { publicDemo?: boolean; inline?: boolean; controlsRef?: Ref<VoiceControls>; onActiveChange?: (active: boolean) => void }) {
   const command = <T,>(body: object, signal?: AbortSignal) => sendCommand<T>(body, signal, publicDemo);
   const audio = useRef<HTMLAudioElement>(null), connection = useRef<Connection | null>(null), controller = useRef<AbortController | null>(null), context = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
   const transcriptDraft = useRef({ text: "", at: 0, sent: "" });
   const [state, setState] = useState("Ready"), [running, setRunning] = useState(false), [text, setText] = useState(""), [error, setError] = useState(""), [ticket, setTicket] = useState<Ticket | null>(null);
+  const [opened, setOpened] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
   useEffect(() => { let active = true; void createApiClient().readMenu(DEMO_RESTAURANT_ID).then(value => { if (active) setMenu(value); }).catch(() => undefined); return () => { active = false; }; }, []);
@@ -49,14 +51,14 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
     if (audio.current) audio.current.muted = true;
     await current?.close().catch(() => { if (mounted.current) setError("Session close was not acknowledged. The local server will expire it."); });
     await context.current?.close().catch(() => undefined); context.current = null;
-    if (mounted.current) { setRunning(false); setState("Stopped"); }
+    if (mounted.current) { setRunning(false); onActiveChange?.(false); setState("Stopped"); }
   }
   useEffect(() => { mounted.current = true; const end = () => { void stop(); }; window.addEventListener("pagehide", end); return () => { mounted.current = false; window.removeEventListener("pagehide", end); void stop(); }; }, []);
   async function start() {
     if (controller.current || !audio.current) return;
     const abort = new AbortController(); controller.current = abort;
     transcriptDraft.current = { text: "", at: 0, sent: "" };
-    setRunning(true); setError(""); setTicket(null); setQuote(null); setText(""); setState("Connecting GPT-Live");
+    setOpened(true); setRunning(true); onActiveChange?.(true); setError(""); setTicket(null); setQuote(null); setText(""); setState("Connecting GPT-Live");
     const ctx = new AudioContext(); context.current = ctx;
     try {
       await ctx.resume(); audio.current.muted = false;
@@ -98,7 +100,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
           try { await command(body, abort.signal); }
           catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; await command(body, abort.signal); }
         }
-        if (status.ticket) { setTicket(status.ticket); setState("Order sent to kitchen — payment due at the stall"); audio.current!.muted = false; live.setMicrophoneEnabled(false); break; }
+        if (status.ticket) { setTicket(status.ticket); await stop(); setState("Order sent to kitchen · Pay at the stall"); break; }
         await new Promise<void>(resolve => setTimeout(resolve, 350));
       }
     } catch (failure) {
@@ -106,7 +108,16 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
       await stop();
     }
   }
+  useImperativeHandle(controlsRef, () => ({ start: () => { void start(); }, stop: () => { void stop(); } }));
   const summary = ticket?.cart ?? quote;
+  if (inline) return <section className={styles.inlineVoice} hidden={!opened} aria-label="Voice order">
+    <div className={styles.inlineStatus}><strong role="status">{state}</strong>{running && <button type="button" className="btn btn-outline" onClick={() => { void stop(); }}>Stop mic</button>}</div>
+    <p className={styles.voiceDisclosure}>AI voice ordering · Review the readback, then say “Confirm” to order.</p>
+    <p className={styles.transcript} aria-live="polite" aria-label="Live transcript">{text || (running ? "Tell us your dishes and add-ons…" : "Mic off")}</p>
+    {error && <p role="alert" className={styles.inlineError}>{error}</p>}
+    {summary && <div className={styles.inlineOrder} aria-live="polite"><h3>{ticket ? "Order sent" : "Your order"}</h3><p>{summary.fulfillmentType === "takeaway" ? "Takeaway" : "Dine-in"}</p><ul className={styles.order}>{summary.lines.map((line, index) => <li key={`${line.dishId}-${index}`}><div><strong>{line.quantity} × {line.name}</strong><strong>{money(line.lineTotalCents)}</strong></div>{!!line.options.length && <p>{line.options.map(option => option.name).join(" · ")}</p>}</li>)}</ul><div className={styles.total}><strong>Total</strong><strong>{money(summary.totalCents)}</strong></div>{ticket && <p>Received by the kitchen · Pay at the stall</p>}</div>}
+    <audio ref={audio} autoPlay />
+  </section>;
   return <main className={styles.page}>
     <Link href="/">← Portal</Link>
     <header className={styles.header}><p className="eyebrow">Jiak Simi · Voice ordering</p><h1>Tell us what you’d like.</h1><p>Order with GPT Live. Say your dish and any extras. We assume dine-in and chilli unless you say otherwise. The voice is AI-generated.</p></header>

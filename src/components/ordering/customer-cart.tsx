@@ -10,6 +10,7 @@ import { formatPublishedHours, cartProblems, definitelyNotSent, money, previewQu
 import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
 import { OrderReview } from "./order-review";
 import { MenuDishPhoto, type DisplayDishPhoto } from "./menu-dish-photo";
+import { HandsfreeVoiceTest, type VoiceControls } from "@/app/voice-test/handsfree-voice-test";
 import styles from "./ordering.module.css";
 
 type Message = { kind: "info" | "error" | "notSent" | "unknown"; text: string };
@@ -47,6 +48,8 @@ function BottomSheet({ children, onClose, preview, label }: { children: ReactNod
 }
 
 export function CustomerCart({ restaurantId, previewMenu, previewHours, previewPhotos = [], showStaffTools = false }: { restaurantId: string; previewMenu?: Menu; previewHours?: string; previewPhotos?: DisplayDishPhoto[]; showStaffTools?: boolean }) {
+  const voiceControls = useRef<VoiceControls>(null);
+  const [voiceActive, setVoiceActive] = useState(false);
   const preview = previewMenu !== undefined;
   const api = useMemo(() => createApiClient(), []);
   const storageKey = `jiak-order-v1:${restaurantId}`;
@@ -137,7 +140,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
     try { sessionStorage.removeItem(storageKey); return true; }
     catch { setStorageError("We couldn’t clear the saved order. Keep this tab open and check with the stall before ordering again."); return false; }
   }
-  const locked = pending !== null || busy || storageError !== null;
+  const locked = pending !== null || busy || storageError !== null || voiceActive;
   const problems = menu ? cartProblems(menu, lines) : [];
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
   const estimate = menu && fulfillmentType && lines.length && !problems.length ? previewQuote(menu, lines, fulfillmentType).totalCents : null;
@@ -250,7 +253,8 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       <div className={styles.headerContent}>
       {restaurantId === DEMO_RESTAURANT_ID && !preview && <nav className={styles.demoActions} aria-label="Try the ordering demo">
         <a className="btn btn-teal" href="https://t.me/blackcharsiewbot" target="_blank" rel="noopener noreferrer">Order on Telegram ↗</a>
-        <Link className="btn btn-outline" href="/voice-test">Speak with GPT Live</Link>
+        <button type="button" className="btn btn-outline" aria-pressed={voiceActive} disabled={!voiceActive && (locked || count > 0 || !ready)} onClick={() => { if (voiceActive) voiceControls.current?.stop(); else voiceControls.current?.start(); }}>{voiceActive ? "Stop mic" : "Speak with GPT Live"}</button>
+        {count > 0 && <p>Finish or clear your cart before starting a voice order.</p>}
       </nav>}
       <h1>{menu?.name ?? "Your stall’s menu"}</h1>
       {publishedDetails ? <details className={styles.hours}><summary>Opening hours · Singapore time</summary>{formatPublishedHours(publishedDetails).map(day => <p key={day}>{day}</p>)}</details> : <p className={styles.hours}>{previewHours || "Opening hours · Please check with the stall"}</p>}
@@ -266,6 +270,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       {loading && <div role="status" className={styles.loading}><span className={styles.loader} />Getting the menu ready…</div>}
       {!loading && !menu && !storageError && <div className={styles.empty}><h2>The menu isn’t ready just yet.</h2><p>Please try again, or ask the stall for help.</p><button className="btn btn-teal" disabled={!!pending} onClick={() => setBoot(value => value + 1)}>Try again</button></div>}
       {menu && <><div className={styles.sectionHeading}><h2>What would you like?</h2><span>{menu.dishes.length} dishes</span></div>
+        {restaurantId === DEMO_RESTAURANT_ID && !preview && <HandsfreeVoiceTest inline publicDemo controlsRef={voiceControls} onActiveChange={setVoiceActive} />}
         <div className={styles.dishes}>{menu.dishes.map(item => <article className={`${styles.dish} ${!item.available ? styles.soldOut : ""}`} key={item.id}>
           <MenuDishPhoto restaurantId={menu.restaurantId} dish={item} photo={(preview ? previewPhotos : publishedPhotos.filter(photo => photo.menuId === menu.id && photo.menuVersion === menu.version)).find(photo => photo.dishId === item.id && photo.dishName === item.name)} />
           <div className={styles.dishBody}><h3>{item.name}</h3><strong className={styles.price}>{money(item.priceCents)}</strong>{item.modifierGroups.length > 0 && <p className={styles.modifierHint}>Make it yours · extras available</p>}
