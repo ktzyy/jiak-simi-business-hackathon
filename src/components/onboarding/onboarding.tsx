@@ -169,7 +169,7 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
         if (preset) {
           saveUploads(preset.uploads.map(upload => ({ ...upload, url: URL.createObjectURL(upload.file) })));
           setName(preset.name); setHours(preset.hours); setSameHours(preset.sameHours); setLoadedPreset(preset);
-          setNotice("Saved demo loaded. Next opens your reviewed menu."); return;
+          setNotice(""); return;
         }
       }
       const response = await fetch("/demo/menu-photo.jpg");
@@ -193,7 +193,7 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
         demoPreset.current = preset; dishPhotos.reset();
         Object.values(cropRef.current).forEach(crop => URL.revokeObjectURL(crop.url));
         cropRef.current = Object.fromEntries(Object.entries(preset.crops).map(([id, crop]) => [id, { ...crop, url: URL.createObjectURL(crop.file) }])); setCrops(cropRef.current);
-        setDraft(preset.draft); setDishes(preset.dishes); setSharedRows(preset.sharedRows); setExcludedExtras(preset.excludedExtras); setAnyExtras(new Set(preset.anyExtras)); setRetainedPhotos([]); setPreview(null); setStep(2); setError(""); setNotice("Saved demo ready."); setLoadedPreset(null);
+        setDraft(preset.draft); setDishes(preset.dishes); setSharedRows(preset.sharedRows); setExcludedExtras(preset.excludedExtras); setAnyExtras(new Set(preset.anyExtras)); setRetainedPhotos([]); setPreview(null); setStep(2); setError(""); setNotice(""); setLoadedPreset(null);
       } catch (e) { setError(errorText(e)); }
       return;
     }

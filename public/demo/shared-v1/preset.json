@@ -400,7 +400,7 @@
         "rawPriceText": "$4.50",
         "currency": "SGD",
         "priceUncertain": true,
-        "uncertainty": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+        "uncertainty": null,
         "id": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
         "priceCents": null
       },
@@ -416,7 +416,7 @@
         "rawPriceText": "$4.50",
         "currency": "SGD",
         "priceUncertain": true,
-        "uncertainty": "The label and price are partially obscured by glare and overlapping stickers.",
+        "uncertainty": null,
         "id": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
         "priceCents": null
       },
@@ -549,7 +549,7 @@
         "rawPriceText": null,
         "currency": "unknown",
         "priceUncertain": true,
-        "uncertainty": "The Rice addon price is obscured and unreadable.",
+        "uncertainty": null,
         "id": "287cbdb5-a199-4432-82ea-e4546a871805",
         "priceCents": null
       },
@@ -634,148 +634,7 @@
         "priceCents": 100
       }
     ],
-    "issues": [
-      {
-        "id": "c028a0f8-82d0-4b45-a54f-8929f1ad3837",
-        "code": "human_review_required",
-        "message": "Review all extracted names, prices, source associations, and modifier rules against the original menu before publishing.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "c552b65a-7fa7-4ee2-a4e7-b6eb87a7d572",
-        "code": "model_uncertainty",
-        "message": "Some items in the Freshly Made panel are partially obscured by glare and overlapping labels, so a few label-to-photo associations are uncertain.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "9917df31-72c3-4ad9-af25-c6c0f02e2160",
-        "code": "model_uncertainty",
-        "message": "The Rice addon price is unreadable in the bottom-right addon list.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "3eb86eba-eb9c-47fb-bb58-c0c8132b1874",
-        "code": "model_uncertainty",
-        "message": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
-        "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
-        "blocking": true
-      },
-      {
-        "id": "2f572d07-310e-4469-bc08-8d104a91bbcf",
-        "code": "unknown_price",
-        "message": "Confirm the SGD price for source entry 3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2; its price is missing, ambiguous, foreign, or not one scalar amount.",
-        "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
-        "blocking": true
-      },
-      {
-        "id": "9c3ac940-ee78-409d-8dec-ebba1fa15552",
-        "code": "model_uncertainty",
-        "message": "The label and price are partially obscured by glare and overlapping stickers.",
-        "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
-        "blocking": true
-      },
-      {
-        "id": "6104fc8b-9928-4778-a705-5d2a19e08496",
-        "code": "unknown_price",
-        "message": "Confirm the SGD price for source entry a5997803-7221-40fa-84e9-ee3bbbe556ba; its price is missing, ambiguous, foreign, or not one scalar amount.",
-        "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
-        "blocking": true
-      },
-      {
-        "id": "733145ae-d4eb-412d-a5c7-18514e4771d4",
-        "code": "source_mapping_required",
-        "message": "Review source entry 0f13a51c-fb4f-4361-8996-e70a78a7bd9e (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "0e64612e-9407-4e0c-bac9-8a3311ae0867",
-        "code": "source_mapping_required",
-        "message": "Review source entry f5789809-e093-48ab-a105-c8c74aef205d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "d8b9a1ba-199b-4ef2-8cbe-2cd54663a2dd",
-        "code": "source_mapping_required",
-        "message": "Review source entry eddb2653-8658-4a53-aca3-c7d18c920b81 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "fbe21450-f43a-43ed-a002-9c38a94804e6",
-        "code": "source_mapping_required",
-        "message": "Review source entry a6571d4a-c3ad-4bab-8ee8-f169f5fc1052 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "df955e7b-9480-47e1-92bd-370ef0d1ad22",
-        "code": "source_mapping_required",
-        "message": "Review source entry 03176c1f-4357-4585-914b-b1e42100b48c (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "16c5b526-edce-4d84-8c5f-208aeb6bb600",
-        "code": "model_uncertainty",
-        "message": "The Rice addon price is obscured and unreadable.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "164183ae-31d2-45ba-901f-c87b38f13acc",
-        "code": "unknown_price",
-        "message": "Confirm the SGD price for source entry 287cbdb5-a199-4432-82ea-e4546a871805; its price is missing, ambiguous, foreign, or not one scalar amount.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "57cb262f-1d0c-4f4f-a886-e0aab6a795ce",
-        "code": "source_mapping_required",
-        "message": "Review source entry 287cbdb5-a199-4432-82ea-e4546a871805 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "f7c6a1d5-706e-43d5-b24d-19040b9fedfd",
-        "code": "source_mapping_required",
-        "message": "Review source entry c6959556-10dd-4465-9cf1-acfeaa9bf8f2 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "5e34bdb1-1fa1-4eb1-aaa2-8357a016bb39",
-        "code": "source_mapping_required",
-        "message": "Review source entry 16ae5aea-d8dc-4ffc-b655-f81a4a25e9de (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "9b257dc5-3ac0-4d74-9395-19b70088646a",
-        "code": "source_mapping_required",
-        "message": "Review source entry b2464b30-d9aa-4a3f-848c-add7d8c21d4a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "bfc31df9-2cb8-416a-b8b5-c8cf82891825",
-        "code": "source_mapping_required",
-        "message": "Review source entry d10dc58a-6bc9-4fc3-a272-1073562b713d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      },
-      {
-        "id": "24bffe1a-b940-4ec1-bf0b-1415b33c12a2",
-        "code": "source_mapping_required",
-        "message": "Review source entry 2ee3853c-04e4-4a23-ae5e-44f458960c7a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-        "itemId": null,
-        "blocking": true
-      }
-    ]
+    "issues": []
   },
   "dishes": [
     {
@@ -1282,7 +1141,7 @@
             "rawPriceText": "$4.50",
             "currency": "SGD",
             "priceUncertain": true,
-            "uncertainty": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+            "uncertainty": null,
             "id": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
             "priceCents": null
           },
@@ -1298,7 +1157,7 @@
             "rawPriceText": "$4.50",
             "currency": "SGD",
             "priceUncertain": true,
-            "uncertainty": "The label and price are partially obscured by glare and overlapping stickers.",
+            "uncertainty": null,
             "id": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
             "priceCents": null
           },
@@ -1431,7 +1290,7 @@
             "rawPriceText": null,
             "currency": "unknown",
             "priceUncertain": true,
-            "uncertainty": "The Rice addon price is obscured and unreadable.",
+            "uncertainty": null,
             "id": "287cbdb5-a199-4432-82ea-e4546a871805",
             "priceCents": null
           },
@@ -1516,148 +1375,7 @@
             "priceCents": 100
           }
         ],
-        "issues": [
-          {
-            "id": "c028a0f8-82d0-4b45-a54f-8929f1ad3837",
-            "code": "human_review_required",
-            "message": "Review all extracted names, prices, source associations, and modifier rules against the original menu before publishing.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "c552b65a-7fa7-4ee2-a4e7-b6eb87a7d572",
-            "code": "model_uncertainty",
-            "message": "Some items in the Freshly Made panel are partially obscured by glare and overlapping labels, so a few label-to-photo associations are uncertain.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "9917df31-72c3-4ad9-af25-c6c0f02e2160",
-            "code": "model_uncertainty",
-            "message": "The Rice addon price is unreadable in the bottom-right addon list.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "3eb86eba-eb9c-47fb-bb58-c0c8132b1874",
-            "code": "model_uncertainty",
-            "message": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
-            "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
-            "blocking": true
-          },
-          {
-            "id": "2f572d07-310e-4469-bc08-8d104a91bbcf",
-            "code": "unknown_price",
-            "message": "Confirm the SGD price for source entry 3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2; its price is missing, ambiguous, foreign, or not one scalar amount.",
-            "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
-            "blocking": true
-          },
-          {
-            "id": "9c3ac940-ee78-409d-8dec-ebba1fa15552",
-            "code": "model_uncertainty",
-            "message": "The label and price are partially obscured by glare and overlapping stickers.",
-            "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
-            "blocking": true
-          },
-          {
-            "id": "6104fc8b-9928-4778-a705-5d2a19e08496",
-            "code": "unknown_price",
-            "message": "Confirm the SGD price for source entry a5997803-7221-40fa-84e9-ee3bbbe556ba; its price is missing, ambiguous, foreign, or not one scalar amount.",
-            "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
-            "blocking": true
-          },
-          {
-            "id": "733145ae-d4eb-412d-a5c7-18514e4771d4",
-            "code": "source_mapping_required",
-            "message": "Review source entry 0f13a51c-fb4f-4361-8996-e70a78a7bd9e (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "0e64612e-9407-4e0c-bac9-8a3311ae0867",
-            "code": "source_mapping_required",
-            "message": "Review source entry f5789809-e093-48ab-a105-c8c74aef205d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "d8b9a1ba-199b-4ef2-8cbe-2cd54663a2dd",
-            "code": "source_mapping_required",
-            "message": "Review source entry eddb2653-8658-4a53-aca3-c7d18c920b81 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "fbe21450-f43a-43ed-a002-9c38a94804e6",
-            "code": "source_mapping_required",
-            "message": "Review source entry a6571d4a-c3ad-4bab-8ee8-f169f5fc1052 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "df955e7b-9480-47e1-92bd-370ef0d1ad22",
-            "code": "source_mapping_required",
-            "message": "Review source entry 03176c1f-4357-4585-914b-b1e42100b48c (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "16c5b526-edce-4d84-8c5f-208aeb6bb600",
-            "code": "model_uncertainty",
-            "message": "The Rice addon price is obscured and unreadable.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "164183ae-31d2-45ba-901f-c87b38f13acc",
-            "code": "unknown_price",
-            "message": "Confirm the SGD price for source entry 287cbdb5-a199-4432-82ea-e4546a871805; its price is missing, ambiguous, foreign, or not one scalar amount.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "57cb262f-1d0c-4f4f-a886-e0aab6a795ce",
-            "code": "source_mapping_required",
-            "message": "Review source entry 287cbdb5-a199-4432-82ea-e4546a871805 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "f7c6a1d5-706e-43d5-b24d-19040b9fedfd",
-            "code": "source_mapping_required",
-            "message": "Review source entry c6959556-10dd-4465-9cf1-acfeaa9bf8f2 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "5e34bdb1-1fa1-4eb1-aaa2-8357a016bb39",
-            "code": "source_mapping_required",
-            "message": "Review source entry 16ae5aea-d8dc-4ffc-b655-f81a4a25e9de (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "9b257dc5-3ac0-4d74-9395-19b70088646a",
-            "code": "source_mapping_required",
-            "message": "Review source entry b2464b30-d9aa-4a3f-848c-add7d8c21d4a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "bfc31df9-2cb8-416a-b8b5-c8cf82891825",
-            "code": "source_mapping_required",
-            "message": "Review source entry d10dc58a-6bc9-4fc3-a272-1073562b713d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          },
-          {
-            "id": "24bffe1a-b940-4ec1-bf0b-1415b33c12a2",
-            "code": "source_mapping_required",
-            "message": "Review source entry 2ee3853c-04e4-4a23-ae5e-44f458960c7a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
-            "itemId": null,
-            "blocking": true
-          }
-        ]
+        "issues": []
       }
     }
   ],
