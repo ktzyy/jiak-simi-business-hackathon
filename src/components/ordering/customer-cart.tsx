@@ -245,8 +245,9 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
   return <div className={`${styles.customer} ${preview ? styles.preview : ""}`}>
     {preview && <div className={styles.previewLabel}>CUSTOMER PREVIEW · NO ORDERS SENT</div>}
     {showStaffTools && !preview && <header className={styles.adminHeader} aria-label="Stall admin"><span>Stall admin</span><nav aria-label="Staff tools"><Link href={`/?restaurantId=${restaurantId}`}>Overview</Link><Link href={`/onboarding?restaurantId=${restaurantId}`}>Edit menu</Link><Link href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode →</Link></nav></header>}
+    <div className={styles.logoHeader}><Link href="/" className={styles.brand} aria-label="Jiak Simi home"><Image src="/brand/jiak-simi-horizontal.png" alt="Jiak Simi" width={128} height={19} unoptimized style={{ width: 128, height: "auto" }} /></Link></div>
     <header className={styles.header}>
-      <Link href="/" className={styles.brand}><Image src="/brand/jiak-simi-horizontal.png" alt="Jiak Simi" width={128} height={19} unoptimized style={{ width: 128, height: "auto" }} /></Link>
+      <div className={styles.headerContent}>
       {restaurantId === DEMO_RESTAURANT_ID && !preview && <nav className={styles.demoActions} aria-label="Try the ordering demo">
         <a className="btn btn-teal" href="https://t.me/blackcharsiewbot" target="_blank" rel="noopener noreferrer">Order on Telegram ↗</a>
         <Link className="btn btn-outline" href="/voice-test">Speak with GPT Live</Link>
@@ -256,6 +257,8 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       <div className={styles.dining} role="group" aria-label="Choose dine-in or takeaway">
         {(["dine_in", "takeaway"] as const).map(mode => <button key={mode} type="button" aria-pressed={fulfillmentType === mode} disabled={locked} onClick={() => { if (locked || busyRef.current) return; setFulfillmentType(mode); setQuote(null); setMessage(null); }}>{mode === "dine_in" ? "Dine-in" : "Takeaway"}</button>)}
       </div>
+      </div>
+      <Image className={styles.headerIllustration} src="/illustrations/roast-meat.svg" alt="" width={1440} height={810} unoptimized />
     </header>
     <div className={styles.menuContent}>
       {storageError && <div className={`${styles.alert} ${styles.error}`} role="alert"><strong>Saved order needs checking</strong><p>{storageError}</p><button className="btn btn-outline" onClick={() => setBoot(value => value + 1)}>Try loading again</button></div>}
