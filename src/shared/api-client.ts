@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CartRequestSchema, CompleteKitchenOrderSchema, ErrorSchema, IntentSchema, KitchenResponseSchema, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema, type CartRequest } from "./contracts";
+import { dishPhotoJobSchema, dishPhotoRequestSchema, dishPhotoSelectionSchema, publishedDishPhotosSchema, type DishPhotoRequest } from "./dish-photo";
 import { extractedMenuDraftSchema } from "./extraction";
 import { PublishedStallSchema, SaveStallDetailsSchema, SavedStallDetailsResponseSchema, StallDetailsResponseSchema } from "./stall-details";
 
@@ -10,7 +11,7 @@ export class ApiError extends Error {
 export function createApiClient(baseUrl = "", fetcher: typeof fetch = fetch) {
   async function call<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
     let response: Response;
-    try { response = await fetcher(`${baseUrl}/api/v1${path}`, { ...init, credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json", ...init?.headers } }); }
+    try { response = await fetcher(`${baseUrl}/api/v1${path}`, { ...init, credentials: "same-origin", cache: "no-store", headers: { ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }), ...init?.headers } }); }
     catch {
       const placingOrder = path === "/orders" || path === "/live/orders" || path === "/kitchen/orders/complete";
       const message = path === "/kitchen/orders/complete"
@@ -34,6 +35,22 @@ export function createApiClient(baseUrl = "", fetcher: typeof fetch = fetch) {
     return parsed.data;
   }
   return {
+    createDishPhoto: (restaurantId: string, key: string, request: DishPhotoRequest, staffAccessToken: string, source?: File) => {
+      const form = new FormData(); form.set("restaurantId", restaurantId); form.set("key", z.uuid().parse(key)); form.set("request", JSON.stringify(dishPhotoRequestSchema.parse(request)));
+      if (source) form.set("source", source);
+      return call("/dish-photos", dishPhotoJobSchema, { method: "POST", body: form, headers: { Authorization: `Bearer ${staffAccessToken}` }, signal: AbortSignal.timeout(185_000) });
+    },
+    readDishPhoto: (restaurantId: string, jobId: string, staffAccessToken: string) => call(`/dish-photos/${encodeURIComponent(jobId)}?restaurantId=${encodeURIComponent(restaurantId)}`, dishPhotoJobSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    findDishPhoto: (restaurantId: string, key: string, staffAccessToken: string) => call(`/dish-photos/by-key/${encodeURIComponent(key)}?restaurantId=${encodeURIComponent(restaurantId)}`, dishPhotoJobSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    dishPhotoPreview: async (restaurantId: string, jobId: string, staffAccessToken: string) => {
+      const response = await fetcher(`${baseUrl}/api/v1/dish-photos/${encodeURIComponent(jobId)}/preview?restaurantId=${encodeURIComponent(restaurantId)}`, { cache: "no-store", credentials: "same-origin", headers: { Authorization: `Bearer ${staffAccessToken}` } });
+      if (!response.ok) throw new ApiError("PHOTO_PREVIEW_UNAVAILABLE", "The photo preview is not ready. Check its status again.", response.status, false);
+      const blob = await response.blob();
+      if (blob.size > 8 * 1024 * 1024 || blob.type !== "image/jpeg") throw new ApiError("INVALID_RESPONSE", "The photo preview could not be verified.", response.status, false);
+      return blob;
+    },
+    readPublishedPhotos: (restaurantId: string, menuId: string, menuVersion: number) => call(`/dish-photos/published?restaurantId=${encodeURIComponent(restaurantId)}&menuId=${encodeURIComponent(menuId)}&menuVersion=${menuVersion}`, publishedDishPhotosSchema),
+    publishMenuWithPhotos: (menu: z.infer<typeof MenuSchema>, staffAccessToken: string, stallDetailsVersion: number, selections: z.infer<typeof dishPhotoSelectionSchema>[]) => call("/dish-photos/publish", z.strictObject({ menu: MenuSchema, photos: publishedDishPhotosSchema }), { method: "POST", headers: { Authorization: `Bearer ${staffAccessToken}` }, body: JSON.stringify({ restaurantId: menu.restaurantId, menu: MenuSchema.parse(menu), stallDetailsVersion, selections: z.array(dishPhotoSelectionSchema).max(100).parse(selections) }) }),
     extract: (photo: Blob, restaurantId: string, staffAccessToken: string) => call("/menu-extractions", extractedMenuDraftSchema, { method: "POST", body: photo, headers: { "Content-Type": photo.type, "X-Restaurant-Id": restaurantId, Authorization: `Bearer ${staffAccessToken}` } }),
     startLive: (sdp: string, restaurantId: string, staffAccessToken: string, signal?: AbortSignal) => call("/live/sessions", z.strictObject({ sessionId: z.string(), sdp: z.string(), model: z.literal("gpt-live-1"), orderingEnabled: z.literal(false), voiceSessionId: z.uuid(), expiresAt: z.iso.datetime({ offset: true }), reviewEnabled: z.literal(true) }), { method: "POST", body: JSON.stringify({ sdp, restaurantId }), headers: { Authorization: `Bearer ${staffAccessToken}` }, signal }),
     prepareVoiceReview: (voiceSessionId: string, text: string, fulfillmentType: "dine_in" | "takeaway", staffAccessToken: string) => call("/live/reviews", z.strictObject({ intent: IntentSchema, review: z.strictObject({ quote: QuoteSchema, confirmationNonce: z.uuid(), revision: z.number().int().positive() }).nullable() }), { method: "POST", body: JSON.stringify({ voiceSessionId, text, fulfillmentType }), headers: { Authorization: `Bearer ${staffAccessToken}` } }),

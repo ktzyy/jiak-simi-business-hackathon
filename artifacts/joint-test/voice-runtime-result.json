@@ -1,0 +1,44 @@
+{
+  "test": "actual-app-gpt-live-webrtc-voice-order",
+  "verificationAt": "2026-09-13T08:46:42.798Z",
+  "model": "gpt-live-1",
+  "restaurantId": "ba2ad996-da84-4653-89a9-c028d77c050d",
+  "transport": "WebRTC PCMU via temporary werift",
+  "syntheticInput": true,
+  "syntheticConfirmation": true,
+  "simulatedPlaybackAcknowledgment": true,
+  "readbackDurationSeconds": 13,
+  "totalElapsedMs": 48666,
+  "observedPhases": [
+    "collecting",
+    "preparing",
+    "readback",
+    "submitted"
+  ],
+  "providerOrAppErrors": [],
+  "quote": {
+    "dish": "Char Siew Rice",
+    "quantity": 1,
+    "options": [
+      "Chilli"
+    ],
+    "fulfillmentType": "dine_in",
+    "totalCents": 450
+  },
+  "ticket": {
+    "id": "25028f86-b317-40a2-9695-a2f55e9e359c",
+    "source": "voice",
+    "paymentStatus": "unpaid"
+  },
+  "replayTicketId": "25028f86-b317-40a2-9695-a2f55e9e359c",
+  "kitchenVerification": {
+    "httpStatus": 200,
+    "matchingTicketCount": 1
+  },
+  "fix": "Next serverExternalPackages ws preserves optional bufferutil JavaScript fallback",
+  "limitations": [
+    "Synthetic audio, not a human microphone test",
+    "Playback acknowledgment simulated after full WAV duration",
+    "Hosted browser autoplay and microphone permission not tested"
+  ]
+}

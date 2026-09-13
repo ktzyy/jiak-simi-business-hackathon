@@ -11,7 +11,8 @@ async function rpc(db,name,args){return Object.values((await db.query(`select pu
 async function setup(legacy=false){
  const db=new PGlite();
  await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to public;grant execute on function auth.uid() to public;");
- for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).filter(f=>f!=='20260913053454_jiak_simi_web_ordering.sql').sort())await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'));
+ // Exercise this historical upgrade from its predecessors, not later migrations.
+ for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).filter(f=>f<'20260913053454_jiak_simi_web_ordering.sql').sort())await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'));
  await db.exec(`insert into auth.users(id) values('${actor}'),('${other}');insert into public.restaurants(id,name,slug) values('${restaurant}','Joint stall','joint');insert into public.restaurant_memberships(restaurant_id,user_id,role) values('${restaurant}','${actor}','owner');`);
  if(legacy){
   await rpc(db,'publish_menu',[restaurant,actor,JSON.stringify(menu)]);await rpc(db,'create_guest_session',[restaurant,'1'.repeat(64)]);

@@ -42,9 +42,13 @@ test("voice create authorizes budget and stores ownership before returning audio
   const handlers = voiceHandlers({ backend: () => backend, create: async input => {
     paid++;
     const spokenMenu = JSON.parse(input.instructions.split("Published menu data: ")[1]);
-    assert.equal(spokenMenu.id, fixtureMenu.id);
+    assert.equal(spokenMenu.id, undefined); // Conversation context omits backend UUIDs.
     assert.equal(spokenMenu.version, fixtureMenu.version);
-    assert.deepEqual(spokenMenu.dishes.map((dish: { id: string; name: string }) => [dish.id, dish.name]), fixtureMenu.dishes.map(dish => [dish.id, dish.name]));
+    assert.deepEqual(spokenMenu.dishes.map((dish: { name: string }) => dish.name), fixtureMenu.dishes.map(dish => dish.name));
+    assert.equal(spokenMenu.dishes[0].id, undefined);
+    const group = spokenMenu.modifierGroups[spokenMenu.dishes[0].modifierGroups[0]];
+    assert.equal(group.name, fixtureMenu.dishes[0].modifierGroups[0].name);
+    assert.equal(group.minSelections, fixtureMenu.dishes[0].modifierGroups[0].minSelections);
     assert.equal(spokenMenu.dishes[0].priceSGD, `S$${(fixtureMenu.dishes[0].priceCents / 100).toFixed(2)}`);
     assert.equal(spokenMenu.dishes[0].priceCents, undefined);
     return { sessionId: session.providerSessionId, sdp: "v=0 answer", model: "gpt-live-1", orderingEnabled: false };

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createLiveSession, liveMenuInstructions, LiveSessionError } from "../src/server/ai/live-session";
+import { createLiveSession, liveMenuInstructions, handsfreeMenuInstructions, LiveSessionError } from "../src/server/ai/live-session";
 
 test("Live SDP exchange is server authenticated and cannot expose order tools", async () => {
   let requestBody: Record<string, unknown> = {};
@@ -40,10 +40,18 @@ test("provider errors and malformed responses never leak their bodies", async ()
 });
 
 
-test("voice menu context rejects oversized snapshots without truncating modifier rules", async () => {
+test("voice context supports 100 dishes without repeating shared modifiers or UUIDs", async () => {
   const { fixtureMenu } = await import("../src/shared/fixtures");
   const dishes = Array.from({ length: 100 }, (_, i) => ({ ...fixtureMenu.dishes[0], id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, name: "x".repeat(120) }));
-  assert.throws(() => liveMenuInstructions({ ...fixtureMenu, dishes }), /too large/);
+  const expanded = { ...fixtureMenu, dishes };
+  for (const render of [liveMenuInstructions, handsfreeMenuInstructions]) {
+    const instructions = render(expanded);
+    const data = JSON.parse(instructions.split("\nPublished menu data: ")[1]);
+    assert.equal(data.dishes.length, 100);
+    assert.ok(instructions.length < 40000);
+    assert.ok(!instructions.includes(fixtureMenu.restaurantId));
+    assert.equal(data.dishes[0].modifierGroups[0], data.dishes[99].modifierGroups[0]);
+  }
 });
 
 test("Live receives dollar-formatted egg prices and free chilli without raw cent fields", async () => {
@@ -51,10 +59,24 @@ test("Live receives dollar-formatted egg prices and free chilli without raw cent
   const instructions = liveMenuInstructions(DEMO_MENU_WITH_EXTRAS);
   const menu = JSON.parse(instructions.split("\nPublished menu data: ")[1]);
   assert.equal(menu.dishes[0].priceSGD, "S$4.50");
-  const options = menu.dishes[0].modifierGroups.flatMap((group: { options: Array<{ name: string; priceAdjustmentSGD: string; spokenPrice: string }> }) => group.options);
+  const options = menu.dishes[0].modifierGroups.map((reference: string) => menu.modifierGroups[reference]).flatMap((group: { options: Array<{ name: string; priceAdjustmentSGD: string; spokenPrice: string }> }) => group.options);
   const egg = options.find((option: { name: string }) => /egg/i.test(option.name));
   assert.equal(egg.priceAdjustmentSGD, "+S$1.00");
   assert.equal(egg.spokenPrice, "one Singapore dollar");
   assert.equal(options.find((option: { name: string }) => /no chilli/i.test(option.name)).spokenPrice, "free");
   assert.doesNotMatch(JSON.stringify(menu), /priceCents|priceDeltaCents/);
+});
+
+
+test("shared modifier references preserve dish-specific price differences", async () => {
+  const { fixtureMenu } = await import("../src/shared/fixtures");
+  const menu = structuredClone(fixtureMenu);
+  const first = menu.dishes[0];
+  const second = structuredClone(first); second.id = "00000000-0000-4000-8000-000000000099";
+  second.modifierGroups[0].options[0].priceDeltaCents += 100;
+  menu.dishes = [first, second];
+  const data = JSON.parse(handsfreeMenuInstructions(menu).split("\nPublished menu data: ")[1]);
+  assert.notEqual(data.dishes[0].modifierGroups[0], data.dishes[1].modifierGroups[0]);
+  assert.equal(data.dishes[0].available, first.available);
+  assert.equal(data.modifierGroups[data.dishes[0].modifierGroups[0]].minSelections, first.modifierGroups[0].minSelections);
 });

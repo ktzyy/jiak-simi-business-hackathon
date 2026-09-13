@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { LiveButler } from "../src/server/ai/live-butler";
+import { HttpError } from "../src/server/http";
+import { LiveButler, type ButlerHooks } from "../src/server/ai/live-butler";
 import { explicitVoiceConfirmation, quoteReadback, validateConfirmationWav, speakQuote, transcribeConfirmation } from "../src/server/ai/live-confirmation-audio";
 import { fixtureQuote, fixtureTicket } from "../src/shared/fixtures";
 
@@ -11,7 +12,7 @@ function wav(speechAtEnd = false) {
   if (speechAtEnd) for (let i = rate * 7; i < rate * 8; i++) audio.writeInt16LE(5000, 44 + i * 2);
   return audio;
 }
-function setup(answer = "Yes, place this order.") {
+function setup(answer = "Yes, place this order.", overrides: Partial<ButlerHooks> = {}) {
   let clock = 0, submitted = 0, transcribed = 0, invalidated = 0;
   const commands: Record<string, unknown>[] = [];
   const nonce = "00000000-0000-4000-8000-000000000080";
@@ -22,7 +23,8 @@ function setup(answer = "Yes, place this order.") {
     transcribe: async () => { transcribed++; return answer; },
     submit: async id => { assert.equal(id, nonce); submitted++; return { ...fixtureTicket, source: "voice" }; },
     close: async () => {},
-    send: event => { commands.push(event); if (event.type === "session.input_audio.mute") queueMicrotask(() => { void butler.receive({ type: "session.input_audio.muted", client_event_id: event.event_id }); }); },
+    send: event => { commands.push(event); if (event.type === "session.input_audio.mute" || event.type === "session.input_audio.unmute") queueMicrotask(() => { void butler.receive({ type: event.type === "session.input_audio.mute" ? "session.input_audio.muted" : "session.input_audio.unmuted", client_event_id: event.event_id }); }); },
+    ...overrides,
   });
   return { butler, commands, counts: () => ({ submitted, transcribed, invalidated }), tick: (ms: number) => { clock += ms; } };
 }
@@ -107,4 +109,59 @@ test("separate speech adapters use exact documented models and complete file res
   };
   assert.ok((await speakQuote("The authoritative quote", "fake", fetcher)).length > 0);
   assert.equal(await transcribeConfirmation(wav(), "fake", fetcher), "Yes, place this order.");
+});
+
+
+test("microphone controls require their matching ACK; late ACK cannot revive timed-out preparation", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const commands: Record<string, unknown>[] = [];
+  let prepared = 0;
+  const s = setup(undefined, { send: event => { commands.push(event); }, prepare: async () => { prepared++; return null; } });
+  await s.butler.receive({ type: "session.input_transcript.delta", event_id: "input", delta: "One rice" });
+  const pending = s.butler.receive({ type: "session.delegation.created", event_id: "delegate", delegation: { id: "d", target: "client" } });
+  const mute = commands.find(event => event.type === "session.input_audio.mute")!;
+  await s.butler.receive({ type: "session.input_audio.muted", client_event_id: "wrong" });
+  await s.butler.receive({ type: "session.input_audio.unmuted", client_event_id: mute.event_id });
+  assert.equal(prepared, 0); assert.equal(s.butler.status().phase, "preparing");
+  t.mock.timers.tick(5000); await pending;
+  assert.equal(s.butler.status().errorCode, "VOICE_CONTROL_TIMEOUT"); assert.equal(s.butler.status().errorStage, "mute");
+  await s.butler.receive({ type: "session.input_audio.muted", client_event_id: mute.event_id });
+  assert.equal(prepared, 0); assert.equal(s.butler.status().phase, "error");
+});
+
+test("known pre-submit transcription outage retains canonical quote for fresh playback, never submits", async () => {
+  const s = setup(undefined, { transcribe: async () => { throw new HttpError(502, "VOICE_TRANSCRIPTION_FAILED", "sensitive raw upstream detail"); } });
+  const id = await ready(s);
+  s.butler.takeAudio(id); s.tick(4000); s.butler.playbackEnded(id); s.tick(8000);
+  await s.butler.confirm(id, wav());
+  const status = s.butler.status();
+  assert.equal(status.phase, "readback"); assert.notEqual(status.readbackId, id);
+  assert.deepEqual(status.quote, fixtureQuote); assert.equal(status.errorStage, "transcribe");
+  assert.equal(s.counts().submitted, 0);
+  assert.ok(!JSON.stringify(status).includes("sensitive"));
+  await assert.rejects(s.butler.confirm(id, wav()));
+});
+
+test("unknown submission outcome fails closed and cannot be retried as a fresh order", async () => {
+  const s = setup(undefined, { submit: async () => { throw new Error("private upstream detail"); } });
+  const id = await ready(s); s.butler.takeAudio(id); s.tick(4000); s.butler.playbackEnded(id); s.tick(8000);
+  await s.butler.confirm(id, wav());
+  assert.equal(s.butler.status().phase, "error"); assert.equal(s.butler.status().errorCode, "VOICE_SUBMIT_FAILED");
+  assert.equal("quote" in s.butler.status(), false);
+  assert.ok(!JSON.stringify(s.butler.status()).includes("private"));
+});
+
+
+test("fresh server quote is visible while speech is prepared and disappears on a late edit", async () => {
+  let finishSpeech!: (audio: Buffer) => void;
+  const speech = new Promise<Buffer>(resolve => { finishSpeech = resolve; });
+  const s = setup(undefined, { speech: async () => speech });
+  await s.butler.receive({ type: "session.input_transcript.delta", event_id: "input", delta: "One rice" });
+  const pending = s.butler.receive({ type: "session.delegation.created", event_id: "delegate", delegation: { id: "d", target: "client" } });
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  assert.equal(s.butler.status().phase, "preparing"); assert.deepEqual(s.butler.status().quote, fixtureQuote);
+  await s.butler.receive({ type: "session.input_transcript.delta", event_id: "edit", delta: " actually two" });
+  assert.equal("quote" in s.butler.status(), false);
+  finishSpeech(Buffer.from("audio")); await pending;
+  assert.equal(s.butler.status().phase, "collecting"); assert.equal("quote" in s.butler.status(), false);
 });

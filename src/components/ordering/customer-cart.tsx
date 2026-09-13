@@ -9,7 +9,7 @@ import type { StallDetails } from "@/shared/stall-details";
 import { formatPublishedHours, cartProblems, definitelyNotSent, money, previewQuote, quoteMatchesCart, receiptMatches, savedOrderSchema, type PendingOrder, type SavedOrder } from "./order-state";
 import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
 import { OrderReview } from "./order-review";
-import { DemoDishPhoto } from "./demo-dish-photo";
+import { MenuDishPhoto, type DisplayDishPhoto } from "./menu-dish-photo";
 import styles from "./ordering.module.css";
 
 type Message = { kind: "info" | "error" | "notSent" | "unknown"; text: string };
@@ -46,11 +46,12 @@ function BottomSheet({ children, onClose, preview, label }: { children: ReactNod
   </div>;
 }
 
-export function CustomerCart({ restaurantId, previewMenu, previewHours }: { restaurantId: string; previewMenu?: Menu; previewHours?: string }) {
+export function CustomerCart({ restaurantId, previewMenu, previewHours, previewPhotos = [] }: { restaurantId: string; previewMenu?: Menu; previewHours?: string; previewPhotos?: DisplayDishPhoto[] }) {
   const preview = previewMenu !== undefined;
   const api = useMemo(() => createApiClient(), []);
   const storageKey = `jiak-order-v1:${restaurantId}`;
   const [menu, setMenu] = useState<Menu | null>(previewMenu ?? null);
+  const [publishedPhotos, setPublishedPhotos] = useState<DisplayDishPhoto[]>([]);
   const [publishedDetails, setPublishedDetails] = useState<StallDetails | null>(null);
   const [fulfillmentType, setFulfillmentType] = useState<CartRequest["fulfillmentType"] | null>(null);
   const [loading, setLoading] = useState(!preview);
@@ -118,6 +119,15 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
     void start();
     return () => { active = false; requestEpoch.current += 1; };
   }, [api, boot, preview, previewMenu, restaurantId, storageKey]);
+
+  useEffect(() => {
+    if (preview || !menu) return;
+    let active = true;
+    api.readPublishedPhotos(restaurantId, menu.id, menu.version).then(photos => {
+      if (active) setPublishedPhotos(photos.map(photo => ({ dishId: photo.dishId, dishName: photo.dishName, imageUrl: photo.imageUrl, label: photo.candidate.label, menuId: menu.id, menuVersion: menu.version })));
+    }).catch(() => { if (active) setPublishedPhotos([]); });
+    return () => { active = false; };
+  }, [api, restaurantId, menu, preview]);
 
   function save(value: SavedOrder): boolean {
     try { sessionStorage.setItem(storageKey, JSON.stringify(value)); return true; }
@@ -263,7 +273,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       {menu && <><div className={styles.sectionHeading}><h2>What would you like?</h2><span>{menu.dishes.length} dishes</span></div>
         <p className={styles.muted}>Pick a dish, add your extras, then check your order.</p>
         <div className={styles.dishes}>{menu.dishes.map(item => <article className={`${styles.dish} ${!item.available ? styles.soldOut : ""}`} key={item.id}>
-          <DemoDishPhoto restaurantId={menu.restaurantId} dish={item} />
+          <MenuDishPhoto restaurantId={menu.restaurantId} dish={item} photo={(preview ? previewPhotos : publishedPhotos.filter(photo => photo.menuId === menu.id && photo.menuVersion === menu.version)).find(photo => photo.dishId === item.id && photo.dishName === item.name)} />
           <div className={styles.dishBody}><h3>{item.name}</h3><strong className={styles.price}>{money(item.priceCents)}</strong>{item.modifierGroups.length > 0 && <p className={styles.modifierHint}>Make it yours · extras available</p>}
             <button className="btn btn-primary" disabled={!item.available || locked || !ready} onClick={() => openDish(item.id)}>{item.available ? "Add to order +" : "Sold out"}</button>
           </div>

@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-09-13T08:47:47.234Z",
+  "status": 200,
+  "key": "bb728029-a065-47bd-b43b-d1fd60a83380",
+  "jobId": "bc7de116-24bc-469c-be5a-bc078e1e764b",
+  "candidateId": "aaf2c06d-4a70-4ea6-833f-6cfcdc200ce5",
+  "model": "gpt-image-2.5-sunburst",
+  "label": "AI-enhanced source photo",
+  "jobStatus": "ready",
+  "imageSha256": "8321b1180ef4901fd7204f20f278f849b71fdbf1712865ca5e83fd9bb4282ea9",
+  "sourceReference": "public/demo/menu-photo.jpg",
+  "sourceSha256": "c3f146830949d0bdcebe50f86411f88da7f744846932d2f642eaa6f91fad2a92",
+  "sourceEvidence": "Manually observed Char Siew Rice plate at left of the supplied original. Test source entry ID, not a persisted OCR row.",
+  "dishId": "3d080a59-c16a-4b1e-846e-dd7e8307fec0",
+  "dishName": "Char Siew Rice",
+  "previewPath": "/private/tmp/jiak-photo-enhancement-preview.jpg",
+  "anonymousPreviewStatus": 401,
+  "published": false,
+  "selected": false,
+  "visibility": "private_unpublished"
+}

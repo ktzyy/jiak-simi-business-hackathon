@@ -1,33 +1,68 @@
-# Kimberley demo sync — 13 September 2026
+# Jiak Simi — integration sync, 13 September 2026
 
-Site: https://jiak-simi-business-demo.elsenyong.chatgpt.site
+Public Site: https://jiak-simi-business-demo.elsenyong.chatgpt.site
 
-The existing Site is public. Kimberley’s latest landing page is restored; See Demo opens the customer menu. Telegram, GPT Live and Cook Mode are linked together. Anonymous edit/publish/completion actions are restricted to restaurant `ba2ad996-da84-4653-89a9-c028d77c050d`. Other stalls retain API authorization. No real payments are processed.
+Repository branch: `elsen/backend`. Reuse the existing Site project `appgprj_6aa6330ed72c819186a4fff3288b4caf`; do not register another Site. The latest deployment receipt will identify the exact commit. This update supersedes the earlier recording-only handoff.
 
-Kim UI commits 2fce99e, 1ec0918 and 11de90572639a2b05524db8cd484899965e35734 are integrated. Her ten polished photos, compact opening-hours editor and layouts are preserved. Original source-photo assets remain available.
+## GPT Live ordering
 
-## Active backend contracts
+The reproduced failure was Next bundling the optional `ws` native mask helper incorrectly. `serverExternalPackages: ["ws"]` keeps the Node dependency intact. The Site forwards voice commands to the existing authenticated laptop relay; the laptop, Next server and Cloudflare tunnel must remain running.
 
-Use `src/shared/api-client.ts` and `src/shared/contracts.ts`. `readPublishedStall` returns menu plus its published hours snapshot. `readStallDetails` / `saveStallDetails` use optimistic versioning with seven explicit open/closed days. `publishMenu` requires the reviewed stall-details version. Hours are entered beside the stall name.
+The actual app now completes `gpt-live-1` WebRTC audio → backend intent → database quote → finite spoken readback → separate recorded confirmation → one unpaid voice ticket. A real protocol test with synthetic input and confirmation created ticket `25028f86-b317-40a2-9695-a2f55e9e359c`; replay returned that same ticket and the kitchen contained exactly one copy. This tests the actual app and provider, but does not establish a human browser microphone/autoplay test. Evidence: `artifacts/joint-test/voice-runtime-result.json`.
 
-Every cart and server quote requires explicit `fulfillmentType` (`dine_in` or `takeaway`), with no default or surcharge. Persisted orders carry it into the kitchen. Submit with the same confirmation key after an uncertain response. `completeKitchenOrder` uses expected status version and an idempotency key; advance only after acknowledgement and refresh counts. Payment remains unpaid.
+Voice defaults are dine-in and free chilli unless explicitly changed, as approved for this demo. Web orders still require explicit dining choice. The page shows the canonical order summary as soon as quoting finishes, then the persisted ticket. Known transcription failure can request a fresh readback/capture; uncertain database submission retries the same confirmation nonce. Error diagnostics never include customer speech or credentials.
 
-Menu review now has “Set your extras once”: edit shared names/prices and apply them to every included dish in one action. Required dish choices stay separate. OCR upload, review and publish remain connected to the existing API client and review helpers. Current published demo menu is v3: all ten photographed dishes, eleven photo extras plus Shao Rou, and free chilli preferences. The demo owner explicitly approved global applicability, availability and the required free Noodle/Hor Fun choice. Wanton Soup is S$4; Rice extra is S$0.50. Hosted publication verified 120 dish/add-on prices and selection rules. See FULL-DEMO-MENU-REVIEW.md.
+The menu context omits UUIDs and deduplicates shared modifier groups. The full ten-dish photographed menu uses about 4,500 characters; a 100-dish fixture is covered. OpenAI separately enforces a 16,384-token startup instruction limit, so arbitrary thousands of unique options are not promised. Current published demo menu remains version 4 with three dishes at the user's recording request.
 
-## Evidence and operational limits
+Test page: `/voice-test`. Say “One Char Siew Rice”; after the readback and beep say “Confirm.” Expected total S$4.50, dine-in, chilli, unpaid. Details: `docs/GPT-LIVE-PROTOCOL-AUDIT.md`.
 
-The previously deployed recording revision 7220433 passed the hosted S$14 dine-in quote → unpaid submission → same-key replay → one persisted ticket → Done/replay check. Hosted read/quote negative checks cover missing fulfillment, stale menus, invalid modifiers, cross-origin access, invalid staff tokens and cross-stall demo scope. Full OCR and real expired-session hosted browser acceptance remain outstanding. Required-modifier enforcement passed hosted database quotes. No real microphone/speaker acceptance has been claimed.
+## OCR and dish photos
 
-193 tests have passing coverage across the full run and a loopback-permitted relay rerun; TypeScript passed. Lint has no errors (one ignored verification-script warning). Deployed commit: c8bf859cf88cb419b63624220cc22322e431e132. Landing, See Demo, photo asset and voice page return HTTP 200. The hosted voice API now reaches the authenticated laptop relay and returns the expected VOICE_SESSION_NOT_FOUND for a nonexistent session. The Worker-specific redirect incompatibility is fixed using manual redirects with explicit rejection. Full microphone-to-persisted-ticket acceptance remains outstanding.
+Upload menu → extract readable dishes/prices → review → optional dish photos → customer preview → publish. In dummy demo mode unreadable entries are skipped; normal strict review remains available outside the dummy scope.
 
-Telegram @blackcharsiewbot accepts private human chats in public demo mode, with dummy-stall isolation and shared AI budgets. Its polling process must stay running. GPT Live uses the supervised laptop relay; the laptop, Next server, relay and Quick Tunnel must all remain running. See HANDSFREE-VOICE.md for verbal confirmation and retry behavior.
+Each included dish has optional **Enhance menu photo** and **Generate dish photo** actions. Enhancement requires the merchant to confirm that the selected dish is visible in the uploaded source; it uses the original image and dish identity, with no forced crop workflow. Generation produces an illustration when a matching source photo is absent. Both require **Use photo** before publication.
 
-All three approved database migrations are applied to staging project mikpepfrumtglwweolzq. No new migration is part of this release. Supabase Auth Site URL and callback allow-list include the canonical Site origin and /auth/confirm. Privileged credentials remain server-side.
+Customer cards and previews display **AI-enhanced source photo** or **AI-generated illustration**. These are AI outputs and should be reviewed for ingredients and serving accuracy. No generated photo changes prices, availability, modifiers or dietary claims.
 
-## Fast demo onboarding
+Photo jobs use frozen request keys, private Storage and immutable outputs. Unknown outcomes use read-only status checks and never automatically buy another image. Replacing the source or changing a dish's name invalidates its selection. The publication request carries exact selected job IDs; the database commits the photo manifest with the menu version atomically. A text-only menu is still supported.
 
-The owner requested skipping unreadable OCR entries and review checkboxes. With NEXT_PUBLIC_DEMO_MODE=true on the fixed dummy stall, names/prices that cannot be read are omitted, shared readable add-ons apply across the menu, per-item/source/issue confirmation gates are hidden, and the preview publishes through one explicit button. Empty menus still require a readable dish; unknown prices never become zero. Required choice rules, seven-day hours, backend scope and publication retry/version checks remain enforced. Normal merchant review outside this demo is unchanged.
+Shared client methods:
 
-## Recording override: three dishes
+- `createDishPhoto(restaurantId, key, request, staffToken, source?)`
+- `readDishPhoto(restaurantId, jobId, staffToken)` and `findDishPhoto(restaurantId, key, staffToken)`
+- `dishPhotoPreview(restaurantId, jobId, staffToken)` returns a private Blob
+- `publishMenuWithPhotos(menu, staffToken, stallDetailsVersion, selections)`
+- `readPublishedPhotos(restaurantId, menuId, menuVersion)` returns version-bound same-origin image URLs and disclosure metadata
 
-After the full-menu voice prompt exceeded its limit, the owner explicitly requested three dishes for recording. Published menu v4 contains Char Siew Rice, Braised Pork Knuckle Rice and Braised Pork Knuckle Noodles, preserving all twelve approved extras and chilli preferences. Existing hours are unchanged. The unchanged hands-free prompt is 7,849 characters, within its 24,000-character limit. `scripts/use-three-dish-demo.ts --apply` guarded the exact v3→v4 publication and verified readback; it created no orders. This supersedes the earlier ten-dish live status above; the full menu remains in historical v3.
+Contracts: `src/shared/dish-photo.ts`. Routes: `/api/v1/dish-photos/**`. Provider: Sunburst enhancement / Flare illustration, one low-quality 1024px JPEG per request, no automatic provider retries. Original upload max 5 MiB; candidate max 8 MiB; request deadline 180 seconds. Independent image cap: 10 requests per 10 minutes and 50 per day per stall.
+
+Real generation and enhancement have produced private candidates. Authenticated previews succeed; anonymous previews and unpublished public image access are rejected. Hosted Supabase atomic photo publication passed in a rolled-back transaction, leaving menu version 4 unchanged. Evidence: `artifacts/photo-smoke/`.
+
+## Database and other ordering contracts
+
+Only staging Supabase `mikpepfrumtglwweolzq` is used. Browser code receives only project URL and publishable key; privileged keys are server-side.
+
+Approved migrations applied:
+
+1. `20260913042355_jiak_simi_202609130001_core_ordering.sql`
+2. `20260913050159_jiak_simi_channel_ordering.sql`
+3. `20260913053454_jiak_simi_web_ordering.sql`
+4. `20260913084500_jiak_simi_dish_photos.sql`
+
+Photo extension: two private RLS tables, five service-only functions and a private bucket. No browser table/function grants. Application receipts are in `artifacts/database-deployment/`.
+
+Dummy restaurant: `ba2ad996-da84-4653-89a9-c028d77c050d`. Staff owner: `hawker-demo@jiak-simi.example`; credentials stay in ignored local configuration. Merchant APIs permit the public demo sentinel only for this restaurant when demo mode is enabled; other restaurant authorization is unchanged.
+
+- Web fulfillment: explicit `dine_in` or `takeaway` through cart, quote and ticket, no surcharge/default.
+- Hours: all seven days explicitly open/closed, interval validation, optimistic editing and published version snapshots. Current saved details may be newer than the published snapshot; always read before publishing.
+- Kitchen: completion uses expected status version plus a stable key, advances only after acknowledgement and retains unpaid status.
+- Joint base order: 2 Char Siew Rice + 1 Braised Pork Knuckle Rice = S$14.00 before extras.
+- Telegram remains `@blackcharsiewbot` via the laptop polling process. Payments are demo-only; database tickets remain unpaid.
+
+## Access and remaining operational limits
+
+The Site audience is public. Sites identifies `tzykim@gmail.com` as an external viewer; a viewing invitation has been added. Publishing editor access is **not granted**: the connector restricts editors to the Site's ChatGPT workspace. Once Kimberley's workspace account is available, the owner can promote it. GitHub source collaboration and Site publishing are separate permissions.
+
+The laptop voice relay and Telegram polling process are demo dependencies, not permanent hosting. Voice currently limits one active device for the shared dummy actor. Real browser microphone/autoplay and the complete merchant photo UI need device acceptance; API, database and synthetic WebRTC checks are recorded separately. Photo retention cleanup is not automated yet.
+
+Validation before this release: 234 tests passed, TypeScript passed, lint passed with one existing unused-variable warning in an older test artifact. Build/deployment and hosted acceptance results belong in the release receipt; local validation alone is not hosted acceptance.

@@ -2,13 +2,14 @@
 
 /* eslint-disable @next/next/no-img-element -- Local user-selected Blob URLs are displayed unchanged for source review. */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
 import { globalAddonRows, applyGlobalAddons, dollars, type DishEdit, type GroupEdit, type SourceDecision } from "./review-state";
 import { cleanDemoAddons } from "./demo-draft";
 import s from "./onboarding.module.css";
 
-export function MenuReview({ quickDemo = false, dishes, draft, sources, issues, sample, photoUrl, onDishChange, onConfirmDish, onConfirmAll, onAddDish, onRemoveDish, onSourceChange, onIssueChange, onContinue, onBack }: {
+export function MenuReview({ quickDemo = false, dishes, draft, sources, issues, sample, photoUrl, onDishChange, onConfirmDish, onConfirmAll, onAddDish, onRemoveDish, onSourceChange, onIssueChange, onContinue, onBack, renderDishPhoto }: {
+  renderDishPhoto?: (dish: DishEdit) => ReactNode;
   quickDemo?: boolean; dishes: DishEdit[]; draft: ExtractedMenuDraft | null; sources: Record<string, SourceDecision>; issues: Record<string, string>; sample: boolean; photoUrl: string | null;
   onDishChange: (id: string, patch: Partial<DishEdit>) => void; onConfirmDish: (id: string) => boolean; onConfirmAll: () => boolean; onAddDish: () => string; onRemoveDish: (id: string) => void;
   onSourceChange: (id: string, value: SourceDecision) => void; onIssueChange: (id: string, value: string) => void; onContinue: (dishes?: DishEdit[]) => void; onBack: () => void;
@@ -70,10 +71,11 @@ export function MenuReview({ quickDemo = false, dishes, draft, sources, issues, 
           <span className={s.dishNumber}>{String(index + 1).padStart(2, "0")}</span><span className={s.summaryMain}><strong>{dish.name || "New dish"}</strong><span className={s.modifierSummary}>{dish.groups.flatMap(group => group.options.map(option => <span className={s.modifierChip} key={option.id}>{option.name || "Unnamed extra"}{option.price ? ` · ${Number(option.price) < 0 ? "−" : "+"}S$${Math.abs(Number(option.price)).toFixed(2)}` : " · price needed"}</span>))}{!dish.groups.length && <span className={s.noExtras}>No extras added</span>}</span></span><span className={s.summaryEnd}><strong>{dish.price ? `S$${dish.price}` : "Price needed"}</strong><span>{!dish.included ? "Left out" : quickDemo ? "Edit" : dish.confirmed ? "✓ Checked" : "Check details"}</span></span><span aria-hidden="true">{isOpen ? "−" : "+"}</span>
         </button>
         {isOpen && <div id={`dish-${dish.id}`} className={s.dishEditor}>
-          {item && <div className={s.evidence}><strong>From your menu</strong><p>{item.name ?? "Name unclear"} · {item.rawPriceText ?? "No readable price"}</p>{source && <p>{source.region} · {source.currency}{source.uncertainty ? ` · ${source.uncertainty}` : ""}</p>}{item.description && <p>{item.description}</p>}<small>The words above stay unchanged as your reference. Dish photos aren’t extracted into the live menu yet.</small></div>}
+          {item && <div className={s.evidence}><strong>From your menu</strong><p>{item.name ?? "Name unclear"} · {item.rawPriceText ?? "No readable price"}</p>{source && <p>{source.region} · {source.currency}{source.uncertainty ? ` · ${source.uncertainty}` : ""}</p>}{item.description && <p>{item.description}</p>}<small>The words above stay unchanged as your reference. You can add an optional dish photo below.</small></div>}
           <label className={s.check}><input type="checkbox" checked={dish.included} onChange={e => onDishChange(dish.id, { included: e.target.checked })} />Include this dish on my menu</label>
           {dish.included ? <>
             <label className="field">Dish name<input value={dish.name} maxLength={120} onChange={e => onDishChange(dish.id, { name: e.target.value })} /></label>
+            {renderDishPhoto?.(dish)}
             <label className="field">Price (S$)<input value={dish.price} inputMode="decimal" placeholder="e.g. 4.50" onChange={e => onDishChange(dish.id, { price: e.target.value })} /></label>
             <label className={s.check}><input type="checkbox" checked={dish.available} onChange={e => onDishChange(dish.id, { available: e.target.checked })} />Available to order</label>
             <div className={s.modifierHeading}><h3>Extras & choices</h3><button className="btn btn-outline" disabled={dish.groups.length >= 20} onClick={() => onDishChange(dish.id, { groups: [...dish.groups, { id: crypto.randomUUID(), name: "Extras", min: "0", max: "1", options: [{ id: crypto.randomUUID(), name: "", price: "" }] }] })}>+ Add group</button></div>
