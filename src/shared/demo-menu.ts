@@ -16,3 +16,31 @@ export const DEMO_MENU = MenuSchema.parse({
     { id: "19dea502-d55d-4064-bb83-974ef123ec2d", name: "Braised Pork Knuckle Noodles", priceCents: 500, available: true, modifierGroups: [] },
   ],
 });
+
+// Explicitly user-approved demo additions; retain v1 above for historical receipts.
+export const DEMO_MENU_WITH_EXTRAS = MenuSchema.parse({
+  ...DEMO_MENU,
+  version: 2,
+  dishes: DEMO_MENU.dishes.map((dish, index) => {
+    const id = (slot: number) => `7816d2fc-9f03-427c-879a-${String((index + 1) * 100 + slot).padStart(12, "0")}`;
+    return { ...dish, modifierGroups: [
+      { id: id(1), name: "Add-ons", minSelections: 0, maxSelections: 3, options: [
+        { id: id(2), name: "Egg", priceDeltaCents: 100 },
+        { id: id(3), name: "Char Siew", priceDeltaCents: 200 },
+        { id: id(4), name: "Shao Rou", priceDeltaCents: 200 },
+      ] },
+      { id: id(5), name: "Chilli preference", minSelections: 0, maxSelections: 1, options: [
+        { id: id(6), name: "Chilli", priceDeltaCents: 0 },
+        { id: id(7), name: "No chilli", priceDeltaCents: 0 },
+      ] },
+    ] };
+  }),
+});
+export const DEMO_APPROVED_DETAILS = {
+  name: "Jiak Simi Roast Meat Demo",
+  timezone: "Asia/Singapore" as const,
+  weeklyHours: Array.from({ length: 7 }, (_, index) => ({
+    weekday: index + 1, closed: false,
+    intervals: [{ opens: "09:00", closes: "18:00", closesNextDay: false }],
+  })),
+};

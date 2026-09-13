@@ -30,12 +30,12 @@ export function quoteCart(approvedMenu: Menu, input: unknown): Quote {
     if (unitPriceCents < 0 || unitPriceCents > 1_000_000) return reject("INVALID_MENU", "Merchant must correct this price.");
     return { dishId: dish.id, name: dish.name, quantity: line.quantity, options, unitPriceCents, lineTotalCents: unitPriceCents * line.quantity };
   });
-  return { restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, currency: "SGD", lines, totalCents: lines.reduce((sum, l) => sum + l.lineTotalCents, 0) };
+  return { restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType: cart.fulfillmentType, currency: "SGD", lines, totalCents: lines.reduce((sum, l) => sum + l.lineTotalCents, 0) };
 }
 
 // Scope a database uniqueness constraint by restaurant + trusted session + key.
 // This hash is not persistence or an idempotency implementation by itself.
-export function cartFingerprint(input: unknown, source: "web" | "whatsapp" | "voice"): string {
+export function cartFingerprint(input: unknown, source: "web" | "whatsapp" | "telegram" | "voice"): string {
   const cart = CartRequestSchema.parse(input);
   const lines = cart.lines.map(l => ({ ...l, optionIds: [...l.optionIds].sort() }));
   return createHash("sha256").update(JSON.stringify({ ...cart, lines, source })).digest("hex");

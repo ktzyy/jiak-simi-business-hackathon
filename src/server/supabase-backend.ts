@@ -2,7 +2,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { CartRequestSchema, Id, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema } from "../shared/contracts";
+import { CartRequestSchema, CompleteKitchenOrderSchema, Id, KitchenResponseSchema, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema } from "../shared/contracts";
 import { errorResponse, HttpError, readBoundedBody } from "./http";
 
 const STAGING_URL = "https://mikpepfrumtglwweolzq.supabase.co";
@@ -31,6 +31,12 @@ const faults: Record<string, [number, string]> = {
   UNKNOWN_MENU: [404, "No published menu was found."],
   STALE_MENU: [409, "The menu changed. Review a fresh quote before placing your order."],
   STALE_REVIEW: [409, "This review is no longer current. Prepare and confirm a fresh review."],
+  STALE_STATUS: [409, "This kitchen ticket changed. Refresh the queue before continuing."],
+  INVALID_STATUS_TRANSITION: [409, "This ticket is already done. Refresh the queue."],
+  ORDER_NOT_FOUND: [404, "This kitchen ticket could not be found."],
+  STALE_STALL_DETAILS: [409, "Stall details changed. Review the latest details before saving or publishing."],
+  INVALID_STALL_DETAILS: [400, "Check the stall name and opening hours."],
+  STALL_DETAILS_REQUIRED: [409, "Save and review the stall details before publishing."],
   INVALID_LEASE: [409, "This message is being handled by another request. Please wait."],
   IDEMPOTENCY_CONFLICT: [409, "This submission key was already used for different order contents."],
   PRICE_CHANGED: [409, "The total changed. Review a fresh quote before placing your order."],
@@ -144,13 +150,20 @@ export function backendHandlers(factory: () => BackendClient = getBackendClient)
     kitchen: (request: Request, restaurantId: string) => run(async () => {
       const id = uuid(restaurantId), client = factory();
       const actor = await verifiedActor(request, client);
-      return json(await rpc(client, "read_kitchen_orders", { p_restaurant_id: id, p_actor_id: actor }, z.strictObject({ orders: z.array(TicketSchema) })));
+      return json(await rpc(client, "read_kitchen_orders", { p_restaurant_id: id, p_actor_id: actor }, KitchenResponseSchema));
+    }),
+    completeKitchenOrder: (request: Request) => run(async () => {
+      requireSameOrigin(request);
+      const client = factory(), actor = await verifiedActor(request, client);
+      const input = await body(request, CompleteKitchenOrderSchema);
+      const key = uuid(request.headers.get("idempotency-key"));
+      return json(await rpc(client, "complete_kitchen_order", { p_actor_id: actor, p_restaurant_id: input.restaurantId, p_order_id: input.orderId, p_expected_status_version: input.expectedStatusVersion, p_idempotency_key: key }, TicketSchema));
     }),
     publish: (request: Request) => run(async () => {
       requireSameOrigin(request);
       const client = factory(), actor = await verifiedActor(request, client);
-      const menu = await body(request, MenuSchema);
-      return json(await rpc(client, "publish_menu", { p_restaurant_id: menu.restaurantId, p_actor_id: actor, p_menu: menu }, MenuSchema));
+      const { menu, stallDetailsVersion } = await body(request, z.strictObject({ menu: MenuSchema, stallDetailsVersion: z.number().int().positive() }));
+      return json(await rpc(client, "publish_menu", { p_restaurant_id: menu.restaurantId, p_actor_id: actor, p_menu: menu, p_stall_details_version: stallDetailsVersion }, MenuSchema));
     }),
   };
 }

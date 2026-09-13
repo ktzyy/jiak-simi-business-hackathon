@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { CartRequestSchema, ErrorSchema, IntentSchema, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema, type CartRequest } from "./contracts";
+import { CartRequestSchema, CompleteKitchenOrderSchema, ErrorSchema, IntentSchema, KitchenResponseSchema, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema, type CartRequest } from "./contracts";
 import { extractedMenuDraftSchema } from "./extraction";
+import { PublishedStallSchema, SaveStallDetailsSchema, SavedStallDetailsResponseSchema, StallDetailsResponseSchema } from "./stall-details";
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public status: number, public retryable: boolean) { super(message); }
@@ -11,8 +12,10 @@ export function createApiClient(baseUrl = "", fetcher: typeof fetch = fetch) {
     let response: Response;
     try { response = await fetcher(`${baseUrl}/api/v1${path}`, { ...init, credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json", ...init?.headers } }); }
     catch {
-      const placingOrder = path === "/orders" || path === "/live/orders";
-      const message = placingOrder
+      const placingOrder = path === "/orders" || path === "/live/orders" || path === "/kitchen/orders/complete";
+      const message = path === "/kitchen/orders/complete"
+        ? "The kitchen update may have succeeded. Refresh the queue or retry the same update with the same key."
+        : placingOrder
         ? "Connection interrupted. A submitted order may have been received; retry the same confirmation with the same key."
         : path === "/menu-extractions"
           ? "The upload result is unknown. Wait before choosing to upload again, or enter the menu manually."
@@ -32,19 +35,26 @@ export function createApiClient(baseUrl = "", fetcher: typeof fetch = fetch) {
   }
   return {
     extract: (photo: Blob, restaurantId: string, staffAccessToken: string) => call("/menu-extractions", extractedMenuDraftSchema, { method: "POST", body: photo, headers: { "Content-Type": photo.type, "X-Restaurant-Id": restaurantId, Authorization: `Bearer ${staffAccessToken}` } }),
-    startLive: (sdp: string, restaurantId: string, staffAccessToken: string, signal?: AbortSignal) => call("/live/sessions", z.strictObject({ sessionId: z.string(), sdp: z.string(), model: z.literal("gpt-live-1"), orderingEnabled: z.literal(false), voiceSessionId: z.uuid(), expiresAt: z.iso.datetime(), reviewEnabled: z.literal(true) }), { method: "POST", body: JSON.stringify({ sdp, restaurantId }), headers: { Authorization: `Bearer ${staffAccessToken}` }, signal }),
-    prepareVoiceReview: (voiceSessionId: string, text: string, staffAccessToken: string) => call("/live/reviews", z.strictObject({ intent: IntentSchema, review: z.strictObject({ quote: QuoteSchema, confirmationNonce: z.uuid(), revision: z.number().int().positive() }).nullable() }), { method: "POST", body: JSON.stringify({ voiceSessionId, text }), headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    startLive: (sdp: string, restaurantId: string, staffAccessToken: string, signal?: AbortSignal) => call("/live/sessions", z.strictObject({ sessionId: z.string(), sdp: z.string(), model: z.literal("gpt-live-1"), orderingEnabled: z.literal(false), voiceSessionId: z.uuid(), expiresAt: z.iso.datetime({ offset: true }), reviewEnabled: z.literal(true) }), { method: "POST", body: JSON.stringify({ sdp, restaurantId }), headers: { Authorization: `Bearer ${staffAccessToken}` }, signal }),
+    prepareVoiceReview: (voiceSessionId: string, text: string, fulfillmentType: "dine_in" | "takeaway", staffAccessToken: string) => call("/live/reviews", z.strictObject({ intent: IntentSchema, review: z.strictObject({ quote: QuoteSchema, confirmationNonce: z.uuid(), revision: z.number().int().positive() }).nullable() }), { method: "POST", body: JSON.stringify({ voiceSessionId, text, fulfillmentType }), headers: { Authorization: `Bearer ${staffAccessToken}` } }),
     confirmVoiceOrder: (voiceSessionId: string, confirmationNonce: string, staffAccessToken: string) => call("/live/orders", TicketSchema, { method: "POST", body: JSON.stringify({ voiceSessionId, confirmationNonce, confirmed: true }), headers: { Authorization: `Bearer ${staffAccessToken}` } }),
     closeVoiceSession: (voiceSessionId: string, staffAccessToken: string) => call("/live/close", z.strictObject({ ok: z.literal(true) }), { method: "POST", body: JSON.stringify({ voiceSessionId }), headers: { Authorization: `Bearer ${staffAccessToken}` } }),
     readMenu: (restaurantId: string) => call(`/menus/${encodeURIComponent(restaurantId)}`, MenuSchema),
     startGuest: (restaurantId: string) => call("/guest-sessions", z.strictObject({ restaurantId: z.uuid(), ready: z.literal(true) }), { method: "POST", body: JSON.stringify({ restaurantId }) }),
-    publishMenu: (menu: z.infer<typeof MenuSchema>, staffAccessToken: string) => call("/menus/publish", MenuSchema, { method: "POST", headers: { Authorization: `Bearer ${staffAccessToken}` }, body: JSON.stringify(MenuSchema.parse(menu)) }),
+    publishMenu: (menu: z.infer<typeof MenuSchema>, staffAccessToken: string, stallDetailsVersion: number) => call("/menus/publish", MenuSchema, { method: "POST", headers: { Authorization: `Bearer ${staffAccessToken}` }, body: JSON.stringify({ menu: MenuSchema.parse(menu), stallDetailsVersion: z.number().int().positive().parse(stallDetailsVersion) }) }),
+    readStallDetails: (restaurantId: string, staffAccessToken: string) => call(`/restaurants/${encodeURIComponent(restaurantId)}/details`, StallDetailsResponseSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    saveStallDetails: (restaurantId: string, input: z.infer<typeof SaveStallDetailsSchema>, staffAccessToken: string) => call(`/restaurants/${encodeURIComponent(restaurantId)}/details`, SavedStallDetailsResponseSchema, { method: "PUT", headers: { Authorization: `Bearer ${staffAccessToken}` }, body: JSON.stringify(SaveStallDetailsSchema.parse(input)) }),
+    readPublishedStall: (restaurantId: string) => call(`/restaurants/${encodeURIComponent(restaurantId)}/published`, PublishedStallSchema),
     parseOrder: (restaurantId: string, menuId: string, menuVersion: number, text: string) => call("/orders/parse", IntentSchema, { method: "POST", body: JSON.stringify({ restaurantId, menuId, menuVersion, text }) }),
     quote: (cart: CartRequest) => call("/orders/quote", QuoteSchema, { method: "POST", body: JSON.stringify(CartRequestSchema.parse(cart)) }),
     submit: (input: z.infer<typeof SubmitSchema>, idempotencyKey: string) => {
       z.uuid().parse(idempotencyKey);
       return call("/orders", TicketSchema, { method: "POST", headers: { "Idempotency-Key": idempotencyKey }, body: JSON.stringify(SubmitSchema.parse(input)) });
     },
-    kitchen: (restaurantId: string, staffAccessToken: string) => call(`/kitchen/${encodeURIComponent(restaurantId)}`, z.strictObject({ orders: z.array(TicketSchema) }), { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    kitchen: (restaurantId: string, staffAccessToken: string) => call(`/kitchen/${encodeURIComponent(restaurantId)}`, KitchenResponseSchema, { headers: { Authorization: `Bearer ${staffAccessToken}` } }),
+    completeKitchenOrder: (input: z.infer<typeof CompleteKitchenOrderSchema>, idempotencyKey: string, staffAccessToken: string) => {
+      z.uuid().parse(idempotencyKey);
+      return call("/kitchen/orders/complete", TicketSchema, { method: "POST", headers: { "Idempotency-Key": idempotencyKey, Authorization: `Bearer ${staffAccessToken}` }, body: JSON.stringify(CompleteKitchenOrderSchema.parse(input)) });
+    },
   };
 }

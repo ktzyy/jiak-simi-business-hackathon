@@ -41,7 +41,12 @@ test("voice create authorizes budget and stores ownership before returning audio
   let paid = 0;
   const handlers = voiceHandlers({ backend: () => backend, create: async input => {
     paid++;
-    assert.deepEqual(JSON.parse(input.instructions.split("Published menu data: ")[1]), fixtureMenu);
+    const spokenMenu = JSON.parse(input.instructions.split("Published menu data: ")[1]);
+    assert.equal(spokenMenu.id, fixtureMenu.id);
+    assert.equal(spokenMenu.version, fixtureMenu.version);
+    assert.deepEqual(spokenMenu.dishes.map((dish: { id: string; name: string }) => [dish.id, dish.name]), fixtureMenu.dishes.map(dish => [dish.id, dish.name]));
+    assert.equal(spokenMenu.dishes[0].priceSGD, `S$${(fixtureMenu.dishes[0].priceCents / 100).toFixed(2)}`);
+    assert.equal(spokenMenu.dishes[0].priceCents, undefined);
     return { sessionId: session.providerSessionId, sdp: "v=0 answer", model: "gpt-live-1", orderingEnabled: false };
   } });
   fail("consume_staff_ai_budget");
@@ -76,18 +81,19 @@ test("failure to save voice ownership closes the new provider session", async t 
 test("new review invalidates old nonce before parsing and only quotes clear intent", async t => {
   const { backend, calls } = setup(t);
   let ambiguous = true;
-  const handlers = voiceHandlers({ backend: () => backend, parse: async (_menu, text) => {
+  const handlers = voiceHandlers({ backend: () => backend, parse: async (_menu, text, options) => {
+    assert.equal(options.fulfillmentType, fixtureCart.fulfillmentType);
     assert.equal(calls.at(-1)?.name, "consume_guest_ai_budget");
     assert.ok(calls.some(call => call.name === "begin_voice_review"));
     assert.equal(text, "two noodles");
     return { ...fixtureCart, issues: ambiguous ? [{ code: "CLARIFICATION_REQUIRED", message: "Which portion?", lineIndex: 0 }] : [] };
   } });
-  let response = await handlers.review(request({ voiceSessionId: session.id, text: "two noodles" }));
+  let response = await handlers.review(request({ voiceSessionId: session.id, text: "two noodles", fulfillmentType: fixtureCart.fulfillmentType }));
   assert.equal(response.status, 200);
   assert.equal((await response.json()).review, null);
   assert.equal(calls.some(call => call.name === "save_voice_review"), false);
   ambiguous = false;
-  response = await handlers.review(request({ voiceSessionId: session.id, text: "two noodles" }));
+  response = await handlers.review(request({ voiceSessionId: session.id, text: "two noodles", fulfillmentType: fixtureCart.fulfillmentType }));
   assert.equal((await response.json()).review.confirmationNonce, nonce);
   assert.deepEqual(calls.at(-1)?.args, { p_actor_id: actor, p_voice_session_id: session.id, p_cart: fixtureCart, p_revision: 2 });
 });
@@ -117,4 +123,23 @@ test("voice End resolves server ownership and only marks closed after provider a
   response = await handlers.close(request({ voiceSessionId: session.id }));
   assert.equal(response.status, 200);
   assert.equal(calls.at(-1)?.name, "close_voice_session");
+});
+
+
+test("voice review requires a selected dining mode and blocks a conflicting interpretation", async t => {
+  const { backend, calls } = setup(t);
+  let parsed = 0;
+  const handlers = voiceHandlers({ backend: () => backend, parse: async () => {
+    parsed++;
+    return { ...fixtureCart, fulfillmentType: fixtureCart.fulfillmentType === "dine_in" ? "takeaway" : "dine_in", issues: [] };
+  } });
+  assert.equal((await handlers.review(request({ voiceSessionId: session.id, text: "one noodles" }))).status, 400);
+  assert.equal(parsed, 0);
+  assert.equal(calls.length, 0);
+  const response = await handlers.review(request({ voiceSessionId: session.id, text: "one noodles", fulfillmentType: fixtureCart.fulfillmentType }));
+  const result = await response.json();
+  assert.equal(result.review, null);
+  assert.equal(result.intent.fulfillmentType, null);
+  assert.equal(result.intent.issues[0].code, "FULFILLMENT_REQUIRED");
+  assert.equal(calls.some(call => call.name === "save_voice_review"), false);
 });

@@ -1,0 +1,33 @@
+Applied with explicit user approval on 13 September 2026. Migration: `20260913053454_jiak_simi_web_ordering.sql`; project `mikpepfrumtglwweolzq`; SHA256 `da04a28fcaefaf1da36066101cf14faae44c1864ec3752cfcbe4c804f1ea11c5`. Management API history and local version align. Hosted checks: 16 assertions passed using uniquely scoped rollback fixtures; privileged pre/post checks confirmed fixture absence. Existing demo data, orders and menu publication were preserved. Evidence: `artifacts/database-deployment/web-applied.json` and `web-hosted-verification.json`.
+
+# Web ordering and kitchen extension — approval package
+
+`docs/web-ordering-extension.sql` retains the approved review text and is byte-identical to the applied migration. It adds five private RLS-enabled tables for kitchen state/completion receipts and versioned stall details/publication associations. It replaces relevant ordering RPCs, preserves immutable financial snapshots, and removes the old three-argument publish RPC that would bypass details review. No payment confirmation, surcharge, menu seed, or existing-order deletion is included.
+
+## Required fulfillment
+
+New `CartRequest` and `Quote` objects require `fulfillmentType: "dine_in" | "takeaway"`. Missing, null or other values are rejected. Both modes use the same approved item/modifier prices; there is no inferred takeaway surcharge. The entire cart, including mode, participates in submission idempotency. Reusing a submission key after changing mode conflicts even when the price remains the same.
+
+The shared intent is allowed to return `fulfillmentType: null` for unresolved speech/text, but cannot become a cart until the customer explicitly selects/says a mode. Voice/TG saved pending carts and quotes flow through the same strict database pricing validation. Existing receipt snapshots are not rewritten: response normalization reports historical missing mode as explicit `null`. Existing Telegram pending reviews missing mode are cleared when claimed so they require a new review; old confirmation receipts remain recoverable. An old voice pending cart cannot submit without mode and must be reviewed again.
+
+The joint-test menu uses Char Siew Rice at 450 cents and Braised Pork Knuckle Rice at 500 cents. **Two Char Siew Rice plus one Braised Pork Knuckle Rice total 1400 cents** for either fulfillment mode.
+
+## Persisted Done and Next
+
+Ticket responses add required `statusVersion` and nullable `completedAt`; status is `received` or `done`. New order receipts start `received`, version 1, completion time null. `paymentStatus` remains `unpaid`.
+
+`completeKitchenOrder({restaurantId,orderId,expectedStatusVersion}, idempotencyKey, staffAccessToken)` calls `POST /api/v1/kitchen/orders/complete`. It verifies staff JWT, same-origin and active restaurant membership, then invokes the service-only `complete_kitchen_order` RPC. The only transition is received/version 1 → done/version 2. A matching idempotency replay returns its recorded success **before** stale-version evaluation. Reusing the key for another request conflicts; a second tab with an old version and a different key gets `STALE_STATUS` (409).
+
+Kitchen operational state lives separately from immutable `public.orders` and receipt/outbox snapshots. Reading the kitchen overlays the current state and returns `{orders,counts:{received,done,total}}`. The completion response is the updated Ticket. After acknowledged completion, the UI refreshes the kitchen/counts and selects the next received ticket locally. It must not advance on an unknown response or treat a network timeout as failure; preserve the key and reconcile/refetch. Replaying the original customer submission still returns its initial received/version-1 receipt, even after the kitchen marks it done.
+
+## Reviewed stall details and publication
+
+Staff detail reads return `{details:null|snapshot}`. Saves require `{expectedVersion,name,timezone:"Asia/Singapore",weeklyHours}` with all seven unique ISO weekdays. Each day is `{weekday,closed,intervals:[{opens,closes,closesNextDay}]}`. Closed days require no intervals; open days allow one to four. Times are `HH:mm`; durations must be positive and no more than 24 hours. SQL rejects overlaps across midnight and Sunday/Monday; touching boundaries are allowed. Only active owner/editor staff may save; active kitchen members may read.
+
+The initial save uses expectedVersion 0; later saves require the current version. Each save creates an immutable snapshot and advances a private current pointer. Publishing now requires `{menu,stallDetailsVersion}` and a matching reviewed current details version. The old RPC overload is removed so direct server callers cannot bypass the requirement. `publishMenu(menu,staffAccessToken,stallDetailsVersion)` preserves the existing menu response. `readPublishedStall(restaurantId)` returns `{menu,details}` pinned to that exact immutable publication. Saving new hours does not silently change a published menu; explicitly publish a fresh menu version after review. Historical publications lacking a details association return `details:null` until reviewed/published anew.
+
+## Validation and rollout limits
+
+Eight local PGlite scenarios apply the prior two migrations plus the exact applied extension (asserting draft-byte equality), exercise fulfillment, 1400-cent pricing, idempotency/version conflicts, persisted kitchen counts, historical receipts, immutable hours publications, overnight validation, voice receipt recovery and restricted grants. HTTP/client tests cover staff identity, missing completion keys, conflict responses, required publication envelopes and unknown acknowledgements. Hosted scoped rollback checks additionally passed 16 assertions; neither suite establishes true multi-connection timing.
+
+Deployment verified catalog collisions and migration history before applying; migration does not rewrite existing financial snapshots. This project already contains demo data: **do not run the earlier empty-database fixture suites against it**. The new hosted verifier uses uniquely scoped rollback fixtures with privileged pre/post absence guards. Coordinate the API/schema rollout because old callers without explicit mode or `stallDetailsVersion` will be rejected. All five added private tables deny browser access; no public RLS policies or grants are added. The migration was applied following the user’s explicit approval. Security advisor: no errors; 17 informational private-table RLS-without-policy findings reflect intentional RPC-only deny-all access. The pre-existing leaked-password-protection warning remains unchanged; see `artifacts/database-deployment/web-security-advisors.json`.

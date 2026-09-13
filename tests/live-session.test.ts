@@ -45,3 +45,16 @@ test("voice menu context rejects oversized snapshots without truncating modifier
   const dishes = Array.from({ length: 100 }, (_, i) => ({ ...fixtureMenu.dishes[0], id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, name: "x".repeat(120) }));
   assert.throws(() => liveMenuInstructions({ ...fixtureMenu, dishes }), /too large/);
 });
+
+test("Live receives dollar-formatted egg prices and free chilli without raw cent fields", async () => {
+  const { DEMO_MENU_WITH_EXTRAS } = await import("../src/shared/demo-menu");
+  const instructions = liveMenuInstructions(DEMO_MENU_WITH_EXTRAS);
+  const menu = JSON.parse(instructions.split("\nPublished menu data: ")[1]);
+  assert.equal(menu.dishes[0].priceSGD, "S$4.50");
+  const options = menu.dishes[0].modifierGroups.flatMap((group: { options: Array<{ name: string; priceAdjustmentSGD: string; spokenPrice: string }> }) => group.options);
+  const egg = options.find((option: { name: string }) => /egg/i.test(option.name));
+  assert.equal(egg.priceAdjustmentSGD, "+S$1.00");
+  assert.equal(egg.spokenPrice, "one Singapore dollar");
+  assert.equal(options.find((option: { name: string }) => /no chilli/i.test(option.name)).spokenPrice, "free");
+  assert.doesNotMatch(JSON.stringify(menu), /priceCents|priceDeltaCents/);
+});

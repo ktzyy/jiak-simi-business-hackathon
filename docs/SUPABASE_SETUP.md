@@ -21,6 +21,8 @@ The portal uses Supabase email/password Auth. In the hackathon project's **Authe
 2. Add both `http://localhost:3000/auth/confirm` and the staging deployment's `/auth/confirm` URL to Redirect URLs.
 3. Keep email confirmation enabled for staging unless the demo specifically requires immediate account creation.
 
+The reserved staging origin is `https://jiak-simi-business-demo.zesty-crown-3337.chatgpt.site`; its callback is that origin plus `/auth/confirm`. Sites registration is private and unpublished, and the remote Auth URL configuration has not yet been changed. See [SITES-READINESS.md](SITES-READINESS.md).
+
 The root restaurant workspace is protected twice: the Next.js request proxy performs an early redirect, and the page validates signed JWT claims before returning restaurant content. The proxy is not the authorization boundary for restaurant data; database access must still use restaurant-membership RLS policies.
 
 ## Agreed hackathon data boundary

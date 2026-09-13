@@ -6,6 +6,8 @@ import { errorResponse, HttpError, readBoundedBody } from "../http";
 import { databaseRpc, getBackendClient, type BackendClient } from "../supabase-backend";
 import { processMessagingUpdate, type MessagingDependencies } from "./core";
 import { createMessagingStore } from "./store";
+import { AudioOrderError, downloadTelegramAudio, decodeTelegramAudio } from "./audio";
+import { audioAttemptPath, ensureNoAudioAttempt, reserveAudioAttempt, transcribeWithGptLive } from "./live-audio";
 import { authenticateTelegramWebhook, decodeTelegramUpdate, sendTelegramReply } from "./telegram";
 
 const settingsSchema = z.strictObject({
@@ -37,11 +39,22 @@ export function createTelegramDependencies(settings: ReturnType<typeof telegramS
   return {
     store: createMessagingStore(client),
     readMenu: restaurantId => databaseRpc(client, "read_published_menu", { p_restaurant_id: restaurantId }, MenuSchema),
-    parseIntent: async (menu, text, hash) => {
+    parseIntent: async (menu, text, hash, cartContext) => {
       await databaseRpc(client, "consume_guest_ai_budget", { p_session_token_hash: hash, p_restaurant_id: settings.restaurantId }, Id);
-      return parseOrderIntent(menu, text, { apiKey: process.env.OPENAI_API_KEY ?? "" });
+      return parseOrderIntent(menu, text, { apiKey: process.env.OPENAI_API_KEY ?? "", cartContext });
     },
     quote: (hash, cart) => databaseRpc(client, "quote_cart", { p_session_token_hash: hash, p_cart: cart }, QuoteSchema),
+    transcribeAudio: async (incoming, hash) => {
+      if (process.env.NODE_ENV === "production" || process.platform !== "darwin") throw new AudioOrderError("Audio ordering currently needs the laptop decoder. Please type your order.");
+      const identity = JSON.stringify([settings.accountId, incoming.recipientId, incoming.updateId]);
+      const marker = audioAttemptPath(settings.secret, identity);
+      await ensureNoAudioAttempt(marker);
+      const bytes = await downloadTelegramAudio(settings.token, incoming.audio);
+      const pcm = await decodeTelegramAudio(bytes, incoming.audio.mimeType);
+      await databaseRpc(client, "consume_guest_ai_budget", { p_session_token_hash: hash, p_restaurant_id: settings.restaurantId }, Id);
+      await reserveAudioAttempt(marker);
+      return transcribeWithGptLive(pcm, process.env.OPENAI_API_KEY ?? "");
+    },
     send: (recipientId, reply) => sendTelegramReply(settings.token, recipientId, reply),
   };
 }

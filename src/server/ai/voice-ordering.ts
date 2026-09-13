@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { CartRequestSchema, Id, MenuSchema, QuoteSchema, TicketSchema } from "../../shared/contracts";
+import { CartRequestSchema, FulfillmentTypeSchema, Id, MenuSchema, QuoteSchema, TicketSchema } from "../../shared/contracts";
 import { errorResponse, HttpError, readBoundedBody } from "../http";
 import { databaseRpc, getBackendClient, requireSameOrigin, verifiedActor, type BackendClient } from "../supabase-backend";
 import { createLiveSession, liveMenuInstructions } from "./live-session";
@@ -63,7 +63,7 @@ export function voiceHandlers(dependencies: {
       }
     }),
     review: run(async request => {
-      const input = await body(request, z.strictObject({ voiceSessionId: Id, text: z.string().trim().min(1).max(4000) }));
+      const input = await body(request, z.strictObject({ voiceSessionId: Id, text: z.string().trim().min(1).max(4000), fulfillmentType: FulfillmentTypeSchema }));
       const { client, actor, session } = await owned(request, input.voiceSessionId);
       active(session);
       const { revision } = await databaseRpc(client, "begin_voice_review", { p_actor_id: actor, p_voice_session_id: session.id }, z.strictObject({ revision: z.number().int().positive() }));
@@ -71,9 +71,13 @@ export function voiceHandlers(dependencies: {
       if (menu.restaurantId !== session.restaurantId) throw new HttpError(502, "INVALID_RESPONSE", "Menu restaurant mismatch.");
       const apiKey = key();
       await databaseRpc(client, "consume_guest_ai_budget", { p_session_token_hash: session.sessionTokenHash, p_restaurant_id: session.restaurantId }, Id);
-      const intent = await (dependencies.parse ?? parseOrderIntent)(menu, input.text, { apiKey, signal: request.signal });
+      const intent = await (dependencies.parse ?? parseOrderIntent)(menu, input.text, { apiKey, signal: request.signal, fulfillmentType: input.fulfillmentType });
+      if (intent.fulfillmentType !== input.fulfillmentType) {
+        intent.fulfillmentType = null;
+        intent.issues.push({ code: "FULFILLMENT_REQUIRED", message: "Your spoken order and selected dining option need clarification.", lineIndex: null });
+      }
       if (intent.issues.length || !intent.lines.length) return json({ intent, review: null });
-      const cart = CartRequestSchema.parse({ restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, lines: intent.lines });
+      const cart = CartRequestSchema.parse({ restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType: input.fulfillmentType, lines: intent.lines });
       const review = await databaseRpc(client, "save_voice_review", { p_actor_id: actor, p_voice_session_id: session.id, p_cart: cart, p_revision: revision }, Review);
       return json({ intent, review });
     }),

@@ -1,72 +1,80 @@
 # Backend sync for Kimberley — 13 September 2026
 
-Use branch **`elsen/backend`** in `ktzyy/jiak-simi-business-hackathon`. Elsen will send the exact pushed commit ID separately; this file travels with that commit. No UI branch has been merged and no application has been deployed.
+Use branch **`elsen/backend`** in `ktzyy/jiak-simi-business-hackathon`. Elsen will supply the exact final pushed commit separately. The public-order-page Auth proxy fix is already pushed in `d632190`; subsequent source changes are still being assembled. Kimberley's onboarding, storefront/cart and kitchen UI is not present in this checkout, and no UI branch has been merged.
 
-Kimberley owns the onboarding/review, storefront/QR, customer cart and kitchen UI. Elsen retains OCR, Telegram, voice, API/server, shared contracts, Supabase and integration. [Assigned UI files and requested contracts](KIMBERLEY-UI-CONTRACTS.md) are listed separately. Photo enhancement and page import are deferred.
+Kimberley owns those four product surfaces. Elsen owns OCR, Telegram, GPT-Live voice/testing, server/API, shared contracts and database integration. Photo enhancement and existing-page imports are deferred. The explicitly approved demo modifier additions are published in menu version 2. See [KIMBERLEY-UI-CONTRACTS.md](KIMBERLEY-UI-CONTRACTS.md).
 
-## Database and demo readiness
+## Applied database and verified demo
 
-Target: **`mikpepfrumtglwweolzq`**, the Singapore hackathon project. Browser configuration contains only its URL and publishable key. All privileged credentials remain server-side and are excluded from Git.
+The only target is Singapore hackathon project **`mikpepfrumtglwweolzq`**. Browser code receives its URL and publishable key; privileged credentials remain server-side and Git-ignored.
 
-- Core migration **`20260913042355_jiak_simi_202609130001_core_ordering.sql`** was applied and verified with 53 hosted pgTAP assertions and fixture rollback.
-- Channel migration **`20260913050159_jiak_simi_channel_ordering.sql`** is applied. Six additional private RLS tables and twelve service-only RPCs passed permissions checks. **18 hosted channel assertions and all 53 core pgTAP assertions passed after application**, with rollback verified. No browser grants were added. Security advisors reported no errors; intentional private-table policy notices and the existing leaked-password-protection warning remain.
-- The synthetic demo is seeded: **Jiak Simi Roast Meat Demo**, restaurant **`ba2ad996-da84-4653-89a9-c028d77c050d`**; staff **`hawker-demo@jiak-simi.example`**, user ID `b123ff27-d269-4b0f-97f6-78a3e97170a3`, owner membership. Password is available only in Elsen’s ignored `.env.local` as `DEMO_STAFF_PASSWORD`; it is not in Git or this document.
-- Published menu **`0b151d11-36e0-4089-90e0-8265f7b77322`**, version **1**: Char Siew Rice S$4.50, Braised Pork Knuckle Rice S$5.00, Braised Pork Knuckle Noodles S$5.00. These are deliberately selected synthetic demo entries based on the mockup, not a complete approved merchant extraction.
+| Applied migration | Verification |
+| --- | --- |
+| `20260913042355` core ordering | 53 hosted rollback assertions passed |
+| `20260913050159` channel ordering | 18 hosted channel assertions passed; the 53 core assertions also passed at that stage |
+| `20260913053454` web ordering extension | 16 hosted assertions passed for fulfillment, kitchen completion and versioned stall details/publication |
 
-**Live verification passed:** demo email/password login, published menu equality, authenticated kitchen access and `consume_staff_ai_budget` succeeded against the hosted project. This used no paid AI call.
+These migrations are already recorded remotely; do not reapply them. The old empty-database core test runner must not be run against the seeded project. Local/hosted regression assertions do not establish every concurrency or provider scenario.
 
-Do not reapply a migration already recorded on the remote. The original core verification runner requires empty application tables; **do not run it after the demo seed**. Consult deployment scripts and their guards before running any mutation.
+Demo restaurant: **`ba2ad996-da84-4653-89a9-c028d77c050d`**, Jiak Simi Roast Meat Demo. Staff login: **`hawker-demo@jiak-simi.example`**, with active owner membership. The password is in Elsen's ignored `.env.local` as `DEMO_STAFF_PASSWORD`; never copy it into a shared handoff.
 
-## OCR: integration entry point
+The synthetic published menu contains Char Siew Rice S$4.50, Braised Pork Knuckle Rice S$5.00 and Braised Pork Knuckle Noodles S$5.00. The current published menu is **version 2**, paired with **stall details version 1** and explicitly approved hours **09:00–18:00 every Monday–Sunday, Asia/Singapore**. Read the current pair with `readPublishedStall(restaurantId)`; `readMenu(restaurantId)` returns the menu alone. These are selected demo entries, not an exhaustive merchant-approved OCR menu. Real hosted login, published-menu access, staff kitchen access and staff AI-budget checks have passed.
 
-Read **[OCR-FRONTEND-INTEGRATION.md](OCR-FRONTEND-INTEGRATION.md)** for exact payloads, review decisions and error handling. Use:
+Every dish now supports optional **Egg +S$1.00, Char Siew +S$2.00 and Shao Rou +S$2.00**, selecting zero to three distinct extras. A separate optional group allows **Chilli or No chilli**, both free and mutually exclusive. Hosted quote checks confirmed the original joint base remains S$14.00 and one Char Siew Rice with all three extras is S$9.50. The publication/quote verification created no order; evidence is `artifacts/demo-menu/version-2-verification.json`. `DEMO_MENU` remains the historical v1 fixture; `DEMO_MENU_WITH_EXTRAS` is the exact approved v2 fixture, with `DEMO_APPROVED_DETAILS` supplying the reviewed schedule.
+
+**A real HTTP backend joint test passed on v1:** two Char Siew Rice plus one Braised Pork Knuckle Rice, **dine-in, S$14.00**, produced unpaid ticket **`0c124fc9-9220-4592-82f3-df0cf6077e25`**. Replaying the same submission key returned that ticket. Done completed it; repeating the same Done action returned the same acknowledgement. At verification, the queue contained **1 received + 1 done = 2 tickets**. This is backend HTTP acceptance, not an implemented Kimberley UI walkthrough or a voice/audio acceptance claim.
+
+## Stall setup and publication
+
+Opening hours belong beside the **stall name** in Kimberley's stall-details step. `readStallDetails(restaurantId, staffAccessToken)` returns `{details:null|snapshot}`. Save with:
 
 ```ts
-const api = createApiClient();
-const draft = await api.extract(photoFile, restaurantId, staffAccessToken);
-// Merchant resolves uncertain items, prices, sources and blocking issues.
-const menu = buildReviewedMenu(draft, explicitReview);
-// Only after the merchant presses Publish:
-await api.publishMenu(menu, staffAccessToken);
+await api.saveStallDetails(restaurantId, {
+  expectedVersion: currentDetails?.version ?? 0,
+  name: stallName,
+  timezone: "Asia/Singapore",
+  weeklyHours: sevenExplicitDays,
+}, staffAccessToken);
 ```
 
-Imports: `src/shared/api-client.ts`, `src/shared/menu-review.ts`; schemas: `src/shared/extraction.ts`, `src/shared/contracts.ts`. `src/shared/ocr-fixtures.ts` contains a sanitized real extraction for UI development, not a published menu.
+Each ISO weekday 1–7 must appear once, explicitly open or closed. A closed day has no intervals; an open day has 1–4. Intervals use `{opens:"09:00",closes:"18:00",closesNextDay:false}`. Invalid times, zero/overlong durations, and overlaps across midnight or the Sunday/Monday boundary are rejected. No schedule is silently defaulted. The current demo’s seven-day schedule was explicitly approved and saved as details version 1; future edits start from that returned version. Use validation from `src/shared/stall-details.ts`.
 
-`extract` sends raw JPEG/PNG/WebP bytes up to 5 MiB, **not FormData**. It uses the signed-in staff JWT and `X-Restaurant-Id`. Server identity verification and the SQL owner/editor quota run before paid extraction. Drafts always need review; null prices cannot become zero. No extraction auto-publishes, stores source images or enhances food photos. Uploads are synchronous and may require up to 150 seconds; verify hosting request limits. Unknown upload outcomes must not be automatically retried.
+Publication is now explicit and version-bound:
 
-The original live OCR service was tested against the hawker photos. The orange-board sample matched all 18 visible price occurrences; tray-menu uncertainty remains. New staff-authenticated handler tests use mocks; the live demo readiness check separately verifies real Auth, published-menu access, kitchen membership and the OCR budget RPC without a paid OCR request. No browser upload-to-publication acceptance run is claimed.
+```ts
+const draft = await api.extract(photoFile, restaurantId, staffAccessToken);
+const menu = buildReviewedMenu(draft, explicitReview);
+await api.publishMenu(menu, staffAccessToken, savedDetails.version);
+```
 
-## Ordering and kitchen API
+`publishMenu` sends `{menu,stallDetailsVersion}`. Required current stall details are validated and their immutable version is associated with this publication. Editing stall name/hours later does not change a published snapshot; explicitly publish a new menu version. `readPublishedStall(restaurantId)` returns `{menu,details}`; legacy publications may return `details:null`. `readMenu` remains available for the existing menu-only contract.
 
-| Action | Shared client method | Behavior |
-| --- | --- | --- |
-| Published menu | `readMenu(restaurantId)` | Immutable reviewed version |
-| Guest capability | `startGuest(restaurantId)` | Same-origin restaurant-bound HttpOnly cookie |
-| Interpret text | `parseOrder(restaurantId, menuId, menuVersion, text)` | Proposed IDs/options and clarifications; no order placement |
-| Price review | `quote(cart)` | Server-calculated SGD integer cents |
-| Place web order | `submit({cart,reviewedTotalCents,confirmed:true}, idempotencyKey)` | Atomic received/unpaid ticket; retain key after uncertain response |
-| Kitchen queue | `kitchen(restaurantId, staffAccessToken)` | Member-authorized read; no status mutation |
+OCR accepts raw JPEG/PNG/WebP bytes up to 5 MiB, not FormData. Staff JWT and restaurant header are checked before the paid extraction quota is consumed. Resolve all blocking source/item/price issues before publication; null prices cannot become zero. No automatic image storage, enhancement or publication is introduced. See [OCR-FRONTEND-INTEGRATION.md](OCR-FRONTEND-INTEGRATION.md) for extraction/review detail; use the new three-argument publication method above if older examples omit the details version.
 
-Use the existing same-origin HTTP client. Never expose the Supabase secret key or call privileged RPCs from browser code. A signup alone grants no restaurant access. Display success only from the persisted Ticket; model speech and local fixtures are not receipts.
+## Ordering and kitchen contracts now supported
 
-## Channel status
+| Operation | Current contract |
+| --- | --- |
+| Customer capability | `startGuest(restaurantId)` establishes a same-origin HttpOnly guest cookie |
+| Cart / quote | Required `fulfillmentType:'dine_in'|'takeaway'` on the complete cart; no default or surcharge |
+| Interpretation | `parseOrder(...)` proposes IDs/options and a nullable explicit mode; unresolved issues require clarification |
+| Placement | `submit({cart,reviewedTotalCents,confirmed:true}, idempotencyKey)` persists an unpaid ticket; mode participates in validation/idempotency |
+| Kitchen queue | `kitchen(restaurantId,staffAccessToken)` returns current persisted ticket status |
+| Kitchen Done | `completeKitchenOrder({restaurantId,orderId,expectedStatusVersion},idempotencyKey,staffAccessToken)` persists `done` with optimistic concurrency |
+| Kitchen Next | Select the oldest remaining received ticket locally after an acknowledged Done/refetch; Next alone does not mutate data |
 
-- **Telegram:** adapter, private-chat allowlist, durable review/confirmation, duplicate handling and laptop polling runner are implemented. Bot `@blackcharsiewbot` was verified, and the user's `/start` was matched to one private chat. Credentials and recipient binding are local only. The local polling runner is active, and the database confirms **one sent welcome reply with zero unconfirmed replies**. No complete Telegram customer order has been verified yet. The laptop process must remain running for this local demo; it is not a hosted deployment. See [MESSAGING-INTEGRATION.md](MESSAGING-INTEGRATION.md).
-- **Voice:** GPT-Live laptop transport, transcript handling, Prepare review, explicit Confirm, microphone pause and End cleanup are implemented. Audio itself has `orderingEnabled:false`; placement uses the separate staff review/order APIs. Pause the microphone during review; Confirm before End because End invalidates the pending review. Real audio remains untested and production creation is disabled pending server-enforced audio lifetime. See [butler-channels.md](butler-channels.md).
-- **WhatsApp:** deferred in favor of Telegram; personal WhatsApp is not connected to a business API.
+Ticket status is `received|done`, with `statusVersion` and nullable `completedAt`. Done means kitchen preparation completed, never paid or collected. Historical orders may have a null fulfillment mode; display “Not specified,” never invent a choice. Retain the original key on unknown placement/Done outcomes; a changed review needs a new explicit action. Display success only from the persisted receipt.
 
-## Requested UI additions
+The pushed proxy change permits the narrow public `/order/:restaurantId` surface without exposing other staff pages. APIs continue enforcing their own guest/staff authorization. Kimberley's public order UI still needs to be built/integrated.
 
-The current strict API **does not persist Done/Next, dine-in/takeaway or opening hours**. [KIMBERLEY-UI-CONTRACTS.md](KIMBERLEY-UI-CONTRACTS.md) supplies concrete proposed semantics and missing backend work:
+## Channels and test surfaces
 
-- Onboarding Next advances after validation; review Done does not publish. For kitchen, proposed Done completes preparation and Next selects the oldest remaining ticket. Payment remains unpaid.
-- Proposed `fulfillmentType: 'dine_in' | 'takeaway'` is an explicit cart choice, echoed in quote/ticket and included in idempotency. Current schemas reject it.
-- Required opening hours need all seven Singapore weekdays explicitly open/closed, valid intervals and publication versioning. Current menu publication has no hours field.
+- **Telegram:** `@blackcharsiewbot` is configured for the explicitly allowlisted private demo account. The laptop polling runner is required; this is not hosted. A welcome reply was confirmed sent. Text and provisional audio-derived orders use explicit dine-in/takeaway and a separate Place order button. Audio uses exact **`gpt-live-1`**, locally on the Mac, at most **5 MB (5,000,000 bytes) / 20 seconds**; input transcript fragments are provisional and require careful review. No fully verified audio-order round trip is claimed. `/paydemo` is a clearly fake two-second payment presentation; it moves no money and the database ticket remains **unpaid**. See [MESSAGING-INTEGRATION.md](MESSAGING-INTEGRATION.md).
+- **Laptop GPT-Live:** staff-protected `/voice-test` supplies Start, microphone pause/resume, transcript, required dining-mode selection, Prepare review, explicit unpaid confirmation and End. The server owns prices and receipts; the Live model cannot place orders. Model access was checked, but actual microphone/provider audio remains a hands-on test. Creation remains local/development-only pending server-enforced audio lifetime.
+- **WhatsApp:** deferred; the personal account is not connected to a business API.
 
-These are reviewable next contracts, not active endpoints. Kimberley can integrate supported OCR/review/publish/menu/cart/kitchen reads now and keep the new controls clearly in review until Elsen lands their complete backend support.
+## Hosting is registered, not deployed
 
-## Validation and first joint run
+Sites project **`appgprj_6aa6330ed72c819186a4fff3288b4caf`** is registered privately in `.openai/hosting.json` and is **UNPUBLISHED**. The reserved expected address is [jiak-simi-business-demo.zesty-crown-3337.chatgpt.site](https://jiak-simi-business-demo.zesty-crown-3337.chatgpt.site), with intended Auth callback `/auth/confirm`. The address is not a verified live application. Supabase Auth staging Site URL/redirect settings have **not** yet been changed. Do not use the reserved URL as evidence that login, OCR request duration or voice hosting works.
 
-94 local tests pass, including eight isolated database scenarios that rerun all 53 core assertions after the extension. TypeScript, ESLint and the webpack production build pass. PGlite is pinned as a dev dependency so `npm ci && npm test` works without a machine-specific module path. Hosted results are recorded above; local tests do not prove real provider delivery or concurrent multi-connection behavior.
-
-First joint run: sign into the demo staff account; load its published menu; upload/review a supported photo; publish only after merchant approval; open customer ordering; quote and explicitly submit; confirm the persisted unpaid ticket in kitchen; replay the same key and verify only one ticket. Keep demo credentials out of chat and source control.
+Follow [DEMO-ORDERING-TEST.md](DEMO-ORDERING-TEST.md) for deliberate channel tests. Final source commit/build results will accompany the next push; the verified HTTP and migration facts above are separate from future UI and deployment acceptance.

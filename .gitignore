@@ -46,3 +46,10 @@ next-env.d.ts
 
 # Local Supabase CLI cache
 /supabase/.temp/
+
+# Worker build/runtime artifacts and local secrets
+/.open-next/
+/.wrangler/
+/.dev.vars*
+/dist/
+/.sites-runtime/

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { backendHandlers, getBackendClient, guestCookieName, hashGuestToken, type BackendClient } from "../src/server/supabase-backend";
-import { fixtureCart, fixtureMenu, fixtureQuote } from "../src/shared/fixtures";
+import { fixtureCart, fixtureMenu, fixtureQuote, fixtureTicket } from "../src/shared/fixtures";
 
 const actor = "99999999-9999-4999-8999-999999999999";
 const token = "ab".repeat(32);
@@ -43,7 +43,7 @@ test("cross-origin, missing confirmation, and tampered prices never reach RPC", 
 });
 
 test("submission fixes channel and preserves caller idempotency key", async () => {
-  const ticket = { id: actor, createdAt: "2026-09-13T00:00:00Z", source: "web", status: "received", paymentStatus: "unpaid", cart: fixtureQuote };
+  const ticket = { ...fixtureTicket, id: actor };
   const { handlers, calls } = harness(ticket);
   const response = await handlers.submit(request({ cart: fixtureCart, reviewedTotalCents: fixtureQuote.totalCents, confirmed: true }, { "idempotency-key": actor }));
   assert.equal(response.status, 200);
@@ -53,7 +53,7 @@ test("submission fixes channel and preserves caller idempotency key", async () =
 });
 
 test("kitchen actor comes from verified Auth user and membership remains RPC enforced", async () => {
-  const { handlers, calls } = harness({ orders: [] });
+  const { handlers, calls } = harness({ orders: [], counts: { received: 0, done: 0, total: 0 } });
   assert.equal((await handlers.kitchen(new Request("https://jiak.test", { headers: { authorization: "Bearer forged-token" } }), fixtureMenu.restaurantId)).status, 401);
   assert.equal(calls.length, 0);
   const response = await handlers.kitchen(new Request("https://jiak.test", { headers: { authorization: "Bearer verified-token", "x-actor-id": fixtureMenu.id } }), fixtureMenu.restaurantId);
@@ -100,4 +100,28 @@ test("configuration cannot silently target another Supabase project", () => {
     if (savedUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     else process.env.NEXT_PUBLIC_SUPABASE_URL = savedUrl;
   }
+});
+test("completion verifies staff and sends expected version plus unchanged idempotency key", async () => {
+  const done = { ...fixtureTicket, status: "done", statusVersion: 2, completedAt: "2026-09-13T04:00:00Z" };
+  const { handlers, calls } = harness(done);
+  const input = { restaurantId: fixtureMenu.restaurantId, orderId: fixtureTicket.id, expectedStatusVersion: 1 };
+  const response = await handlers.completeKitchenOrder(request(input, { authorization: "Bearer verified-token", "idempotency-key": fixtureMenu.id }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls[0], { name: "complete_kitchen_order", args: { p_actor_id: actor, p_restaurant_id: fixtureMenu.restaurantId, p_order_id: fixtureTicket.id, p_expected_status_version: 1, p_idempotency_key: fixtureMenu.id } });
+  assert.deepEqual(await response.json(), done);
+});
+test("completion rejects missing keys and stale status has a safe conflict response", async () => {
+  const input = { restaurantId: fixtureMenu.restaurantId, orderId: fixtureTicket.id, expectedStatusVersion: 1 };
+  const missing = harness();
+  assert.equal((await missing.handlers.completeKitchenOrder(request(input, { authorization: "Bearer verified-token" }))).status, 400);
+  assert.equal(missing.calls.length, 0);
+  const stale = harness(null, { code: "P0001", message: "STALE_STATUS" });
+  assert.equal((await stale.handlers.completeKitchenOrder(request(input, { authorization: "Bearer verified-token", "idempotency-key": fixtureMenu.id }))).status, 409);
+});
+test("publication requires a reviewed details version and no old bare-menu bypass", async () => {
+  const { handlers, calls } = harness(fixtureMenu);
+  assert.equal((await handlers.publish(request(fixtureMenu, { authorization: "Bearer verified-token" }))).status, 400);
+  assert.equal(calls.length, 0);
+  assert.equal((await handlers.publish(request({ menu: fixtureMenu, stallDetailsVersion: 2 }, { authorization: "Bearer verified-token" }))).status, 200);
+  assert.equal(calls[0].args.p_stall_details_version, 2);
 });

@@ -11,11 +11,13 @@ The browser opens `oai-events` before its offer. Only `session.started`, `sessio
 | Endpoint | Request | Result |
 | --- | --- | --- |
 | `POST /api/v1/live/sessions` | `{restaurantId,sdp}` | `{sessionId,sdp,model,voiceSessionId,expiresAt,reviewEnabled:true,orderingEnabled:false}` |
-| `POST /api/v1/live/reviews` | `{voiceSessionId,text}` | `{intent,review:null}` for clarification, or `{intent,review:{quote,confirmationNonce,revision}}` |
+| `POST /api/v1/live/reviews` | `{voiceSessionId,text,fulfillmentType}` | `{intent,review:null}` for clarification, or `{intent,review:{quote,confirmationNonce,revision}}` |
 | `POST /api/v1/live/orders` | `{voiceSessionId,confirmationNonce,confirmed:true}` | Persisted unpaid ticket with source `voice` |
 | `POST /api/v1/live/close` | `{voiceSessionId}` | `{ok:true}` only after provider close acknowledgement and database close |
 
 Every endpoint requires a verified staff Bearer session and same-origin request. Database RPCs scope ownership to active restaurant staff. Session creation consumes a distributed staff AI budget before the provider call; preparation consumes the internal guest AI budget. The internal guest hash stays on the server. Creation persists provider-to-restaurant/actor ownership before returning SDP. If persistence fails, it attempts an awaited provider close.
+
+Prepare review requires an explicit `fulfillmentType` selection (`dine_in` or `takeaway`) with no default. A conflicting spoken dining choice returns clarification rather than overriding the selection. The quote and unpaid ticket snapshot this choice. Changing the selection invalidates the displayed review and requires Prepare review again.
 
 Prepare review invalidates the old confirmation nonce before interpreting the transcript. The model proposes item IDs/options only; the server builds a cart from the authoritative menu, and SQL quotes it. Ambiguity returns issues without a submit nonce. A revision check prevents an earlier parse from overwriting a newer review. Confirm uses the stored cart, quote and nonce, with database idempotency: no caller-supplied prices or carts are accepted at the submit route. Stale menu/nonce requires another review; an exact confirmed retry recovers the persisted ticket.
 
