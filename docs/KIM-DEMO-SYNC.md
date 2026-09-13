@@ -27,3 +27,7 @@ All three approved database migrations are applied to staging project mikpepfrum
 ## Fast demo onboarding
 
 The owner requested skipping unreadable OCR entries and review checkboxes. With NEXT_PUBLIC_DEMO_MODE=true on the fixed dummy stall, names/prices that cannot be read are omitted, shared readable add-ons apply across the menu, per-item/source/issue confirmation gates are hidden, and the preview publishes through one explicit button. Empty menus still require a readable dish; unknown prices never become zero. Required choice rules, seven-day hours, backend scope and publication retry/version checks remain enforced. Normal merchant review outside this demo is unchanged.
+
+## Recording override: three dishes
+
+After the full-menu voice prompt exceeded its limit, the owner explicitly requested three dishes for recording. Published menu v4 contains Char Siew Rice, Braised Pork Knuckle Rice and Braised Pork Knuckle Noodles, preserving all twelve approved extras and chilli preferences. Existing hours are unchanged. The unchanged hands-free prompt is 7,849 characters, within its 24,000-character limit. `scripts/use-three-dish-demo.ts --apply` guarded the exact v3→v4 publication and verified readback; it created no orders. This supersedes the earlier ten-dish live status above; the full menu remains in historical v3.
