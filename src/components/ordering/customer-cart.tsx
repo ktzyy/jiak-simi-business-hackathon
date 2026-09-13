@@ -8,8 +8,8 @@ import { CartRequestSchema, MenuSchema, type CartRequest, type Menu, type Quote,
 import type { StallDetails } from "@/shared/stall-details";
 import { formatPublishedHours, cartProblems, definitelyNotSent, money, previewQuote, quoteMatchesCart, receiptMatches, savedOrderSchema, type PendingOrder, type SavedOrder } from "./order-state";
 import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
-import { demoPhotoPosition } from "./demo-photo";
 import { OrderReview } from "./order-review";
+import { DemoDishPhoto } from "./demo-dish-photo";
 import styles from "./ordering.module.css";
 
 type Message = { kind: "info" | "error" | "notSent" | "unknown"; text: string };
@@ -248,7 +248,6 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       <div className={styles.dining} role="group" aria-label="Choose dine-in or takeaway">
         {(["dine_in", "takeaway"] as const).map(mode => <button key={mode} type="button" aria-pressed={fulfillmentType === mode} disabled={locked} onClick={() => { if (locked || busyRef.current) return; setFulfillmentType(mode); setQuote(null); setMessage(null); }}>{mode === "dine_in" ? "Dine-in" : "Takeaway"}</button>)}
       </div>
-      {!fulfillmentType && <small className={styles.muted}>Choose dine-in or takeaway before checking your order.</small>}
     </header>
     <div className={styles.menuContent}>
       {restaurantId === DEMO_RESTAURANT_ID && !preview && <details className={styles.sourcePhoto}>
@@ -264,7 +263,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       {menu && <><div className={styles.sectionHeading}><h2>What would you like?</h2><span>{menu.dishes.length} dishes</span></div>
         <p className={styles.muted}>Pick a dish, add your extras, then check your order.</p>
         <div className={styles.dishes}>{menu.dishes.map(item => <article className={`${styles.dish} ${!item.available ? styles.soldOut : ""}`} key={item.id}>
-          {demoPhotoPosition(restaurantId, item) ? <div className={styles.sourceDishPhoto}><div className={styles.cropFrame} role="img" aria-label={`${item.name}, cropped from the photographed printed menu`} style={{ backgroundPosition: demoPhotoPosition(restaurantId, item)! }} /><small>From the menu photo</small></div> : <div className={styles.photo} role="img" aria-label={`Photo of ${item.name} not yet available`}><span aria-hidden="true">▧</span><small>No photo yet</small></div>}
+          <DemoDishPhoto restaurantId={menu.restaurantId} dish={item} />
           <div className={styles.dishBody}><h3>{item.name}</h3><strong className={styles.price}>{money(item.priceCents)}</strong>{item.modifierGroups.length > 0 && <p className={styles.modifierHint}>Make it yours · extras available</p>}
             <button className="btn btn-primary" disabled={!item.available || locked || !ready} onClick={() => openDish(item.id)}>{item.available ? "Add to order +" : "Sold out"}</button>
           </div>

@@ -44,7 +44,7 @@ export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, o
     <section className={`card ${s.section}`}>
       <p className="eyebrow">Add-ons for every dish</p><h2>Set your extras once.</h2>
       <p>Egg, chicken feet, vegetables and other extras can apply to every dish. Check the names and prices here, then apply them together. Noodle choices and chilli preferences stay separate.</p>
-      {globalRows.map((row, index) => <div key={row.id} className={s.optionRow}>
+      {globalRows.map((row, index) => <div key={row.id} className={s.sharedOptionRow}>
         <label className={s.check}><input type="checkbox" checked={row.included} onChange={e => updateGlobal(index, { included: e.target.checked })} />Include</label>
         <label className="field">Add-on name<input maxLength={120} value={row.name} disabled={!row.included} onChange={e => updateGlobal(index, { name: e.target.value })} /></label>
         <label className="field">Extra price (S$)<input inputMode="decimal" value={row.price} disabled={!row.included} placeholder="Price needed" onChange={e => updateGlobal(index, { price: e.target.value })} /></label>

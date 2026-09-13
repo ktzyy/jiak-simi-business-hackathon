@@ -8,7 +8,7 @@
 .steps span { width: 30px; height: 30px; display: inline-grid; place-items: center; border-radius: 50%; background: #efe6d2; font-size: 17px; flex-shrink: 0; }
 .steps .activeStep { color: #20564b; border-color: #20564b; }
 .activeStep span { background: #20564b; color: white; }
-.stack { display: grid; gap: 24px; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .section { padding: clamp(22px, 4vw, 38px); display: grid; gap: 16px; }
 .section h2, .previewIntro h2 { font-size: clamp(27px, 3vw, 34px); line-height: 1.13; letter-spacing: -.025em; margin: 0; color: #20564b; }
 .section h3 { font-size: 24px; margin: 0; color: #20564b; }
@@ -43,6 +43,9 @@
 .sample p, .saved p { margin: 12px 0; }
 .urlRow { display: flex; gap: 14px; align-items: flex-end; }
 .urlRow button { flex-shrink: 0; }
+.contactDetails { border-top: 1px solid #efe6d2; padding-top: 8px; }
+.contactDetails summary { color: #20564b; cursor: pointer; font-size: 18px; font-weight: 700; padding: 12px 0; min-height: 44px; }
+.contactDetails > p { margin-top: 14px; }
 .contact { display: grid; gap: 16px; margin-top: 10px; }
 .work { border: 0; padding: 0; margin: 0; min-width: 0; }
 .error { margin: 20px 0; border-color: #ef2626 !important; }
@@ -81,6 +84,7 @@
 .groupTitle > label { flex: 1; }
 .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .optionRow { display: grid; grid-template-columns: minmax(0, 1fr) 170px 44px; align-items: flex-end; gap: 12px; }
+.sharedOptionRow { display: grid; grid-template-columns: 100px minmax(0, 1fr) 170px; align-items: flex-end; gap: 12px; }
 .delete { border: 0; flex-shrink: 0; border-radius: 999px; width: 44px; height: 44px; background: #ef2626; color: #fff; font-size: 30px; line-height: 1; cursor: pointer; margin-bottom: 4px; }
 .addDish { justify-self: start; }
 .source { border-top: 1px solid #e4dac5; padding-top: 16px; }
@@ -126,6 +130,8 @@
   .modifierGroup { padding: 14px; }
   .optionRow { grid-template-columns: minmax(0, 1fr) 44px; }
   .optionRow label:first-child { grid-column: 1 / -1; }
+  .sharedOptionRow { grid-template-columns: minmax(0, 1fr) 110px; }
+  .sharedOptionRow > label:first-child { grid-column: 1 / -1; }
   .rules { gap: 12px; }
   .assign { grid-template-columns: 1fr; }
   .phone { border-width: 4px; padding: 7px; border-radius: 38px; }
