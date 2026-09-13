@@ -40,7 +40,7 @@ function classifyError(error: unknown): QueueError {
 }
 
 function ServiceBadge({ ticket }: { ticket: Ticket }) {
-  return <span className={styles.serviceBadge}>{ticket.cart.fulfillmentType === "dine_in" ? "Dine-in" : ticket.cart.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</span>;
+  return <span className={styles.serviceBadge} data-service={ticket.cart.fulfillmentType ?? "unknown"}>{ticket.cart.fulfillmentType === "dine_in" ? "Dine-in" : ticket.cart.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</span>;
 }
 
 function DishLines({ ticket, compact = false }: { ticket: Ticket; compact?: boolean }) {
@@ -202,7 +202,6 @@ export function OrderQueue({ restaurantId }: { restaurantId: string }) {
         <div>
           <p className={styles.eyebrow}>Keep cooking. We’ll keep the orders in view.</p>
           <h1>Cook mode</h1>
-          <p className={styles.intro}>Clear orders, one at a time.</p>
         </div>
         <div className={styles.connection}>
           <span className={`${styles.connectionBadge} ${error ? styles.staleBadge : ""}`}>
@@ -216,7 +215,7 @@ export function OrderQueue({ restaurantId }: { restaurantId: string }) {
       </header>
 
       {actionMessage && <div className="notice" role="status"><p>{actionMessage}</p>{completion && <button type="button" className="btn btn-outline" disabled={completing || refreshing || storageBlocked || !!error?.authRequired || !!error?.accessDenied} onClick={() => void completeOrder()}>{completing ? "Saving…" : "Retry same kitchen update"}</button>}</div>}
-      {orders !== null && <p className={styles.queueSummary}>{counts.received} in queue · {counts.done} done · {counts.total} total</p>}
+      {orders !== null && <p className={styles.queueSummary} aria-live="polite"><strong>{counts.received} in queue</strong><span>{counts.done} done · {counts.total} total</span></p>}
       {error && (
         <div className={`notice ${styles.errorNotice}`} role="alert">
           <div>
@@ -250,39 +249,34 @@ export function OrderQueue({ restaurantId }: { restaurantId: string }) {
       )}
 
       {current && (
-        <>
-          <div className={styles.queueSummary}>
-            <p aria-live="polite"><strong>{queue.length}</strong> {queue.length === 1 ? "order" : "orders"} in queue</p>
-            <p>Oldest orders appear first · Viewing an order keeps it in the queue</p>
-          </div>
-
-          <article className={`card ${styles.currentOrder}`} aria-labelledby="current-order-title">
-            <div className={styles.currentTop}>
-              <div>
-                <p className={styles.eyebrow}>{currentIndex === 0 ? "Oldest order" : "Viewing order"}</p>
-                <h2 id="current-order-title">Current order</h2>
-                <p className={styles.received}>Received <time dateTime={current.createdAt}>{receivedTime(current.createdAt)}</time> · {sourceLabels[current.source]}</p>
+        <div className={styles.cookLayout}>
+          <div className={styles.preparing}>
+            <div className={styles.preparingHeading}><h2 id="current-order-title">{currentIndex === 0 ? "Preparing now" : "Viewing order"}</h2><ServiceBadge ticket={current} /></div>
+            <article className={`card ${styles.currentOrder}`} aria-labelledby="current-order-title">
+              <div className={styles.currentTop}>
+                <div><p className={styles.ticketReference}>#{current.id.slice(0, 8).toUpperCase()}</p><p className={styles.received}>Received <time dateTime={current.createdAt}>{receivedTime(current.createdAt)}</time> · {sourceLabels[current.source]}</p></div>
+                <span className={styles.paymentBadge}>Unpaid</span>
               </div>
-              <span className={styles.paymentBadge}>Unpaid</span>
-            </div>
-            <ServiceBadge ticket={current} />
+              <div className={styles.ticketBody}>
             <DishLines ticket={current} />
             <div className={styles.orderTotal}><span>Order total</span><strong>{money(current.cart.totalCents)}</strong></div>
-            <p className={styles.fullId}>Full order ID: <code>{current.id}</code></p>
             <div className={styles.orderActions}>
-              <button type="button" className={`btn btn-teal ${styles.doneButton}`} disabled={completing || storageBlocked || refreshing || !!error || (completion !== null && completion.input.orderId !== current.id)} onClick={() => void completeOrder(current)} aria-describedby="completion-note">
+              <button type="button" className={`btn btn-primary ${styles.doneButton}`} disabled={completing || storageBlocked || refreshing || !!error || (completion !== null && completion.input.orderId !== current.id)} onClick={() => void completeOrder(current)} aria-describedby="completion-note">
                 {completing ? "Saving…" : completion?.input.orderId === current.id ? "Retry same Done update" : "Done, next order"} <span aria-hidden="true">→</span>
               </button>
-              <p id="completion-note" className={styles.completionNote}>Done completes kitchen preparation. It does not mark payment received.</p>
+              <p id="completion-note" className={styles.completionNote}>Tap Done when the food is ready. Payment is separate.</p>
+            </div>
+              </div>
+            </article>
               <div className={styles.viewActions}>
                 <button type="button" className="btn btn-outline" disabled={completing || completion !== null || remaining.length === 0} onClick={() => setSelectedId(remaining[0]?.id ?? current.id)}>
                   View next order <span aria-hidden="true">→</span>
                 </button>
                 {currentIndex > 0 && <button type="button" className="btn btn-outline" disabled={completing || completion !== null} onClick={() => setSelectedId(queue[0].id)}>Back to oldest order</button>}
               </div>
+            <details className={styles.fullId}><summary>Full order reference</summary><code>{current.id}</code></details>
               <p className={styles.viewNote}>View only — this doesn’t mark an order done.</p>
-            </div>
-          </article>
+          </div>
 
           <section className={styles.upNext} aria-labelledby="next-orders-title">
             <div className={styles.sectionHeading}>
@@ -301,16 +295,15 @@ export function OrderQueue({ restaurantId }: { restaurantId: string }) {
                     <ServiceBadge ticket={ticket} />
                     <DishLines ticket={ticket} compact />
                     <p className={styles.previewTotal}>Total <strong>{money(ticket.cart.totalCents)}</strong></p>
-                    <p className={styles.fullId}>Full order ID: <code>{ticket.id}</code></p>
                     <button type="button" className="btn btn-outline" disabled={completing || completion !== null} onClick={() => setSelectedId(ticket.id)} aria-label={`View order ${ticket.id}`}>View order</button>
                   </article>
                 ))}
               </div>
             ) : <p className={styles.noNext}>That’s the only order in the queue for now.</p>}
             {additionalCount > 0 && <p className={styles.moreOrders}>+ {additionalCount} more {additionalCount === 1 ? "order" : "orders"} in queue</p>}
-            <p className={styles.queueFooter}>{queue.length} {queue.length === 1 ? "order" : "orders"} in total · Completed orders leave the preparation queue after confirmation.</p>
+            <p className={styles.queueFooter}>{queue.length} {queue.length === 1 ? "order" : "orders"} in total · Oldest orders appear first.</p>
           </section>
-        </>
+        </div>
       )}
     </div>
   );

@@ -11,7 +11,7 @@ export function Landing({ demo = false }: { demo?: boolean }) {
     <header className={`site-header ${styles.header}`}><Brand /><Link className={styles.login} href="/login">Log in</Link></header>
     <main className={styles.landing}>
       <section className={styles.hero}>
-        <div className={styles.heroCopy}><p className="eyebrow">A little help for your stall</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p className={styles.description}>Short of hands? Start with a photo of your menu. Customers order on their phones, and you see clearly what to cook next.</p><div className={styles.heroActions}><Link className="btn btn-primary" href={startHref}>Get started →</Link><Link className="btn btn-teal" href={menuHref}>See Demo</Link></div><p className={styles.caption}>Your menu. Your dishes. You’re in control.</p></div>
+        <div className={styles.heroCopy}><p className="eyebrow">AI-powered help for your stall</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p className={styles.description}>Short of hands? Start with a photo of your menu. Customers order on their phones, and you see clearly what to cook next.</p><p className={styles.setupTime}>Your stall online in about 15 minutes</p><div className={styles.heroActions}><Link className="btn btn-primary" href={startHref}>Get started →</Link><Link className="btn btn-teal" href={menuHref}>See Demo</Link></div><p className={styles.caption}>Your menu. Your dishes. You’re in control.</p></div>
         <div className={styles.phoneStage} aria-label="Example customer menu and cook ticket">
           <div className={styles.phone}>
             <div className={styles.speaker} aria-hidden="true" />

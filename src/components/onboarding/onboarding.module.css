@@ -73,9 +73,6 @@
 .modifierChip { color: #d81e20; background: #fce9e1; border-radius: 999px; font-size: 14px; font-weight: 700; padding: 5px 10px; line-height: 1.2; }
 .noExtras { font-size: 15px; color: #6f6b60; }
 .dishEditor { display: grid; gap: 20px; padding: 0 26px 28px; }
-.evidence { padding: 18px; border-radius: 15px; background: #f3ecdf; font-size: 16px; color: #5b5d51; }
-.evidence p { margin: 7px 0; }
-.evidence small { font-size: 14px; }
 .modifierHeading { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px solid #efe6d2; padding-top: 24px; }
 .modifierHeading h3 { margin: 0; font-size: 24px; color: #20564b; }
 .modifierGroup { display: grid; gap: 16px; min-width: 0; border: 1px solid #ddd5c4; border-radius: 16px; padding: 18px; background: #fbf2e6; }
@@ -139,3 +136,28 @@
   .actions :global(.btn) { width: 100%; margin: 0; }
   .required { margin-left: 3px; }
 }
+
+.dishOverview { display: grid; grid-template-columns: 250px minmax(0, 1fr); align-items: center; }
+.photoComparison { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px 0 16px 18px; }
+.photoComparison figure { margin: 0; min-width: 0; }
+.photoComparison img, .originalCrop { width: 100%; aspect-ratio: 4 / 3; height: auto; object-fit: cover; display: block; border-radius: 10px; background-color: #efe6d2; }
+.originalCrop { background-image: url('/demo/menu-photo.jpg'); background-size: 500%; }
+.photoComparison figcaption { font-size: 12px; color: #20564b; font-weight: 700; margin-top: 6px; }
+.photoUnavailable { margin: 16px; color: #686658; font-size: 14px; text-align: center; }
+.optionActions { display: flex; gap: 10px; flex-wrap: wrap; }
+.addOption { justify-self: start; }
+.selectionRule { max-width: 430px; }
+.selectionRule select { width: 100%; }
+.advancedRules { color: #20564b; }
+.advancedRules summary { cursor: pointer; font-size: 16px; padding: 10px 0; min-height: 44px; }
+.advancedRules .rules { margin-top: 10px; }
+@media (max-width: 760px) {
+  .dishOverview { grid-template-columns: 1fr; }
+  .photoComparison { grid-row: 2; padding: 0 18px 16px; width: 270px; max-width: 100%; }
+  .dishNumber { display: none; }
+  .photoUnavailable { grid-row: 2; text-align: left; margin-top: 0; }
+  .dishEditor { padding-top: 8px; }
+}
+
+.sourceReference { color: #686658; font-size: 16px; }
+.sourceReference summary { padding: 12px 0; cursor: pointer; }
