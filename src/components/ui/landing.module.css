@@ -5,6 +5,7 @@
 .heroCopy h1 { font-size: clamp(42px, 5.2vw, 64px); font-weight: 700; letter-spacing: -.035em; line-height: 1.06; margin-bottom: 26px; }
 .heroCopy h1 span { color: var(--red); }
 .description { font-size: 21px; line-height: 1.5; max-width: 435px; margin-bottom: 28px; }
+.setupTime { color: var(--green); font-size: 18px; font-weight: 700; margin: -8px 0 20px; }
 .caption { color: var(--muted); font-size: 15px; margin: 12px 0 0; }
 .heroActions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .phoneStage { width: 100%; max-width: 365px; margin: 0 auto; padding-bottom: 8px; }

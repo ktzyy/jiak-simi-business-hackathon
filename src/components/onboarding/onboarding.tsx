@@ -17,8 +17,8 @@ import { getStaffAccessToken } from "@/components/ui/staff-access";
 import { CustomerCart } from "@/components/ordering/customer-cart";
 import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
-import { DAYS, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, reviewedMenu, type DishEdit, type SourceDecision } from "./review-state";
-import { cleanDemoDishes, demoMenu } from "./demo-draft";
+import { DAYS, applyGlobalAddons, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, reviewedMenu, type DishEdit, type SourceDecision } from "./review-state";
+import { cleanDemoAddons, cleanDemoDishes, demoMenu } from "./demo-draft";
 import { PUBLIC_DEMO_RESTAURANT_ID } from "@/shared/public-demo";
 import s from "./onboarding.module.css";
 
@@ -49,6 +49,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<ExtractedMenuDraft | null>(null);
+  const [anyExtras, setAnyExtras] = useState<Set<string>>(() => new Set());
   const [dishes, setDishes] = useState<DishEdit[]>([]);
   const [sources, setSources] = useState<Record<string, SourceDecision>>({});
   const [issues, setIssues] = useState<Record<string, string>>({});
@@ -123,8 +124,13 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       const source = next.sourceEntries?.find(source => source.id === item?.sourceEntryId);
       return !source || source.currency === "SGD" && !source.priceUncertain;
     }) : original;
-    const cleaned = quickDemo && kind !== "manual" ? cleanDemoDishes(readable).dishes : readable;
-    setDraft(next); setDishes(cleaned);
+    let cleaned = quickDemo && kind !== "manual" ? cleanDemoDishes(readable).dishes : readable;
+    if (quickDemo && next && cleaned.length) {
+      const readableDraft = { ...next, sourceEntries: next.sourceEntries?.filter(entry => entry.currency === "SGD" && !entry.priceUncertain) };
+      const extras = cleanDemoAddons(globalAddonRows(readableDraft, cleaned));
+      if (extras.length) cleaned = applyGlobalAddons(cleaned, extras, crypto.randomUUID()).dishes;
+    }
+    setDraft(next); setDishes(cleaned); setAnyExtras(new Set());
     setSources({}); setIssues({}); setSample(kind === "sample"); setPreview(null); setError("");
     setNotice(quickDemo && original.length !== cleaned.length ? `${original.length - cleaned.length} unclear entries skipped. You can add them later.` : ""); setStep(2);
   }
@@ -152,7 +158,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   }
   function confirmDishes(ids: string[]) {
     const selected = dishes.filter(d => ids.includes(d.id));
-    for (const dish of selected) { const problem = dishProblem(dish); if (problem) { setError(`${dish.name || "New dish"}: ${problem}`); return false; } }
+    for (const dish of selected) { const problem = quickDemo && !dish.included ? null : dishProblem(dish); if (problem) { setError(`${dish.name || "New dish"}: ${problem}`); return false; } }
     const nextDishes = dishes.map(d => ids.includes(d.id) ? { ...d, confirmed: true, reason: d.included ? "Checked this dish’s name, price, availability and modifier rules." : d.reason.trim() } : d);
     setDishes(nextDishes);
     setSources(old => {
@@ -190,6 +196,12 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     if (inFlight.current) return;
     const problem = stepOneProblem();
     if (problem) { setStep(1); setError(problem); return; }
+    if (quickDemo) {
+      for (const dish of candidateDishes.filter(dish => dish.included)) {
+        const issue = dishProblem(dish);
+        if (issue) { setError(`${dish.name || "New dish"}: ${issue}`); return; }
+      }
+    }
     inFlight.current = true; setBusy("preview"); setError("");
     try {
       const fresh = await readCurrent(restaurantId); setCurrent(fresh); setMenuRead("ready");
@@ -311,7 +323,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
       {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes · version {published.version}</p><p>Menu names, prices, options and the reviewed opening hours are live. Address and contact import remain unavailable.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
         {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} photo={photo} onPhoto={selectPhoto} photoUrl={photoUrl} busy={!!busy} onExtract={extract} onManual={() => { if (mayContinue()) loadDraft(null, "manual"); }} onExample={() => { if (mayContinue()) loadDraft(OCR_DRAFT_FIXTURE, "sample"); }} onExisting={() => { if (current && mayContinue()) loadDraft(null, "current"); }} currentMenu={current?.name ?? ""} existingAvailable={!!current} pageDetails={pageDetails} setPageDetails={setPageDetails} />}
-        {step === 2 && <MenuReview quickDemo={quickDemo} dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} renderDishPhoto={dish => {
+        {step === 2 && <MenuReview anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} restaurantId={restaurantId} quickDemo={quickDemo} dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} renderDishPhoto={dish => {
           const item = draft?.items.find(item => item.id === dish.draftItemId);
           const record = dishPhotos.records[dish.id]; const previewUrl = dishPhotos.previews[dish.id];
           const sourceEntryId = item?.sourceEntryId;
