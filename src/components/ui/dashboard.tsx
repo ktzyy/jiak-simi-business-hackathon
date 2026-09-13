@@ -40,7 +40,7 @@ export function Dashboard({ restaurantId }: { restaurantId: string }) {
       <article className="card"><p>Dishes available</p><strong>{data?.menu ? data.menu.dishes.filter(d=>d.available).length : data ? 0 : '—'}</strong><small>{data?.menu ? `Published menu · Version ${data.menu.version}` : 'Publish your menu to get started'}</small></article>
     </section>
     <div className={styles.dashboardGrid}>
-      <section className="card"><h2>Your menu</h2><Link className="btn btn-primary" href={`/onboarding${query}`}>{data?.menu ? 'Review my menu' : 'Set up my menu'} →</Link></section>
+      <section className="card"><h2>Your menu</h2><Link className="btn btn-primary" href={data?.menu ? `/order/${restaurantId}?workspace=1` : `/onboarding${query}`}>{data?.menu ? 'Review my menu' : 'Set up my menu'} →</Link></section>
       <section className="card"><h2>Your customer menu & QR</h2><p>Share your menu or print its QR.</p><Link className="btn btn-outline" href={`/storefront${query}`}>View menu & QR →</Link></section>
       <section className="card"><p className="eyebrow">Chat assistant</p><h2>More ways to order</h2><p>Chat setup coming soon.</p><button className="btn btn-primary" onClick={()=>open('assistant')}>Set up assistant</button></section>
       <section className="card"><p className="eyebrow">Payments · Demo only</p><h2>Payments</h2><p>Collect payment at the stall.</p><button className="btn btn-primary" onClick={()=>open('payments')}>View payment setup</button></section>

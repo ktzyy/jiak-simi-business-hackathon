@@ -244,7 +244,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
 
   return <div className={`${styles.customer} ${preview ? styles.preview : ""}`}>
     {preview && <div className={styles.previewLabel}>CUSTOMER PREVIEW · NO ORDERS SENT</div>}
-    {showStaffTools && !preview && <header className={styles.adminHeader} aria-label="Stall admin"><span>Stall admin</span><nav aria-label="Staff tools"><Link href={`/?restaurantId=${restaurantId}`}>Overview</Link><Link href={`/onboarding?restaurantId=${restaurantId}`}>Edit menu</Link><Link href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode →</Link></nav></header>}
+    {showStaffTools && !preview && <header className={styles.adminHeader} aria-label="Stall admin"><span>Stall admin</span><nav aria-label="Staff tools"><Link href={`/?restaurantId=${restaurantId}`}>Overview</Link><Link href={`/onboarding?restaurantId=${restaurantId}&edit=1`}>Edit menu</Link><Link href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode →</Link></nav></header>}
     <div className={styles.logoHeader}><Link href="/" className={styles.brand} aria-label="Jiak Simi home"><Image src="/brand/jiak-simi-horizontal.png" alt="Jiak Simi" width={128} height={19} unoptimized style={{ width: 128, height: "auto" }} /></Link></div>
     <header className={styles.header}>
       <div className={styles.headerContent}>

@@ -41,7 +41,7 @@ export function QrPanel({ restaurantId }: { restaurantId: string }) {
   return <div className={styles.storefront}>
     <div><p className="eyebrow">Menu & QR</p><h1>Share your menu</h1><p className="muted">Customers scan this QR to order.</p></div>
     {busy && <p className="notice" role="status">Checking your published menu…</p>}
-    {error && <div className="notice notice-error" role="alert"><p>{error}</p><div className="actions"><button className="btn btn-outline" disabled={busy} onClick={() => { setBusy(true); void load(); }}>Try again</button><Link className="btn btn-teal" href={`/onboarding?restaurantId=${restaurantId}`}>Review my menu</Link></div></div>}
+    {error && <div className="notice notice-error" role="alert"><p>{error}</p><div className="actions"><button className="btn btn-outline" disabled={busy} onClick={() => { setBusy(true); void load(); }}>Try again</button><Link className="btn btn-teal" href={`/onboarding?restaurantId=${restaurantId}&edit=1`}>Review my menu</Link></div></div>}
     {menu && !busy && <>
       <section className={`card ${styles.qrCard}`} aria-label="Published menu QR">
         <p className="eyebrow">Published menu</p><h2>{menu.name}</h2>
@@ -54,7 +54,7 @@ export function QrPanel({ restaurantId }: { restaurantId: string }) {
         <p role="status" className="muted">{copied}</p><a className={styles.url} href={url} target="_blank" rel="noreferrer">{url}</a>
       </section>
       {local && <p className="notice">Local preview. Download a new QR after publishing the site.</p>}
-      <div className="actions"><a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">Open customer menu ↗</a><Link className="btn btn-outline" href={`/onboarding?restaurantId=${restaurantId}`}>Edit menu</Link><Link className="btn btn-outline" href={`/kitchen?restaurantId=${restaurantId}`}>Open cook mode</Link></div>
+      <div className="actions"><a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">Open customer menu ↗</a><Link className="btn btn-outline" href={`/onboarding?restaurantId=${restaurantId}&edit=1`}>Edit menu</Link><Link className="btn btn-outline" href={`/kitchen?restaurantId=${restaurantId}`}>Open cook mode</Link></div>
     </>}
   </div>;
 }

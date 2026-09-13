@@ -34,7 +34,7 @@ async function readCurrent(restaurantId: string): Promise<Menu | null> {
 function sameMenu(a: Menu, b: Menu) { return JSON.stringify(MenuSchema.parse(a)) === JSON.stringify(MenuSchema.parse(b)); }
 const needsReconciliation = (error: unknown) => !(error instanceof ApiError) || error.status === 0 || error.status >= 500 || error.code === "INVALID_RESPONSE";
 
-export function Onboarding({ restaurantId }: { restaurantId: string }) {
+export function Onboarding({ restaurantId, editPublished = false }: { restaurantId: string; editPublished?: boolean }) {
   const dishPhotos = useDishPhotos(restaurantId);
   const [uploads, setUploads] = useState<UploadedMenu[]>([]);
   const uploadRef = useRef<UploadedMenu[]>([]);
@@ -72,8 +72,13 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
 
   useEffect(() => {
     let active = true;
-    Promise.all([readCurrent(restaurantId), getStaffAccessToken().then(token => api.readStallDetails(restaurantId, token))]).then(([menu, response]) => {
+    Promise.all([readCurrent(restaurantId), getStaffAccessToken().then(token => api.readStallDetails(restaurantId, token))]).then(async ([menu, response]) => {
+      const photos = editPublished && menu ? await api.readPublishedPhotos(restaurantId, menu.id, menu.version) : [];
       if (!active) return;
+      if (editPublished && menu) {
+        const shared = splitSharedExtras(existingDishes(menu));
+        dishPhotos.reset(); setDraft(null); setDishes(shared.dishes); setSharedRows(shared.rows); setExcludedExtras(shared.excluded); setRetainedPhotos(photos); setStep(2);
+      }
       setCurrent(menu); setMenuRead("ready"); setSavedDetails(response.details);
       setName(response.details?.name ?? menu?.name ?? "");
       if (response.details) { setHours(editorHours(response.details)); setSameHours(allHoursMatch(editorHours(response.details))); }
@@ -98,7 +103,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       }
     });
     return () => { active = false; };
-  }, [restaurantId, pendingKey]);
+  }, [restaurantId, pendingKey, editPublished]);
 
   useEffect(() => () => {
     uploadRef.current.forEach(upload => URL.revokeObjectURL(upload.url));
