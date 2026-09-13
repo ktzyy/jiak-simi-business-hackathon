@@ -1,8 +1,0 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><title>Export demo preset</title><body><button id="export">Export saved demo</button><p id="status"></p><script>
-document.getElementById('export').onclick=async()=>{try{
-const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('jiak-demo-presets',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
-const preset=await new Promise((resolve,reject)=>{const r=db.transaction('presets').objectStore('presets').get('ba2ad996-da84-4653-89a9-c028d77c050d');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});db.close();if(!preset)throw Error('No saved preset in this browser.');
-async function encode(x){if(x instanceof Blob)return {__blob:true,type:x.type,name:x.name||null,data:await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=reject;r.readAsDataURL(x)})};if(Array.isArray(x))return Promise.all(x.map(encode));if(x&&typeof x==='object')return Object.fromEntries(await Promise.all(Object.entries(x).map(async([k,v])=>[k,await encode(v)])));return x}
-const blob=new Blob([JSON.stringify(await encode(preset))],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='jiak-approved-demo-preset.json';a.click();document.getElementById('status').textContent='Exported '+preset.dishes.length+' dishes.';
-}catch(e){document.getElementById('status').textContent=e.message}};
-</script></body></html>

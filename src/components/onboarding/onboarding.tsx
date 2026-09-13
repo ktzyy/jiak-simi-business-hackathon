@@ -21,7 +21,7 @@ import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
 import { DAYS, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, menuFromEdits, type DishEdit, type GlobalAddonEdit } from "./review-state";
 import s from "./onboarding.module.css";
-import { readDemoPreset, saveDemoPreset, type DemoPreset } from "./demo-preset";
+import { readDemoPreset, readSharedDemoPreset, saveDemoPreset, type DemoPreset } from "./demo-preset";
 import { splitSharedExtras, withSharedExtras } from "./shared-extras";
 
 const api = createApiClient();
@@ -165,7 +165,7 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
     inFlight.current = true; setBusy("demo-image"); setError("");
     try {
       if (!uploads.length) {
-        const preset = await readDemoPreset(restaurantId);
+        const preset = await readSharedDemoPreset(restaurantId) ?? await readDemoPreset(restaurantId);
         if (preset) {
           saveUploads(preset.uploads.map(upload => ({ ...upload, url: URL.createObjectURL(upload.file) })));
           setName(preset.name); setHours(preset.hours); setSameHours(preset.sameHours); setLoadedPreset(preset); setDemoUpload(true);
@@ -245,7 +245,7 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
     try {
       withSharedExtras(dishes, sharedRows, excludedExtras, crypto.randomUUID());
       const preset: DemoPreset = { version: 1, restaurantId, savedAt: new Date().toISOString(), name, hours, sameHours, draft, dishes, sharedRows, excludedExtras, anyExtras: [...anyExtras], uploads: uploads.map(({ url, ...upload }) => upload), crops: Object.fromEntries(Object.entries(crops).map(([id, { url, ...crop }]) => [id, crop])), photos: await dishPhotos.snapshot() };
-      await saveDemoPreset(preset); setNotice("Demo saved in this browser, including crops and polished photos. Upload Demo Image will reuse it next time.");
+      await saveDemoPreset(preset); setNotice("Demo saved in this browser, including crops and polished photos.");
     } catch (e) { setError(errorText(e)); }
     finally { setBusy(""); }
   }

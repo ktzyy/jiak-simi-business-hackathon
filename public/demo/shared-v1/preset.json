@@ -1,0 +1,2202 @@
+{
+  "version": 1,
+  "restaurantId": "ba2ad996-da84-4653-89a9-c028d77c050d",
+  "savedAt": "2026-09-13T13:48:03.488Z",
+  "name": "Charcoal Roast Meat",
+  "hours": [
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    },
+    {
+      "closed": false,
+      "start": "",
+      "end": "",
+      "nextDay": false,
+      "hasBreak": false,
+      "breakStart": "",
+      "breakEnd": "",
+      "intervals": [
+        {
+          "opens": "09:00",
+          "closes": "18:00",
+          "closesNextDay": false
+        }
+      ]
+    }
+  ],
+  "sameHours": true,
+  "draft": {
+    "id": "3ac74e43-ac99-4e48-a21d-8468443a5387",
+    "status": "needs_review",
+    "currency": "SGD",
+    "items": [
+      {
+        "name": "CHAR SIEW RICE",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "b856174d-9247-456f-b50a-b32c088fd1c6",
+        "modifierGroups": [],
+        "id": "8f76f86a-3cbc-434b-9deb-68dc433d94c7"
+      },
+      {
+        "name": "ROASTED SAUSAGE RICE",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+        "modifierGroups": [],
+        "id": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1"
+      },
+      {
+        "name": "BRAISED PORK KNUCKLE RICE",
+        "category": null,
+        "description": null,
+        "priceCents": 500,
+        "rawPriceText": "$5.00",
+        "sourceEntryId": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+        "modifierGroups": [],
+        "id": "f777fa56-b67c-4d27-9762-9a3f37da07da"
+      },
+      {
+        "name": "CHICKEN FEET NOODLE / HOR FUN",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+        "modifierGroups": [],
+        "id": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544"
+      },
+      {
+        "name": "BRAISED PORK KNUCKLE NOODLE",
+        "category": null,
+        "description": null,
+        "priceCents": 500,
+        "rawPriceText": "$5.00",
+        "sourceEntryId": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+        "modifierGroups": [],
+        "id": "50f42759-0312-4b2c-a72b-19e293d1b87b"
+      },
+      {
+        "name": "CHARCOAL CHARSIEW WANTON NOODLE",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+        "modifierGroups": [],
+        "id": "ef01e664-49cd-4135-913f-d2820af64b1d"
+      },
+      {
+        "name": "MUSHROOM CHICKEN FEET",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+        "modifierGroups": [],
+        "id": "36c972b5-386c-4c92-9c07-6aac188c3ce0"
+      },
+      {
+        "name": "DUMPLING SOUP",
+        "category": null,
+        "description": null,
+        "priceCents": null,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+        "modifierGroups": [],
+        "id": "c1a2e791-a2ad-4c17-9db0-059de670b7a6"
+      },
+      {
+        "name": "WANTON SOUP",
+        "category": null,
+        "description": null,
+        "priceCents": null,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+        "modifierGroups": [],
+        "id": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f"
+      },
+      {
+        "name": "OYSTER SAUCE KAILAN",
+        "category": null,
+        "description": null,
+        "priceCents": 450,
+        "rawPriceText": "$4.50",
+        "sourceEntryId": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+        "modifierGroups": [],
+        "id": "768fbac2-e560-43a7-84d5-1fccc9a6cb53"
+      }
+    ],
+    "sourceEntries": [
+      {
+        "kind": "category",
+        "name": "\u73b0\u5305\u73b0\u5356 / FRESHLY MADE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "upper right panel header",
+        "photoRegion": null,
+        "rawPriceText": null,
+        "currency": "unknown",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "793faa42-d720-429f-97ae-151905610c89",
+        "priceCents": null
+      },
+      {
+        "kind": "item",
+        "name": "CHAR SIEW RICE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "left middle dish",
+        "photoRegion": {
+          "x": 0.113,
+          "y": 0.308,
+          "width": 0.239,
+          "height": 0.205
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "b856174d-9247-456f-b50a-b32c088fd1c6",
+        "priceCents": 450
+      },
+      {
+        "kind": "item",
+        "name": "ROASTED SAUSAGE RICE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "upper middle dish",
+        "photoRegion": {
+          "x": 0.254,
+          "y": 0.271,
+          "width": 0.21,
+          "height": 0.183
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+        "priceCents": 450
+      },
+      {
+        "kind": "item",
+        "name": "BRAISED PORK KNUCKLE RICE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "lower left-middle dish",
+        "photoRegion": {
+          "x": 0.098,
+          "y": 0.447,
+          "width": 0.22,
+          "height": 0.191
+        },
+        "rawPriceText": "$5.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+        "priceCents": 500
+      },
+      {
+        "kind": "item",
+        "name": "CHICKEN FEET NOODLE / HOR FUN",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "center dish",
+        "photoRegion": {
+          "x": 0.21,
+          "y": 0.418,
+          "width": 0.225,
+          "height": 0.205
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+        "priceCents": 450
+      },
+      {
+        "kind": "item",
+        "name": "BRAISED PORK KNUCKLE NOODLE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom left dish",
+        "photoRegion": {
+          "x": 0.107,
+          "y": 0.612,
+          "width": 0.229,
+          "height": 0.191
+        },
+        "rawPriceText": "$5.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+        "priceCents": 500
+      },
+      {
+        "kind": "item",
+        "name": "CHARCOAL CHARSIEW WANTON NOODLE",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom center dish",
+        "photoRegion": {
+          "x": 0.259,
+          "y": 0.601,
+          "width": 0.244,
+          "height": 0.205
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+        "priceCents": 450
+      },
+      {
+        "kind": "item",
+        "name": "MUSHROOM CHICKEN FEET",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "middle right dish",
+        "photoRegion": {
+          "x": 0.415,
+          "y": 0.381,
+          "width": 0.191,
+          "height": 0.198
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+        "priceCents": 450
+      },
+      {
+        "kind": "item",
+        "name": "DUMPLING SOUP",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": "FRESHLY MADE",
+        "region": "upper right panel, top area",
+        "photoRegion": null,
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": true,
+        "uncertainty": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+        "id": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+        "priceCents": null
+      },
+      {
+        "kind": "item",
+        "name": "WANTON SOUP",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": "FRESHLY MADE",
+        "region": "right panel, lower-left bowl",
+        "photoRegion": null,
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": true,
+        "uncertainty": "The label and price are partially obscured by glare and overlapping stickers.",
+        "id": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+        "priceCents": null
+      },
+      {
+        "kind": "item",
+        "name": "OYSTER SAUCE KAILAN",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": "FRESHLY MADE",
+        "region": "right panel, lower-right bowl",
+        "photoRegion": {
+          "x": 0.732,
+          "y": 0.604,
+          "width": 0.186,
+          "height": 0.132
+        },
+        "rawPriceText": "$4.50",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+        "priceCents": 450
+      },
+      {
+        "kind": "category",
+        "name": "Additional Ingredients",
+        "category": null,
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel heading",
+        "photoRegion": null,
+        "rawPriceText": null,
+        "currency": "unknown",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "a98b5651-816c-422a-87b9-4369a77e582d",
+        "priceCents": null
+      },
+      {
+        "kind": "addon",
+        "name": "Add Vegetables",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, top",
+        "photoRegion": null,
+        "rawPriceText": "$1.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "0f13a51c-fb4f-4361-8996-e70a78a7bd9e",
+        "priceCents": 100
+      },
+      {
+        "kind": "addon",
+        "name": "Add Noodle",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, second",
+        "photoRegion": null,
+        "rawPriceText": "$1.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "f5789809-e093-48ab-a105-c8c74aef205d",
+        "priceCents": 100
+      },
+      {
+        "kind": "addon",
+        "name": "Noodle Plain",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, third",
+        "photoRegion": null,
+        "rawPriceText": "$2.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "eddb2653-8658-4a53-aca3-c7d18c920b81",
+        "priceCents": 200
+      },
+      {
+        "kind": "addon",
+        "name": "Egg",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, fourth",
+        "photoRegion": null,
+        "rawPriceText": "$1.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "a6571d4a-c3ad-4bab-8ee8-f169f5fc1052",
+        "priceCents": 100
+      },
+      {
+        "kind": "addon",
+        "name": "Peanut",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, fifth",
+        "photoRegion": null,
+        "rawPriceText": "$1.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "03176c1f-4357-4585-914b-b1e42100b48c",
+        "priceCents": 100
+      },
+      {
+        "kind": "addon",
+        "name": "Rice",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, right column, bottom",
+        "photoRegion": null,
+        "rawPriceText": null,
+        "currency": "unknown",
+        "priceUncertain": true,
+        "uncertainty": "The Rice addon price is obscured and unreadable.",
+        "id": "287cbdb5-a199-4432-82ea-e4546a871805",
+        "priceCents": null
+      },
+      {
+        "kind": "addon",
+        "name": "Add Roasted Sausage",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, left column, top",
+        "photoRegion": null,
+        "rawPriceText": "$2.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "c6959556-10dd-4465-9cf1-acfeaa9bf8f2",
+        "priceCents": 200
+      },
+      {
+        "kind": "addon",
+        "name": "Add Char Siew",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, left column, second",
+        "photoRegion": null,
+        "rawPriceText": "$2.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "16ae5aea-d8dc-4ffc-b655-f81a4a25e9de",
+        "priceCents": 200
+      },
+      {
+        "kind": "addon",
+        "name": "Add Chicken Feet",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, left column, third",
+        "photoRegion": null,
+        "rawPriceText": "$2.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "b2464b30-d9aa-4a3f-848c-add7d8c21d4a",
+        "priceCents": 200
+      },
+      {
+        "kind": "addon",
+        "name": "Add Dumpling",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, left column, fourth",
+        "photoRegion": null,
+        "rawPriceText": "$2.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "d10dc58a-6bc9-4fc3-a272-1073562b713d",
+        "priceCents": 200
+      },
+      {
+        "kind": "addon",
+        "name": "Add Wanton",
+        "category": "Additional Ingredients",
+        "description": null,
+        "itemNumber": null,
+        "menuLabel": null,
+        "region": "bottom right panel, left column, bottom",
+        "photoRegion": null,
+        "rawPriceText": "$1.00",
+        "currency": "SGD",
+        "priceUncertain": false,
+        "uncertainty": null,
+        "id": "2ee3853c-04e4-4a23-ae5e-44f458960c7a",
+        "priceCents": 100
+      }
+    ],
+    "issues": [
+      {
+        "id": "c028a0f8-82d0-4b45-a54f-8929f1ad3837",
+        "code": "human_review_required",
+        "message": "Review all extracted names, prices, source associations, and modifier rules against the original menu before publishing.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "c552b65a-7fa7-4ee2-a4e7-b6eb87a7d572",
+        "code": "model_uncertainty",
+        "message": "Some items in the Freshly Made panel are partially obscured by glare and overlapping labels, so a few label-to-photo associations are uncertain.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "9917df31-72c3-4ad9-af25-c6c0f02e2160",
+        "code": "model_uncertainty",
+        "message": "The Rice addon price is unreadable in the bottom-right addon list.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "3eb86eba-eb9c-47fb-bb58-c0c8132b1874",
+        "code": "model_uncertainty",
+        "message": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+        "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+        "blocking": true
+      },
+      {
+        "id": "2f572d07-310e-4469-bc08-8d104a91bbcf",
+        "code": "unknown_price",
+        "message": "Confirm the SGD price for source entry 3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2; its price is missing, ambiguous, foreign, or not one scalar amount.",
+        "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+        "blocking": true
+      },
+      {
+        "id": "9c3ac940-ee78-409d-8dec-ebba1fa15552",
+        "code": "model_uncertainty",
+        "message": "The label and price are partially obscured by glare and overlapping stickers.",
+        "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+        "blocking": true
+      },
+      {
+        "id": "6104fc8b-9928-4778-a705-5d2a19e08496",
+        "code": "unknown_price",
+        "message": "Confirm the SGD price for source entry a5997803-7221-40fa-84e9-ee3bbbe556ba; its price is missing, ambiguous, foreign, or not one scalar amount.",
+        "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+        "blocking": true
+      },
+      {
+        "id": "733145ae-d4eb-412d-a5c7-18514e4771d4",
+        "code": "source_mapping_required",
+        "message": "Review source entry 0f13a51c-fb4f-4361-8996-e70a78a7bd9e (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "0e64612e-9407-4e0c-bac9-8a3311ae0867",
+        "code": "source_mapping_required",
+        "message": "Review source entry f5789809-e093-48ab-a105-c8c74aef205d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "d8b9a1ba-199b-4ef2-8cbe-2cd54663a2dd",
+        "code": "source_mapping_required",
+        "message": "Review source entry eddb2653-8658-4a53-aca3-c7d18c920b81 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "fbe21450-f43a-43ed-a002-9c38a94804e6",
+        "code": "source_mapping_required",
+        "message": "Review source entry a6571d4a-c3ad-4bab-8ee8-f169f5fc1052 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "df955e7b-9480-47e1-92bd-370ef0d1ad22",
+        "code": "source_mapping_required",
+        "message": "Review source entry 03176c1f-4357-4585-914b-b1e42100b48c (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "16c5b526-edce-4d84-8c5f-208aeb6bb600",
+        "code": "model_uncertainty",
+        "message": "The Rice addon price is obscured and unreadable.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "164183ae-31d2-45ba-901f-c87b38f13acc",
+        "code": "unknown_price",
+        "message": "Confirm the SGD price for source entry 287cbdb5-a199-4432-82ea-e4546a871805; its price is missing, ambiguous, foreign, or not one scalar amount.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "57cb262f-1d0c-4f4f-a886-e0aab6a795ce",
+        "code": "source_mapping_required",
+        "message": "Review source entry 287cbdb5-a199-4432-82ea-e4546a871805 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "f7c6a1d5-706e-43d5-b24d-19040b9fedfd",
+        "code": "source_mapping_required",
+        "message": "Review source entry c6959556-10dd-4465-9cf1-acfeaa9bf8f2 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "5e34bdb1-1fa1-4eb1-aaa2-8357a016bb39",
+        "code": "source_mapping_required",
+        "message": "Review source entry 16ae5aea-d8dc-4ffc-b655-f81a4a25e9de (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "9b257dc5-3ac0-4d74-9395-19b70088646a",
+        "code": "source_mapping_required",
+        "message": "Review source entry b2464b30-d9aa-4a3f-848c-add7d8c21d4a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "bfc31df9-2cb8-416a-b8b5-c8cf82891825",
+        "code": "source_mapping_required",
+        "message": "Review source entry d10dc58a-6bc9-4fc3-a272-1073562b713d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      },
+      {
+        "id": "24bffe1a-b940-4ec1-bf0b-1415b33c12a2",
+        "code": "source_mapping_required",
+        "message": "Review source entry 2ee3853c-04e4-4a23-ae5e-44f458960c7a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+        "itemId": null,
+        "blocking": true
+      }
+    ]
+  },
+  "dishes": [
+    {
+      "id": "8f76f86a-3cbc-434b-9deb-68dc433d94c7",
+      "draftItemId": "8f76f86a-3cbc-434b-9deb-68dc433d94c7",
+      "name": "Char Siew Rice",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1",
+      "draftItemId": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1",
+      "name": "Roasted Sausage Rice",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "f777fa56-b67c-4d27-9762-9a3f37da07da",
+      "draftItemId": "f777fa56-b67c-4d27-9762-9a3f37da07da",
+      "name": "Braised Pork Knuckle Rice",
+      "price": "5.00",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544",
+      "draftItemId": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544",
+      "name": "Chicken Feet Noodle / Hor Fun",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "50f42759-0312-4b2c-a72b-19e293d1b87b",
+      "draftItemId": "50f42759-0312-4b2c-a72b-19e293d1b87b",
+      "name": "Braised Pork Knuckle Noodle",
+      "price": "5.00",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "ef01e664-49cd-4135-913f-d2820af64b1d",
+      "draftItemId": "ef01e664-49cd-4135-913f-d2820af64b1d",
+      "name": "Charcoal Charsiew Wanton Noodle",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "36c972b5-386c-4c92-9c07-6aac188c3ce0",
+      "draftItemId": "36c972b5-386c-4c92-9c07-6aac188c3ce0",
+      "name": "Mushroom Chicken Feet",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+      "draftItemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+      "name": "Dumpling Soup",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+      "draftItemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+      "name": "Wanton Soup",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    },
+    {
+      "id": "768fbac2-e560-43a7-84d5-1fccc9a6cb53",
+      "draftItemId": "768fbac2-e560-43a7-84d5-1fccc9a6cb53",
+      "name": "Oyster Sauce Kailan",
+      "price": "4.50",
+      "available": true,
+      "included": true,
+      "confirmed": false,
+      "reason": "",
+      "groups": []
+    }
+  ],
+  "sharedRows": [
+    {
+      "id": "0f13a51c-fb4f-4361-8996-e70a78a7bd9e",
+      "name": "Add Vegetables",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "0f13a51c-fb4f-4361-8996-e70a78a7bd9e"
+      ]
+    },
+    {
+      "id": "f5789809-e093-48ab-a105-c8c74aef205d",
+      "name": "Add Noodle",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "f5789809-e093-48ab-a105-c8c74aef205d"
+      ]
+    },
+    {
+      "id": "eddb2653-8658-4a53-aca3-c7d18c920b81",
+      "name": "Noodle Plain",
+      "price": "2.00",
+      "included": true,
+      "sourceIds": [
+        "eddb2653-8658-4a53-aca3-c7d18c920b81"
+      ]
+    },
+    {
+      "id": "a6571d4a-c3ad-4bab-8ee8-f169f5fc1052",
+      "name": "Egg",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "a6571d4a-c3ad-4bab-8ee8-f169f5fc1052"
+      ]
+    },
+    {
+      "id": "03176c1f-4357-4585-914b-b1e42100b48c",
+      "name": "Peanut",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "03176c1f-4357-4585-914b-b1e42100b48c"
+      ]
+    },
+    {
+      "id": "287cbdb5-a199-4432-82ea-e4546a871805",
+      "name": "Rice",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "287cbdb5-a199-4432-82ea-e4546a871805"
+      ]
+    },
+    {
+      "id": "c6959556-10dd-4465-9cf1-acfeaa9bf8f2",
+      "name": "Add Roasted Sausage",
+      "price": "2.00",
+      "included": true,
+      "sourceIds": [
+        "c6959556-10dd-4465-9cf1-acfeaa9bf8f2"
+      ]
+    },
+    {
+      "id": "16ae5aea-d8dc-4ffc-b655-f81a4a25e9de",
+      "name": "Add Char Siew",
+      "price": "2.00",
+      "included": true,
+      "sourceIds": [
+        "16ae5aea-d8dc-4ffc-b655-f81a4a25e9de"
+      ]
+    },
+    {
+      "id": "b2464b30-d9aa-4a3f-848c-add7d8c21d4a",
+      "name": "Add Chicken Feet",
+      "price": "2.00",
+      "included": true,
+      "sourceIds": [
+        "b2464b30-d9aa-4a3f-848c-add7d8c21d4a"
+      ]
+    },
+    {
+      "id": "d10dc58a-6bc9-4fc3-a272-1073562b713d",
+      "name": "Add Dumpling",
+      "price": "2.00",
+      "included": true,
+      "sourceIds": [
+        "d10dc58a-6bc9-4fc3-a272-1073562b713d"
+      ]
+    },
+    {
+      "id": "2ee3853c-04e4-4a23-ae5e-44f458960c7a",
+      "name": "Add Wanton",
+      "price": "1.00",
+      "included": true,
+      "sourceIds": [
+        "2ee3853c-04e4-4a23-ae5e-44f458960c7a"
+      ]
+    }
+  ],
+  "excludedExtras": [],
+  "anyExtras": [],
+  "uploads": [
+    {
+      "id": "1775c189-0d75-466d-b218-29c478afcd50",
+      "file": {
+        "path": "/demo/shared-v1/photo-ce26a4ede0300b9009bb.jpg",
+        "type": "image/jpeg",
+        "name": "Charcoal-Char-Siew-menu.jpg"
+      },
+      "draft": {
+        "id": "dc21133b-b2bd-4db1-a496-5792047af2c2",
+        "status": "needs_review",
+        "currency": "SGD",
+        "items": [
+          {
+            "name": "CHAR SIEW RICE",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "b856174d-9247-456f-b50a-b32c088fd1c6",
+            "modifierGroups": [],
+            "id": "8f76f86a-3cbc-434b-9deb-68dc433d94c7"
+          },
+          {
+            "name": "ROASTED SAUSAGE RICE",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+            "modifierGroups": [],
+            "id": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1"
+          },
+          {
+            "name": "BRAISED PORK KNUCKLE RICE",
+            "category": null,
+            "description": null,
+            "priceCents": 500,
+            "rawPriceText": "$5.00",
+            "sourceEntryId": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+            "modifierGroups": [],
+            "id": "f777fa56-b67c-4d27-9762-9a3f37da07da"
+          },
+          {
+            "name": "CHICKEN FEET NOODLE / HOR FUN",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+            "modifierGroups": [],
+            "id": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544"
+          },
+          {
+            "name": "BRAISED PORK KNUCKLE NOODLE",
+            "category": null,
+            "description": null,
+            "priceCents": 500,
+            "rawPriceText": "$5.00",
+            "sourceEntryId": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+            "modifierGroups": [],
+            "id": "50f42759-0312-4b2c-a72b-19e293d1b87b"
+          },
+          {
+            "name": "CHARCOAL CHARSIEW WANTON NOODLE",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+            "modifierGroups": [],
+            "id": "ef01e664-49cd-4135-913f-d2820af64b1d"
+          },
+          {
+            "name": "MUSHROOM CHICKEN FEET",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+            "modifierGroups": [],
+            "id": "36c972b5-386c-4c92-9c07-6aac188c3ce0"
+          },
+          {
+            "name": "DUMPLING SOUP",
+            "category": null,
+            "description": null,
+            "priceCents": null,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+            "modifierGroups": [],
+            "id": "c1a2e791-a2ad-4c17-9db0-059de670b7a6"
+          },
+          {
+            "name": "WANTON SOUP",
+            "category": null,
+            "description": null,
+            "priceCents": null,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+            "modifierGroups": [],
+            "id": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f"
+          },
+          {
+            "name": "OYSTER SAUCE KAILAN",
+            "category": null,
+            "description": null,
+            "priceCents": 450,
+            "rawPriceText": "$4.50",
+            "sourceEntryId": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+            "modifierGroups": [],
+            "id": "768fbac2-e560-43a7-84d5-1fccc9a6cb53"
+          }
+        ],
+        "sourceEntries": [
+          {
+            "kind": "category",
+            "name": "\u73b0\u5305\u73b0\u5356 / FRESHLY MADE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "upper right panel header",
+            "photoRegion": null,
+            "rawPriceText": null,
+            "currency": "unknown",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "793faa42-d720-429f-97ae-151905610c89",
+            "priceCents": null
+          },
+          {
+            "kind": "item",
+            "name": "CHAR SIEW RICE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "left middle dish",
+            "photoRegion": {
+              "x": 0.113,
+              "y": 0.308,
+              "width": 0.239,
+              "height": 0.205
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "b856174d-9247-456f-b50a-b32c088fd1c6",
+            "priceCents": 450
+          },
+          {
+            "kind": "item",
+            "name": "ROASTED SAUSAGE RICE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "upper middle dish",
+            "photoRegion": {
+              "x": 0.254,
+              "y": 0.271,
+              "width": 0.21,
+              "height": 0.183
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+            "priceCents": 450
+          },
+          {
+            "kind": "item",
+            "name": "BRAISED PORK KNUCKLE RICE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "lower left-middle dish",
+            "photoRegion": {
+              "x": 0.098,
+              "y": 0.447,
+              "width": 0.22,
+              "height": 0.191
+            },
+            "rawPriceText": "$5.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+            "priceCents": 500
+          },
+          {
+            "kind": "item",
+            "name": "CHICKEN FEET NOODLE / HOR FUN",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "center dish",
+            "photoRegion": {
+              "x": 0.21,
+              "y": 0.418,
+              "width": 0.225,
+              "height": 0.205
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+            "priceCents": 450
+          },
+          {
+            "kind": "item",
+            "name": "BRAISED PORK KNUCKLE NOODLE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom left dish",
+            "photoRegion": {
+              "x": 0.107,
+              "y": 0.612,
+              "width": 0.229,
+              "height": 0.191
+            },
+            "rawPriceText": "$5.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+            "priceCents": 500
+          },
+          {
+            "kind": "item",
+            "name": "CHARCOAL CHARSIEW WANTON NOODLE",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom center dish",
+            "photoRegion": {
+              "x": 0.259,
+              "y": 0.601,
+              "width": 0.244,
+              "height": 0.205
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+            "priceCents": 450
+          },
+          {
+            "kind": "item",
+            "name": "MUSHROOM CHICKEN FEET",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "middle right dish",
+            "photoRegion": {
+              "x": 0.415,
+              "y": 0.381,
+              "width": 0.191,
+              "height": 0.198
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+            "priceCents": 450
+          },
+          {
+            "kind": "item",
+            "name": "DUMPLING SOUP",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": "FRESHLY MADE",
+            "region": "upper right panel, top area",
+            "photoRegion": null,
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": true,
+            "uncertainty": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+            "id": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+            "priceCents": null
+          },
+          {
+            "kind": "item",
+            "name": "WANTON SOUP",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": "FRESHLY MADE",
+            "region": "right panel, lower-left bowl",
+            "photoRegion": null,
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": true,
+            "uncertainty": "The label and price are partially obscured by glare and overlapping stickers.",
+            "id": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+            "priceCents": null
+          },
+          {
+            "kind": "item",
+            "name": "OYSTER SAUCE KAILAN",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": "FRESHLY MADE",
+            "region": "right panel, lower-right bowl",
+            "photoRegion": {
+              "x": 0.732,
+              "y": 0.604,
+              "width": 0.186,
+              "height": 0.132
+            },
+            "rawPriceText": "$4.50",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+            "priceCents": 450
+          },
+          {
+            "kind": "category",
+            "name": "Additional Ingredients",
+            "category": null,
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel heading",
+            "photoRegion": null,
+            "rawPriceText": null,
+            "currency": "unknown",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "a98b5651-816c-422a-87b9-4369a77e582d",
+            "priceCents": null
+          },
+          {
+            "kind": "addon",
+            "name": "Add Vegetables",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, top",
+            "photoRegion": null,
+            "rawPriceText": "$1.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "0f13a51c-fb4f-4361-8996-e70a78a7bd9e",
+            "priceCents": 100
+          },
+          {
+            "kind": "addon",
+            "name": "Add Noodle",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, second",
+            "photoRegion": null,
+            "rawPriceText": "$1.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "f5789809-e093-48ab-a105-c8c74aef205d",
+            "priceCents": 100
+          },
+          {
+            "kind": "addon",
+            "name": "Noodle Plain",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, third",
+            "photoRegion": null,
+            "rawPriceText": "$2.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "eddb2653-8658-4a53-aca3-c7d18c920b81",
+            "priceCents": 200
+          },
+          {
+            "kind": "addon",
+            "name": "Egg",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, fourth",
+            "photoRegion": null,
+            "rawPriceText": "$1.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "a6571d4a-c3ad-4bab-8ee8-f169f5fc1052",
+            "priceCents": 100
+          },
+          {
+            "kind": "addon",
+            "name": "Peanut",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, fifth",
+            "photoRegion": null,
+            "rawPriceText": "$1.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "03176c1f-4357-4585-914b-b1e42100b48c",
+            "priceCents": 100
+          },
+          {
+            "kind": "addon",
+            "name": "Rice",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, right column, bottom",
+            "photoRegion": null,
+            "rawPriceText": null,
+            "currency": "unknown",
+            "priceUncertain": true,
+            "uncertainty": "The Rice addon price is obscured and unreadable.",
+            "id": "287cbdb5-a199-4432-82ea-e4546a871805",
+            "priceCents": null
+          },
+          {
+            "kind": "addon",
+            "name": "Add Roasted Sausage",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, left column, top",
+            "photoRegion": null,
+            "rawPriceText": "$2.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "c6959556-10dd-4465-9cf1-acfeaa9bf8f2",
+            "priceCents": 200
+          },
+          {
+            "kind": "addon",
+            "name": "Add Char Siew",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, left column, second",
+            "photoRegion": null,
+            "rawPriceText": "$2.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "16ae5aea-d8dc-4ffc-b655-f81a4a25e9de",
+            "priceCents": 200
+          },
+          {
+            "kind": "addon",
+            "name": "Add Chicken Feet",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, left column, third",
+            "photoRegion": null,
+            "rawPriceText": "$2.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "b2464b30-d9aa-4a3f-848c-add7d8c21d4a",
+            "priceCents": 200
+          },
+          {
+            "kind": "addon",
+            "name": "Add Dumpling",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, left column, fourth",
+            "photoRegion": null,
+            "rawPriceText": "$2.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "d10dc58a-6bc9-4fc3-a272-1073562b713d",
+            "priceCents": 200
+          },
+          {
+            "kind": "addon",
+            "name": "Add Wanton",
+            "category": "Additional Ingredients",
+            "description": null,
+            "itemNumber": null,
+            "menuLabel": null,
+            "region": "bottom right panel, left column, bottom",
+            "photoRegion": null,
+            "rawPriceText": "$1.00",
+            "currency": "SGD",
+            "priceUncertain": false,
+            "uncertainty": null,
+            "id": "2ee3853c-04e4-4a23-ae5e-44f458960c7a",
+            "priceCents": 100
+          }
+        ],
+        "issues": [
+          {
+            "id": "c028a0f8-82d0-4b45-a54f-8929f1ad3837",
+            "code": "human_review_required",
+            "message": "Review all extracted names, prices, source associations, and modifier rules against the original menu before publishing.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "c552b65a-7fa7-4ee2-a4e7-b6eb87a7d572",
+            "code": "model_uncertainty",
+            "message": "Some items in the Freshly Made panel are partially obscured by glare and overlapping labels, so a few label-to-photo associations are uncertain.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "9917df31-72c3-4ad9-af25-c6c0f02e2160",
+            "code": "model_uncertainty",
+            "message": "The Rice addon price is unreadable in the bottom-right addon list.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "3eb86eba-eb9c-47fb-bb58-c0c8132b1874",
+            "code": "model_uncertainty",
+            "message": "The soup-photo association is unclear because the Freshly Made panel contains multiple similar bowls.",
+            "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+            "blocking": true
+          },
+          {
+            "id": "2f572d07-310e-4469-bc08-8d104a91bbcf",
+            "code": "unknown_price",
+            "message": "Confirm the SGD price for source entry 3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2; its price is missing, ambiguous, foreign, or not one scalar amount.",
+            "itemId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+            "blocking": true
+          },
+          {
+            "id": "9c3ac940-ee78-409d-8dec-ebba1fa15552",
+            "code": "model_uncertainty",
+            "message": "The label and price are partially obscured by glare and overlapping stickers.",
+            "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+            "blocking": true
+          },
+          {
+            "id": "6104fc8b-9928-4778-a705-5d2a19e08496",
+            "code": "unknown_price",
+            "message": "Confirm the SGD price for source entry a5997803-7221-40fa-84e9-ee3bbbe556ba; its price is missing, ambiguous, foreign, or not one scalar amount.",
+            "itemId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+            "blocking": true
+          },
+          {
+            "id": "733145ae-d4eb-412d-a5c7-18514e4771d4",
+            "code": "source_mapping_required",
+            "message": "Review source entry 0f13a51c-fb4f-4361-8996-e70a78a7bd9e (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "0e64612e-9407-4e0c-bac9-8a3311ae0867",
+            "code": "source_mapping_required",
+            "message": "Review source entry f5789809-e093-48ab-a105-c8c74aef205d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "d8b9a1ba-199b-4ef2-8cbe-2cd54663a2dd",
+            "code": "source_mapping_required",
+            "message": "Review source entry eddb2653-8658-4a53-aca3-c7d18c920b81 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "fbe21450-f43a-43ed-a002-9c38a94804e6",
+            "code": "source_mapping_required",
+            "message": "Review source entry a6571d4a-c3ad-4bab-8ee8-f169f5fc1052 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "df955e7b-9480-47e1-92bd-370ef0d1ad22",
+            "code": "source_mapping_required",
+            "message": "Review source entry 03176c1f-4357-4585-914b-b1e42100b48c (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "16c5b526-edce-4d84-8c5f-208aeb6bb600",
+            "code": "model_uncertainty",
+            "message": "The Rice addon price is obscured and unreadable.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "164183ae-31d2-45ba-901f-c87b38f13acc",
+            "code": "unknown_price",
+            "message": "Confirm the SGD price for source entry 287cbdb5-a199-4432-82ea-e4546a871805; its price is missing, ambiguous, foreign, or not one scalar amount.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "57cb262f-1d0c-4f4f-a886-e0aab6a795ce",
+            "code": "source_mapping_required",
+            "message": "Review source entry 287cbdb5-a199-4432-82ea-e4546a871805 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "f7c6a1d5-706e-43d5-b24d-19040b9fedfd",
+            "code": "source_mapping_required",
+            "message": "Review source entry c6959556-10dd-4465-9cf1-acfeaa9bf8f2 (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "5e34bdb1-1fa1-4eb1-aaa2-8357a016bb39",
+            "code": "source_mapping_required",
+            "message": "Review source entry 16ae5aea-d8dc-4ffc-b655-f81a4a25e9de (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "9b257dc5-3ac0-4d74-9395-19b70088646a",
+            "code": "source_mapping_required",
+            "message": "Review source entry b2464b30-d9aa-4a3f-848c-add7d8c21d4a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "bfc31df9-2cb8-416a-b8b5-c8cf82891825",
+            "code": "source_mapping_required",
+            "message": "Review source entry d10dc58a-6bc9-4fc3-a272-1073562b713d (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          },
+          {
+            "id": "24bffe1a-b940-4ec1-bf0b-1415b33c12a2",
+            "code": "source_mapping_required",
+            "message": "Review source entry 2ee3853c-04e4-4a23-ae5e-44f458960c7a (addon) and explicitly assign its applicability and rules; it has not been added as a dish or modifier.",
+            "itemId": null,
+            "blocking": true
+          }
+        ]
+      }
+    }
+  ],
+  "crops": {
+    "8f76f86a-3cbc-434b-9deb-68dc433d94c7": {
+      "file": {
+        "path": "/demo/shared-v1/photo-6b93b4900d52f74987ad.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "2ae9405e-d3ab-429a-a6dc-02e74c2deac1",
+      "sourceEntryId": "b856174d-9247-456f-b50a-b32c088fd1c6",
+      "region": {
+        "x": 0.113,
+        "y": 0.308,
+        "width": 0.239,
+        "height": 0.205
+      }
+    },
+    "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1": {
+      "file": {
+        "path": "/demo/shared-v1/photo-68690dd7f66fea8935e0.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "b661fa91-4ccb-45ac-9f56-7a689805730e",
+      "sourceEntryId": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+      "region": {
+        "x": 0.2903825017755682,
+        "y": 0.22892924360795458,
+        "width": 0.21,
+        "height": 0.183
+      }
+    },
+    "f777fa56-b67c-4d27-9762-9a3f37da07da": {
+      "file": {
+        "path": "/demo/shared-v1/photo-9837041d8a658794e048.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "b0262b60-e2e6-49f9-9b57-f1c738ffff41",
+      "sourceEntryId": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+      "region": {
+        "x": 0.098,
+        "y": 0.447,
+        "width": 0.22,
+        "height": 0.191
+      }
+    },
+    "7183949f-ddcb-4eec-b3cd-1ff80fdd6544": {
+      "file": {
+        "path": "/demo/shared-v1/photo-8f3c77fef4d8ea1a7a31.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "9195ddba-9b0d-4b80-95c5-b34f642c6c06",
+      "sourceEntryId": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+      "region": {
+        "x": 0.2885889781605113,
+        "y": 0.41022212357954546,
+        "width": 0.225,
+        "height": 0.205
+      }
+    },
+    "50f42759-0312-4b2c-a72b-19e293d1b87b": {
+      "file": {
+        "path": "/demo/shared-v1/photo-86566333dc2f7be04d90.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "f5d2339a-e07f-406e-9171-d67abaf2bcb0",
+      "sourceEntryId": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+      "region": {
+        "x": 0.107,
+        "y": 0.612,
+        "width": 0.229,
+        "height": 0.191
+      }
+    },
+    "ef01e664-49cd-4135-913f-d2820af64b1d": {
+      "file": {
+        "path": "/demo/shared-v1/photo-fab553369b3b8392dd47.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "e3b761dd-946c-451a-a009-4c1aa39c7037",
+      "sourceEntryId": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+      "region": {
+        "x": 0.3554962491122159,
+        "y": 0.5963787878787878,
+        "width": 0.244,
+        "height": 0.205
+      }
+    },
+    "36c972b5-386c-4c92-9c07-6aac188c3ce0": {
+      "file": {
+        "path": "/demo/shared-v1/photo-96afe037e76d7a9626d7.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "210b064d-6dc3-4a9d-88ce-71968d5ac7ef",
+      "sourceEntryId": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+      "region": {
+        "x": 0.30683715820312496,
+        "y": 0.409396513967803,
+        "width": 0.191,
+        "height": 0.198
+      }
+    },
+    "768fbac2-e560-43a7-84d5-1fccc9a6cb53": {
+      "file": {
+        "path": "/demo/shared-v1/photo-ed4bd04d9e13565de7e0.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "54cf9b2a-7f46-47ed-ba2e-4e49788f7d8d",
+      "sourceEntryId": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+      "region": {
+        "x": 0.6424451127485795,
+        "y": 0.45848227391098484,
+        "width": 0.186,
+        "height": 0.132
+      }
+    },
+    "c1a2e791-a2ad-4c17-9db0-059de670b7a6": {
+      "file": {
+        "path": "/demo/shared-v1/photo-46bae01ce8fe59ba0bab.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "61c97728-dd72-4d96-a7fe-d401e38d0323",
+      "sourceEntryId": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+      "region": {
+        "x": 0.6990720436789774,
+        "y": 0.31627522786458334,
+        "width": 0.14286942915482953,
+        "height": 0.17148999763257572
+      }
+    },
+    "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f": {
+      "file": {
+        "path": "/demo/shared-v1/photo-7bbe85f91f9970e93f9b.jpg",
+        "type": "image/jpeg",
+        "name": "dish.jpg"
+      },
+      "sourceImageId": "13b3b61b-a3a9-4416-8873-1d1b0d058af5",
+      "sourceEntryId": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+      "region": {
+        "x": 0.5805019309303978,
+        "y": 0.33401507753314397,
+        "width": 0.1715813654119318,
+        "height": 0.2139266690340909
+      }
+    }
+  },
+  "photos": {
+    "records": {
+      "8f76f86a-3cbc-434b-9deb-68dc433d94c7": {
+        "key": "23b8c363-2e58-475b-9881-321e7b38b157",
+        "request": {
+          "dishId": "8f76f86a-3cbc-434b-9deb-68dc433d94c7",
+          "dishName": "Char Siew Rice",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "2ae9405e-d3ab-429a-a6dc-02e74c2deac1",
+          "sourceEntryId": "b856174d-9247-456f-b50a-b32c088fd1c6"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "80007e11-2592-4fcd-9bd5-0d2b01028e3d",
+        "candidate": {
+          "id": "abb8c893-14e6-40fa-b320-96366fe193b3",
+          "dishId": "8f76f86a-3cbc-434b-9deb-68dc433d94c7",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "b646568bdf6d70943216b7343655a651a680ed14334a23b1d7becc808125dd89",
+          "sourceImageId": "2ae9405e-d3ab-429a-a6dc-02e74c2deac1",
+          "sourceEntryId": "b856174d-9247-456f-b50a-b32c088fd1c6",
+          "sourceImageSha256": "6b93b4900d52f74987ad5cc374b41e04a88e91575a961096da28cffc34590644",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "ad32819efc88f20673017634befcb41c463816ea54c4fce818568c98e934b06d",
+          "createdAt": "2026-09-13T13:44:32.567Z"
+        }
+      },
+      "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1": {
+        "key": "79ec4eec-34e1-4e1f-8e7d-0bcf90e23fe5",
+        "request": {
+          "dishId": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1",
+          "dishName": "Roasted Sausage Rice",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "b661fa91-4ccb-45ac-9f56-7a689805730e",
+          "sourceEntryId": "19ae50ff-3615-48b5-869f-6c90f713fa72"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "37dd04b3-8314-4f1f-8871-64d8fe166a4c",
+        "candidate": {
+          "id": "0540e7a0-bca9-4e3e-a2ab-7ecbc4a56644",
+          "dishId": "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "fb1ef6b5574e746c6aa5fd2b9a24871d4cf726b9c8ee704636528d7aeb7d73a6",
+          "sourceImageId": "b661fa91-4ccb-45ac-9f56-7a689805730e",
+          "sourceEntryId": "19ae50ff-3615-48b5-869f-6c90f713fa72",
+          "sourceImageSha256": "68690dd7f66fea8935e062ab0c68bbb523c3a91a889d4e4e0857cebdc20c96d4",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "b84684a5e3e1c37e1c7161cfd3bb3d54df8db6b8fedf15365311dff328b20ff9",
+          "createdAt": "2026-09-13T13:44:49.146Z"
+        }
+      },
+      "f777fa56-b67c-4d27-9762-9a3f37da07da": {
+        "key": "bfbb78a0-c579-4f7a-82ef-4d4e5464c163",
+        "request": {
+          "dishId": "f777fa56-b67c-4d27-9762-9a3f37da07da",
+          "dishName": "Braised Pork Knuckle Rice",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "b0262b60-e2e6-49f9-9b57-f1c738ffff41",
+          "sourceEntryId": "dc51014f-7d90-4968-a2fe-71f1aa72c40f"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "d5649ded-5548-45ed-b627-6ee19e6c75df",
+        "candidate": {
+          "id": "af0f9454-9360-4906-a057-a2f6c4658cd3",
+          "dishId": "f777fa56-b67c-4d27-9762-9a3f37da07da",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "8e98c9e1217b7ed6a517473c3f6d92832e974056a011a4e690625505cb7a3b3e",
+          "sourceImageId": "b0262b60-e2e6-49f9-9b57-f1c738ffff41",
+          "sourceEntryId": "dc51014f-7d90-4968-a2fe-71f1aa72c40f",
+          "sourceImageSha256": "9837041d8a658794e048c05bf81600da33ddf959a06487ca1f5c3eb726b069f9",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "6286b2cdf264b2250727f929d73332f9a08a0cbb62bd091aa2793c0108f4768d",
+          "createdAt": "2026-09-13T13:45:07.352Z"
+        }
+      },
+      "7183949f-ddcb-4eec-b3cd-1ff80fdd6544": {
+        "key": "760ece9e-c49f-4c97-8150-5ab4b03b5d56",
+        "request": {
+          "dishId": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544",
+          "dishName": "Chicken Feet Noodle / Hor Fun",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "9195ddba-9b0d-4b80-95c5-b34f642c6c06",
+          "sourceEntryId": "4f22eefe-8fe3-4095-a7c6-13afe8aca373"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "627eb9d4-0824-4d38-8419-d9c325001f47",
+        "candidate": {
+          "id": "213261c7-eca6-44aa-bdcf-62bbea778fd2",
+          "dishId": "7183949f-ddcb-4eec-b3cd-1ff80fdd6544",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "062796652f20abd2702460d91824a894b373f00fe7951da35e8dd5f3ffac12ce",
+          "sourceImageId": "9195ddba-9b0d-4b80-95c5-b34f642c6c06",
+          "sourceEntryId": "4f22eefe-8fe3-4095-a7c6-13afe8aca373",
+          "sourceImageSha256": "8f3c77fef4d8ea1a7a31f808564702133e68ba6c89fde156b69c3e9c723f5527",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "e8ef055446cd8931f7acea20561ab5b6e230630923865fbcca7334f6f190ffd9",
+          "createdAt": "2026-09-13T13:45:29.147Z"
+        }
+      },
+      "50f42759-0312-4b2c-a72b-19e293d1b87b": {
+        "key": "dc7237a8-9f51-4b4d-b8ed-2974785294a6",
+        "request": {
+          "dishId": "50f42759-0312-4b2c-a72b-19e293d1b87b",
+          "dishName": "Braised Pork Knuckle Noodle",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "f5d2339a-e07f-406e-9171-d67abaf2bcb0",
+          "sourceEntryId": "a41c9bda-4566-4766-b921-47e5af01c6d9"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "aa65acfc-64dd-4684-b546-aee1b1d03f15",
+        "candidate": {
+          "id": "6aadd2ef-8b0c-4532-982d-45caa9f89e59",
+          "dishId": "50f42759-0312-4b2c-a72b-19e293d1b87b",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "a21030f2c9730921b6c3731dd7babf8b78c610a4bf4a043c00d99ec6f75c14a4",
+          "sourceImageId": "f5d2339a-e07f-406e-9171-d67abaf2bcb0",
+          "sourceEntryId": "a41c9bda-4566-4766-b921-47e5af01c6d9",
+          "sourceImageSha256": "86566333dc2f7be04d908fcc67063115d93a79aec50042d50724f97528748500",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "2e3befb9f921ef3adb4484df40809a2705174bcce654fe7233e4809bd8b420c4",
+          "createdAt": "2026-09-13T13:45:43.596Z"
+        }
+      },
+      "ef01e664-49cd-4135-913f-d2820af64b1d": {
+        "key": "dab08328-de4e-4fec-9292-c79f3861bf3e",
+        "request": {
+          "dishId": "ef01e664-49cd-4135-913f-d2820af64b1d",
+          "dishName": "Charcoal Charsiew Wanton Noodle",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "e3b761dd-946c-451a-a009-4c1aa39c7037",
+          "sourceEntryId": "fd5fb5da-b224-4fc3-83de-5533d40de1e7"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "31090496-3fe3-4bae-adee-e40153a6746f",
+        "candidate": {
+          "id": "670b556b-0b96-4ac6-9e39-b1d665b491bc",
+          "dishId": "ef01e664-49cd-4135-913f-d2820af64b1d",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "11dd6b2849c5f91b27a4a2109963c5bdc196a8e7189f82a006d7bb04b7a489d4",
+          "sourceImageId": "e3b761dd-946c-451a-a009-4c1aa39c7037",
+          "sourceEntryId": "fd5fb5da-b224-4fc3-83de-5533d40de1e7",
+          "sourceImageSha256": "fab553369b3b8392dd47a902e91f937e35ea481184ab5bd0e5897d573b1f8d53",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "29f7b1cec0ec5cb97b5c31ac52915898506546e7b77def6be6252b4660a9f736",
+          "createdAt": "2026-09-13T13:45:58.821Z"
+        }
+      },
+      "36c972b5-386c-4c92-9c07-6aac188c3ce0": {
+        "key": "e1018fd3-6a99-4fa6-b5e1-7eb12456b1c0",
+        "request": {
+          "dishId": "36c972b5-386c-4c92-9c07-6aac188c3ce0",
+          "dishName": "Mushroom Chicken Feet",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "210b064d-6dc3-4a9d-88ce-71968d5ac7ef",
+          "sourceEntryId": "da0fb993-8b1e-42c4-80fe-9657104f5977"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "c2688954-130b-4921-a6f2-5b89339d7a1c",
+        "candidate": {
+          "id": "28975b1c-e4df-4ea0-a458-2b24e4c4ac7d",
+          "dishId": "36c972b5-386c-4c92-9c07-6aac188c3ce0",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "494807e058c835982a88157c1c40b841fc98880587cdc9317d50e849c984599e",
+          "sourceImageId": "210b064d-6dc3-4a9d-88ce-71968d5ac7ef",
+          "sourceEntryId": "da0fb993-8b1e-42c4-80fe-9657104f5977",
+          "sourceImageSha256": "96afe037e76d7a9626d7931e95405929ecd215399f1d35091d7f7cbac9b56fcd",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "a89171f164df017caa87e7adcdaf71841a97dde5d4ae7b77f5bf1e0aa5929dd1",
+          "createdAt": "2026-09-13T13:46:17.644Z"
+        }
+      },
+      "c1a2e791-a2ad-4c17-9db0-059de670b7a6": {
+        "key": "f99151a8-8aad-439e-bba1-546f2d0acafb",
+        "request": {
+          "dishId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+          "dishName": "Dumpling Soup",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "61c97728-dd72-4d96-a7fe-d401e38d0323",
+          "sourceEntryId": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "9b0fef80-f080-47ff-99eb-218c5589de9c",
+        "candidate": {
+          "id": "035813a9-94a9-4051-bb0a-3c4ed7400a10",
+          "dishId": "c1a2e791-a2ad-4c17-9db0-059de670b7a6",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "658b1debaa9fbe77d5ac83906a4d1f6e78d8352f8d16ca04e5d7ae2d6fe9f919",
+          "sourceImageId": "61c97728-dd72-4d96-a7fe-d401e38d0323",
+          "sourceEntryId": "3dd96ab6-ed9e-4292-9f2e-725ca70ab2e2",
+          "sourceImageSha256": "46bae01ce8fe59ba0babbe6ac05b8a456daa83659f6f65aa9ea2a1fbbead65e4",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "c5d9442814570e231f04f02506b018b3a231c0f0e6e40a2eb235ad3ed6809c0b",
+          "createdAt": "2026-09-13T13:46:30.424Z"
+        }
+      },
+      "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f": {
+        "key": "02bcfb7a-a638-4fc4-931a-732126aabf3f",
+        "request": {
+          "dishId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+          "dishName": "Wanton Soup",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "13b3b61b-a3a9-4416-8873-1d1b0d058af5",
+          "sourceEntryId": "a5997803-7221-40fa-84e9-ee3bbbe556ba"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "43c28fcd-5569-4b67-9add-55ad940c9281",
+        "candidate": {
+          "id": "1027cad4-7535-4499-9111-e7c3d7deed3b",
+          "dishId": "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "d82a5d06ee62d0a76ccb9aca587fb61390c8881aefb4874196baade93fe962f7",
+          "sourceImageId": "13b3b61b-a3a9-4416-8873-1d1b0d058af5",
+          "sourceEntryId": "a5997803-7221-40fa-84e9-ee3bbbe556ba",
+          "sourceImageSha256": "7bbe85f91f9970e93f9b26f1dffa938f020f2e1f9b66eb54895f6a053ebfdc94",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "6efb66f0d28aabfc622a4d52bb9c9cf5be7f88287b7f011b04ded19c8d19de3f",
+          "createdAt": "2026-09-13T13:46:45.381Z"
+        }
+      },
+      "768fbac2-e560-43a7-84d5-1fccc9a6cb53": {
+        "key": "08a7b245-91f1-43ca-8298-328c607936f5",
+        "request": {
+          "dishId": "768fbac2-e560-43a7-84d5-1fccc9a6cb53",
+          "dishName": "Oyster Sauce Kailan",
+          "mode": "enhance_visible",
+          "merchantConfirmedVisible": true,
+          "sourceImageId": "54cf9b2a-7f46-47ed-ba2e-4e49788f7d8d",
+          "sourceEntryId": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3"
+        },
+        "status": "ready",
+        "selected": true,
+        "jobId": "62ae9c56-4b4e-4e73-9eba-e4353404e88f",
+        "candidate": {
+          "id": "993c0319-5aca-439a-a5a4-359401b9866d",
+          "dishId": "768fbac2-e560-43a7-84d5-1fccc9a6cb53",
+          "status": "needs_review",
+          "mode": "enhance_visible",
+          "label": "AI-enhanced source photo",
+          "disclosureRequired": true,
+          "mimeType": "image/jpeg",
+          "imageSha256": "984c5e6e8ed17c0b098e697e273dc021a7e8a4531b236f98e0750e731cb9ab65",
+          "sourceImageId": "54cf9b2a-7f46-47ed-ba2e-4e49788f7d8d",
+          "sourceEntryId": "d7ad5dae-fbb9-4682-b228-86c76c43f4b3",
+          "sourceImageSha256": "ed4bd04d9e13565de7e0f62839fe61cab1d276e5c6226c3f9f8a8e0fea4edf99",
+          "region": null,
+          "model": "gpt-image-2.5-sunburst",
+          "quality": "low",
+          "size": "1024x1024",
+          "promptSha256": "43fe6c8ca6a704de8ae8c91fba49dd7f507e5c9e2d5604a3d39bbbd35c256aed",
+          "createdAt": "2026-09-13T13:46:59.430Z"
+        }
+      }
+    },
+    "blobs": {
+      "8f76f86a-3cbc-434b-9deb-68dc433d94c7": {
+        "path": "/demo/shared-v1/photo-b646568bdf6d70943216.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "d34a6e1e-7fa3-4ae3-ab84-109bfcbb2ab1": {
+        "path": "/demo/shared-v1/photo-fb1ef6b5574e746c6aa5.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "f777fa56-b67c-4d27-9762-9a3f37da07da": {
+        "path": "/demo/shared-v1/photo-8e98c9e1217b7ed6a517.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "7183949f-ddcb-4eec-b3cd-1ff80fdd6544": {
+        "path": "/demo/shared-v1/photo-062796652f20abd27024.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "50f42759-0312-4b2c-a72b-19e293d1b87b": {
+        "path": "/demo/shared-v1/photo-a21030f2c9730921b6c3.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "ef01e664-49cd-4135-913f-d2820af64b1d": {
+        "path": "/demo/shared-v1/photo-11dd6b2849c5f91b27a4.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "36c972b5-386c-4c92-9c07-6aac188c3ce0": {
+        "path": "/demo/shared-v1/photo-494807e058c835982a88.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "c1a2e791-a2ad-4c17-9db0-059de670b7a6": {
+        "path": "/demo/shared-v1/photo-658b1debaa9fbe77d5ac.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "ef2a024f-f4b3-4ace-8033-ea5db7f2d61f": {
+        "path": "/demo/shared-v1/photo-d82a5d06ee62d0a76ccb.jpg",
+        "type": "image/jpeg",
+        "name": null
+      },
+      "768fbac2-e560-43a7-84d5-1fccc9a6cb53": {
+        "path": "/demo/shared-v1/photo-984c5e6e8ed17c0b098e.jpg",
+        "type": "image/jpeg",
+        "name": null
+      }
+    }
+  }
+}
