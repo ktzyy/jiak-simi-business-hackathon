@@ -23,3 +23,7 @@ The previously deployed recording revision 7220433 passed the hosted S$14 dine-i
 Telegram @blackcharsiewbot accepts private human chats in public demo mode, with dummy-stall isolation and shared AI budgets. Its polling process must stay running. GPT Live uses the supervised laptop relay; the laptop, Next server, relay and Quick Tunnel must all remain running. See HANDSFREE-VOICE.md for verbal confirmation and retry behavior.
 
 All three approved database migrations are applied to staging project mikpepfrumtglwweolzq. No new migration is part of this release. Supabase Auth Site URL and callback allow-list include the canonical Site origin and /auth/confirm. Privileged credentials remain server-side.
+
+## Fast demo onboarding
+
+The owner requested skipping unreadable OCR entries and review checkboxes. With NEXT_PUBLIC_DEMO_MODE=true on the fixed dummy stall, names/prices that cannot be read are omitted, shared readable add-ons apply across the menu, per-item/source/issue confirmation gates are hidden, and the preview publishes through one explicit button. Empty menus still require a readable dish; unknown prices never become zero. Required choice rules, seven-day hours, backend scope and publication retry/version checks remain enforced. Normal merchant review outside this demo is unchanged.

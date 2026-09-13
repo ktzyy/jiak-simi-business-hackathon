@@ -109,6 +109,16 @@ test("refusals and credential failures never trigger retry or expose provider me
   }
 });
 
+test("OCR rejects provider redirects without following or retrying with its bearer", async () => {
+  let calls = 0;
+  const fetcher: typeof fetch = async (url, init) => {
+    calls++; assert.equal(String(url), "https://api.openai.com/v1/responses"); assert.equal(init?.redirect, "manual");
+    return new Response("untrusted redirect body", { status: 302, headers: { Location: "https://untrusted.example/collect" } });
+  };
+  await assert.rejects(extractMenu(input, { apiKey: "fake-key", fetch: fetcher }), (error: unknown) => error instanceof MenuExtractionError && error.code === "provider_error" && !error.message.includes("untrusted"));
+  assert.equal(calls, 1);
+});
+
 test("incomplete response and repeated provider failures stop after two attempts", async () => {
   for (const responses of [
     [Response.json({ status: "incomplete", output: [] }), Response.json({ status: "incomplete", output: [] })],

@@ -14,6 +14,8 @@ import { CustomerCart } from "@/components/ordering/customer-cart";
 import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
 import { DAYS, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, reviewedMenu, type DishEdit, type SourceDecision } from "./review-state";
+import { cleanDemoDishes, demoMenu } from "./demo-draft";
+import { PUBLIC_DEMO_RESTAURANT_ID } from "@/shared/public-demo";
 import s from "./onboarding.module.css";
 
 const api = createApiClient();
@@ -26,6 +28,7 @@ function sameMenu(a: Menu, b: Menu) { return JSON.stringify(MenuSchema.parse(a))
 const needsReconciliation = (error: unknown) => !(error instanceof ApiError) || error.status === 0 || error.status >= 500 || error.code === "INVALID_RESPONSE";
 
 export function Onboarding({ restaurantId }: { restaurantId: string }) {
+  const quickDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true" && restaurantId === PUBLIC_DEMO_RESTAURANT_ID;
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [hours, setHours] = useState(() => DAYS.map(emptyHours));
@@ -103,8 +106,16 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     setError(""); return true;
   }
   function loadDraft(next: ExtractedMenuDraft | null, kind: "sample" | "manual" | "current" | "photo") {
-    setDraft(next); setDishes(next ? draftDishes(next) : kind === "current" && current ? existingDishes(current) : [newDish()]);
-    setSources({}); setIssues({}); setSample(kind === "sample"); setPreview(null); setError(""); setNotice(""); setStep(2);
+    const original = next ? draftDishes(next) : kind === "current" && current ? existingDishes(current) : [newDish()];
+    const readable = quickDemo && next ? original.filter(dish => {
+      const item = next.items.find(item => item.id === dish.draftItemId);
+      const source = next.sourceEntries?.find(source => source.id === item?.sourceEntryId);
+      return !source || source.currency === "SGD" && !source.priceUncertain;
+    }) : original;
+    const cleaned = quickDemo && kind !== "manual" ? cleanDemoDishes(readable).dishes : readable;
+    setDraft(next); setDishes(cleaned);
+    setSources({}); setIssues({}); setSample(kind === "sample"); setPreview(null); setError("");
+    setNotice(quickDemo && original.length !== cleaned.length ? `${original.length - cleaned.length} unclear entries skipped. You can add them later.` : ""); setStep(2);
   }
   function selectPhoto(file: File | null) {
     setError("");
@@ -161,14 +172,16 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     catch (e) { setMenuRead("error"); setError(errorText(e)); }
     finally { inFlight.current = false; setBusy(""); }
   }
-  async function preparePreview() {
+  async function preparePreview(candidateDishes = dishes) {
     if (inFlight.current) return;
     const problem = stepOneProblem();
     if (problem) { setStep(1); setError(problem); return; }
     inFlight.current = true; setBusy("preview"); setError("");
     try {
       const fresh = await readCurrent(restaurantId); setCurrent(fresh); setMenuRead("ready");
-      const menu = reviewedMenu({ draft, dishes, sources, issues, id: fresh?.id ?? crypto.randomUUID(), restaurantId, version: (fresh?.version ?? 0) + 1, name });
+      const menuInput = { dishes: candidateDishes, id: fresh?.id ?? crypto.randomUUID(), restaurantId, version: (fresh?.version ?? 0) + 1, name };
+      const menu = quickDemo ? demoMenu(menuInput) : reviewedMenu({ ...menuInput, draft, sources, issues });
+      if (quickDemo) setDishes(cleanDemoDishes(candidateDishes).dishes);
       const input = detailsInput(name, hours, sameHours);
       const token = await getStaffAccessToken();
       let details = savedDetails;
@@ -219,7 +232,7 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   async function publish(retry = false) {
     const candidate = retry ? pending : preview;
     const details = retry ? pendingDetails : previewDetails;
-    if (!details || !candidate || candidate.restaurantId !== restaurantId || inFlight.current || (!retry && !menuOnly) || conflict || storageBlocked) return;
+    if (!details || !candidate || candidate.restaurantId !== restaurantId || inFlight.current || (!retry && !menuOnly && !quickDemo) || conflict || storageBlocked) return;
     inFlight.current = true; setBusy("publish"); setError(""); setNotice("");
     let sent = false;
     try {
@@ -265,13 +278,13 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
       {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes · version {published.version}</p><p>Menu names, prices, options and the reviewed opening hours are live. Address and contact import remain unavailable.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
         {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} photo={photo} onPhoto={selectPhoto} photoUrl={photoUrl} busy={!!busy} onExtract={extract} onManual={() => { if (mayContinue()) loadDraft(null, "manual"); }} onExample={() => { if (mayContinue()) loadDraft(OCR_DRAFT_FIXTURE, "sample"); }} onExisting={() => { if (current && mayContinue()) loadDraft(null, "current"); }} currentMenu={current?.name ?? ""} existingAvailable={!!current} pageDetails={pageDetails} setPageDetails={setPageDetails} />}
-        {step === 2 && <MenuReview dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onConfirmAll={() => confirmDishes(dishes.map(d => d.id))} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onSourceChange={(id, decision) => { setSources(old => ({ ...old, [id]: decision })); setPreview(null); }} onIssueChange={(id, value) => setIssues(old => ({ ...old, [id]: value }))} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
+        {step === 2 && <MenuReview quickDemo={quickDemo} dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onConfirmAll={() => confirmDishes(dishes.map(d => d.id))} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onSourceChange={(id, decision) => { setSources(old => ({ ...old, [id]: decision })); setPreview(null); }} onIssueChange={(id, value) => setIssues(old => ({ ...old, [id]: value }))} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
         {step === 3 && preview && <div className={s.stack}>
           <div className={s.previewIntro}><p className="eyebrow">Customer preview</p><h2>This is what they’ll see.</h2><p>Scroll through the menu and tap “Add to order” to try the options. Preview orders won’t go to your kitchen.</p>{sample && <p className="notice">You are previewing the saved, unapproved extraction example.</p>}</div>
           <div className={s.phone}><div className={s.phoneTop} aria-hidden="true"><span>9:41</span><span className={s.island} /><span>● ▰</span></div><div className={s.phoneScreen}><CustomerCart key={JSON.stringify(preview)} restaurantId={restaurantId} previewMenu={preview} previewHours={hoursProblem(hours, sameHours) ? undefined : hoursSummary(hours, sameHours)} /></div><div className={s.phoneBottom} aria-hidden="true" /></div>
           <section className={`card ${s.section}`}><h2>{pending ? "Check your publication" : "Ready to put your menu up?"}</h2><p>Version {preview.version} · reviewed stall details version {previewDetails?.version ?? pendingDetails?.version} · {preview.dishes.filter(d => d.available).length} dishes available to order</p>
             <p className="notice">Publishing saves this menu with the reviewed stall name and opening hours. Address, contact and photo uploads are not saved yet. The demo menu uses its prepared dish photos.</p>
-            {!pending ? <><label className={s.check}><input type="checkbox" checked={menuOnly} onChange={e => setMenuOnly(e.target.checked)} />I’ve checked the preview. Publish this menu for the test.</label><div className={s.actions}><button className="btn btn-outline" onClick={() => { setStep(2); setPreview(null); }}>← Back to editing</button><button className="btn btn-primary" disabled={!menuOnly || storageBlocked} onClick={() => publish()}>Publish menu →</button></div></> : <><p>Keep this page open until we can confirm what’s live. Retrying uses this same menu and version.</p><div className={s.actions}><button className="btn btn-teal" onClick={reconcile}>Check publication status</button>{conflict ? <button className="btn btn-outline" onClick={returnAfterConflict}>Return to review</button> : <button className="btn btn-outline" disabled={storageBlocked} onClick={() => publish(true)}>Retry this exact publish</button>}</div></>}
+            {!pending ? <>{!quickDemo && <label className={s.check}><input type="checkbox" checked={menuOnly} onChange={e => setMenuOnly(e.target.checked)} />I’ve checked the preview. Publish this menu for the test.</label>}<div className={s.actions}><button className="btn btn-outline" onClick={() => { setStep(2); setPreview(null); }}>← Back to editing</button><button className="btn btn-primary" disabled={(!quickDemo && !menuOnly) || storageBlocked} onClick={() => publish()}>Publish menu →</button></div></> : <><p>Keep this page open until we can confirm what’s live. Retrying uses this same menu and version.</p><div className={s.actions}><button className="btn btn-teal" onClick={reconcile}>Check publication status</button>{conflict ? <button className="btn btn-outline" onClick={returnAfterConflict}>Return to review</button> : <button className="btn btn-outline" disabled={storageBlocked} onClick={() => publish(true)}>Retry this exact publish</button>}</div></>}
           </section>
         </div>}
       </fieldset>}

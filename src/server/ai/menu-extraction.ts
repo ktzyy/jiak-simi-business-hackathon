@@ -111,6 +111,9 @@ export async function extractMenu(
     try {
       const response = await fetcher("https://api.openai.com/v1/responses", {
         method: "POST",
+        // workerd does not implement redirect:"error". Manual handling leaves
+        // 3xx to the non-success check below without forwarding the API bearer.
+        redirect: "manual",
         headers: { Authorization: `Bearer ${options.apiKey}`, "Content-Type": "application/json" },
         signal,
         body: JSON.stringify({
