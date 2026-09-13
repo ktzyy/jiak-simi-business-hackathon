@@ -34,7 +34,7 @@ p { margin-bottom:16px; }
 .actions { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
 .site-header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:22px; padding:24px max(24px,calc((100vw - 1160px)/2)); border-bottom:1px solid var(--line); background:var(--paper); }
 .brand { display:inline-flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:var(--ink); flex-shrink:0; }
-.brand img { width:126px; height:auto; object-fit:contain; }
+.brand img { width:128px; height:auto; object-fit:contain; }
 .brand span { font-size:10px; font-weight:700; letter-spacing:.19em; }
 .site-header nav { display:flex; gap:6px; flex-wrap:wrap; }
 .site-header nav a { padding:10px 16px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--green); }

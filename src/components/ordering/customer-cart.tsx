@@ -246,7 +246,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
     {preview && <div className={styles.previewLabel}>CUSTOMER PREVIEW · NO ORDERS SENT</div>}
     {showStaffTools && !preview && <header className={styles.adminHeader} aria-label="Stall admin"><span>Stall admin</span><nav aria-label="Staff tools"><Link href={`/?restaurantId=${restaurantId}`}>Overview</Link><Link href={`/onboarding?restaurantId=${restaurantId}`}>Edit menu</Link><Link href={`/kitchen?restaurantId=${restaurantId}`}>Cook mode →</Link></nav></header>}
     <header className={styles.header}>
-      <Link href="/" className={styles.brand}><Image src="/brand/jiak-simi.png" alt="Jiak Simi" width={144} height={35} style={{ width: 144, height: "auto" }} /></Link>
+      <Link href="/" className={styles.brand}><Image src="/brand/jiak-simi-horizontal.png" alt="Jiak Simi" width={128} height={19} unoptimized style={{ width: 128, height: "auto" }} /></Link>
       {restaurantId === DEMO_RESTAURANT_ID && !preview && <nav className={styles.demoActions} aria-label="Try the ordering demo">
         <a className="btn btn-teal" href="https://t.me/blackcharsiewbot" target="_blank" rel="noopener noreferrer">Order on Telegram ↗</a>
         <Link className="btn btn-outline" href="/voice-test">Speak with GPT Live</Link>
