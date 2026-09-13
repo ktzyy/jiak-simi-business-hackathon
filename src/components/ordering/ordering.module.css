@@ -37,3 +37,8 @@
 @media(min-width:650px){.customer:not(.preview) .logoHeader{padding-inline:40px;}}
 @media(max-width:700px){.header{grid-template-columns:minmax(0,1fr);gap:12px;}.headerIllustration{width:180px;justify-self:end;}.logoHeader{padding:16px 20px;}}
 .preview .logoHeader{padding:12px 20px;min-height:48px;}.preview .logoHeader .brand{margin:0;}.preview .headerIllustration{width:100px;}.preview .header{gap:8px;}
+
+.preview .header { display:block; }.preview .headerIllustration { display:none; }
+.dining { max-width:100%; }.dining button { white-space:nowrap; }
+.preview .dining button { padding:10px 16px; }
+@media(max-width:700px){.headerIllustration{display:none;}.header{display:block;}}

@@ -168,7 +168,7 @@
 .uploadedPhotos figcaption { max-width: 100%; font-size: 14px; overflow-wrap: anywhere; }
 .textAction { color: #20564b; background: none; border: none; font: inherit; font-weight: 700; text-decoration: underline; padding: 12px 0; cursor: pointer; }
 .addDish { width: 100%; justify-self: stretch; }
-.extracting { padding: 48px 24px; text-align: center; background: #f5f3e8; border-radius: 24px; margin-bottom: 24px; }
+.extracting { padding: 48px 24px; text-align: center; background: transparent; margin-bottom: 24px; }
 .extracting h2 { color: #20564b; margin: 16px 0 8px; }
 .extracting p { margin: 0; color: #686658; }
 .foodAnimation { display: flex; justify-content: center; gap: 16px; font-size: 46px; }
