@@ -94,3 +94,36 @@ test("out-of-range hours or minutes are rejected", () => {
   assert.ok(hoursProblem(Array.from({ length: 7 }, () => ({ ...open, start: "25:00" })), true));
   assert.ok(hoursProblem(Array.from({ length: 7 }, () => ({ ...open, start: "11:65" })), true));
 });
+
+
+test("shared add-ons apply once to all included dishes without removing required choices", async () => {
+  const { applyGlobalAddons, existingDishes } = await import("./review-state");
+  const { DEMO_FULL_MENU } = await import("@/shared/demo-full-menu-proposal");
+  const dishes = existingDishes(DEMO_FULL_MENU);
+  dishes[0].included = false;
+  const groupId = "7aef4800-b88a-4148-8044-000000000001";
+  const rows = [{ id: "7aef4800-b88a-4148-8044-000000000002", name: "Egg", price: "1.00", included: true, sourceIds: ["source-egg"] }];
+  const result = applyGlobalAddons(dishes, rows, groupId);
+  assert.equal(result.dishes.length, 9);
+  for (const dish of result.dishes) {
+    assert.equal(dish.groups.filter(g => g.name === "Additional Ingredients").length, 1);
+    assert.equal(dish.groups.find(g => g.id === groupId)?.options[0].price, "1.00");
+    assert.equal(dish.confirmed, false);
+  }
+  const chicken = result.dishes.find(d => d.name === "Chicken Feet Noodle / Hor Fun")!;
+  assert.equal(chicken.groups.find(g => g.name === "Noodle type")?.min, "1");
+  assert.equal(chicken.groups.find(g => g.name === "Chilli preference")?.max, "1");
+  assert.equal(result.sources["source-egg"].dishIds.length, 9);
+  assert.equal(applyGlobalAddons(result.dishes, rows, groupId).dishes[0].groups.filter(g => g.id === groupId).length, 1);
+});
+test("shared extras reject unknown prices and duplicates, retain explicit source exclusions", async () => {
+  const { applyGlobalAddons, globalAddonRows } = await import("./review-state");
+  const input = reviewedFixture();
+  const row = { id: "7aef4800-b88a-4148-8044-000000000002", name: "Rice", price: "", included: true, sourceIds: ["rice-source"] };
+  assert.throws(() => applyGlobalAddons(input.dishes, [row], row.id), /Check the price/);
+  assert.throws(() => applyGlobalAddons(input.dishes, [{ ...row, price: "0.50" }, { ...row, id: "different", price: "0.50" }], row.id), /appears twice/);
+  const excluded = applyGlobalAddons(input.dishes, [{ ...row, included: false }], row.id);
+  assert.deepEqual(excluded.sources["rice-source"].dishIds, []);
+  assert.equal(excluded.sources["rice-source"].confirmed, true);
+  assert.equal(globalAddonRows(input.draft, input.dishes).length, 2);
+});

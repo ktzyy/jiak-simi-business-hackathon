@@ -77,3 +77,37 @@ export function hoursSummary(hours: HourDay[], same: boolean) {
   const describe = (day: HourDay) => day.closed ? "Closed" : day.intervals ? day.intervals.map(period => `${timeLabel(period.opens)}–${timeLabel(period.closes)}${period.closesNextDay ? " next day" : ""}`).join(", ") : `${timeLabel(day.start)}–${timeLabel(day.end)}${day.nextDay ? " next day" : ""}${day.hasBreak ? ` (break ${timeLabel(day.breakStart)}–${timeLabel(day.breakEnd)})` : ""}`;
   return same ? `Mon–Sun ${describe(hours[0])}` : hours.map((day, i) => `${DAYS[i]} ${describe(day)}`).join(" · ");
 }
+
+export type GlobalAddonEdit = { id: string; name: string; price: string; included: boolean; sourceIds: string[] };
+export function globalAddonRows(draft: ExtractedMenuDraft | null, dishes: DishEdit[]): GlobalAddonEdit[] {
+  if (draft) return (draft.sourceEntries ?? []).filter(entry => entry.kind === "addon").map(entry => ({ id: entry.id, name: titleName(entry.name ?? ""), price: dollars(entry.priceCents), included: true, sourceIds: [entry.id] }));
+  const first = dishes.find(dish => dish.included)?.groups.find(group => group.min === "0" && /^(additional ingredients|add-ons|extras)$/i.test(group.name));
+  return first?.options.map(option => ({ ...option, included: true, sourceIds: [] })) ?? [];
+}
+export function applyGlobalAddons(dishes: DishEdit[], rows: GlobalAddonEdit[], groupId: string) {
+  const included = rows.filter(row => row.included);
+  if (included.length > 20) throw new Error("Use at most 20 shared add-ons. Leave out any duplicate printed entries.");
+  const names = new Set<string>();
+  for (const row of included) {
+    const normalized = row.name.trim().toLowerCase();
+    if (!normalized || row.name.trim().length > 120) throw new Error("Give each included add-on a name.");
+    if (names.has(normalized)) throw new Error("The same add-on appears twice. Keep one row and leave the duplicate out.");
+    names.add(normalized);
+    const cents = amount(row.price);
+    if (!Number.isInteger(cents) || cents < 0 || cents > 1_000_000) throw new Error(`Check the price for ${row.name}. Enter 0 only when it is free.`);
+  }
+  const affected = dishes.filter(dish => dish.included);
+  if (!affected.length) throw new Error("Include at least one dish before applying add-ons.");
+  const group: GroupEdit = { id: groupId, name: "Additional Ingredients", min: "0", max: String(included.length), options: included.map(row => ({ id: row.id, name: row.name.trim(), price: row.price.trim() })) };
+  const updated = affected.map(dish => {
+    // Only replace this editor's group, or the dedicated optional add-on panel.
+    // Required noodle alternatives and chilli groups remain untouched.
+    const groups = dish.groups.filter(g => g.id !== groupId && !(g.min === "0" && /^(additional ingredients|add-ons|extras)$/i.test(g.name)));
+    if (included.length) groups.push(group);
+    if (groups.length > 20) throw new Error(`Too many option groups for ${dish.name}.`);
+    return { ...dish, groups, confirmed: false };
+  });
+  const sources: Record<string, SourceDecision> = {};
+  for (const row of rows) for (const sourceId of row.sourceIds) sources[sourceId] = row.included ? { dishIds: affected.map(dish => dish.id), confirmed: true, reason: `Reviewed ${row.name} at S$${Number(row.price).toFixed(2)} as an optional add-on for every included dish; each add-on can be selected once.` } : { dishIds: [], confirmed: true, reason: `Explicitly left ${row.name || "this printed add-on"} out of the shared add-on list.` };
+  return { dishes: updated, sources };
+}

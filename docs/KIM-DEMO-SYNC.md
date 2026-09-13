@@ -12,7 +12,7 @@ Use `src/shared/api-client.ts` and `src/shared/contracts.ts`. `readPublishedStal
 
 Every cart and server quote requires explicit `fulfillmentType` (`dine_in` or `takeaway`), with no default or surcharge. Persisted orders carry it into the kitchen. Submit with the same confirmation key after an uncertain response. `completeKitchenOrder` uses expected status version and an idempotency key; advance only after acknowledgement and refresh counts. Payment remains unpaid.
 
-OCR upload, review and publish remain connected to the existing API client and review helpers. Current published demo menu is v2: three dishes plus egg S$1, char siew S$2, shao rou S$2 and free chilli preferences. Full photographed menu v3 is prepared but not published: explicit approval of item availability, global extras applicability and the required noodle/hor-fun choice is pending. Wanton Soup S$4 and Rice S$0.50 are already confirmed. See FULL-DEMO-MENU-REVIEW.md.
+Menu review now has “Set your extras once”: edit shared names/prices and apply them to every included dish in one action. Required dish choices stay separate. OCR upload, review and publish remain connected to the existing API client and review helpers. Current published demo menu is v2: three dishes plus egg S$1, char siew S$2, shao rou S$2 and free chilli preferences. Full photographed menu v3 is prepared but not published: explicit approval of item availability, global extras applicability and the required noodle/hor-fun choice is pending. Wanton Soup S$4 and Rice S$0.50 are already confirmed. See FULL-DEMO-MENU-REVIEW.md.
 
 ## Evidence and operational limits
 

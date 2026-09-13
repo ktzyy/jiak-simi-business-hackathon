@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
-import { dollars, type DishEdit, type GroupEdit, type SourceDecision } from "./review-state";
+import { globalAddonRows, applyGlobalAddons, dollars, type DishEdit, type GroupEdit, type SourceDecision } from "./review-state";
 import s from "./onboarding.module.css";
 
 export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, onDishChange, onConfirmDish, onConfirmAll, onAddDish, onRemoveDish, onSourceChange, onIssueChange, onContinue, onBack }: {
@@ -14,6 +14,24 @@ export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, o
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [bulkChecked, setBulkChecked] = useState(false);
+  const [globalRows, setGlobalRows] = useState(() => globalAddonRows(draft, dishes));
+  const [globalGroupId] = useState(() => crypto.randomUUID());
+  const [globalMessage, setGlobalMessage] = useState("");
+  const [globalDirty, setGlobalDirty] = useState(false);
+  function updateGlobal(index: number, patch: Partial<(typeof globalRows)[number]>) { setGlobalRows(old => old.map((row, i) => i === index ? { ...row, ...patch } : row)); setGlobalDirty(true); setGlobalMessage(""); }
+  function applyShared() {
+    try {
+      const next = applyGlobalAddons(dishes, globalRows, globalGroupId);
+      for (const dish of next.dishes) onDishChange(dish.id, { groups: dish.groups });
+      for (const [id, decision] of Object.entries(next.sources)) onSourceChange(id, decision);
+      for (const issue of draft?.issues ?? []) {
+        const sourceId = Object.keys(next.sources).find(id => issue.message.includes(id));
+        if (sourceId && ["source_mapping_required", "unknown_price"].includes(issue.code)) onIssueChange(issue.id, next.sources[sourceId].reason);
+      }
+      setBulkChecked(false); setGlobalDirty(false);
+      setGlobalMessage(`Add-ons applied to ${next.dishes.length} dishes. Check the updated cards, then confirm all checked dishes below.`);
+    } catch (error) { setGlobalMessage(error instanceof Error ? error.message : "Check your add-ons."); }
+  }
   const confirmed = dishes.filter(d => d.confirmed).length;
   const extraSources = (draft?.sourceEntries ?? []).filter(source => !draft?.items.some(item => item.sourceEntryId === source.id));
   function patchGroup(dish: DishEdit, id: string, patch: Partial<GroupEdit>) { onDishChange(dish.id, { groups: dish.groups.map(g => g.id === id ? { ...g, ...patch } : g) }); }
@@ -23,6 +41,19 @@ export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, o
     {photoUrl && <details className={s.original}><summary>Keep the original menu photo handy</summary>{/* User-selected local Blob URL. */}<img src={photoUrl} alt="Original menu photo for reviewing names, prices and options" /></details>}
     <p className={s.help}>Extracted English names start in title case, like “Char Siew Rice”. You can change the spelling. The original wording stays below each extracted dish for comparison.</p>
     {dishes.length === 0 && <div className="notice"><h3>No dishes came through</h3><p>You can add your dishes below, or go back and try a clearer photo.</p></div>}
+    <section className={`card ${s.section}`}>
+      <p className="eyebrow">Add-ons for every dish</p><h2>Set your extras once.</h2>
+      <p>Egg, chicken feet, vegetables and other extras can apply to every dish. Check the names and prices here, then apply them together. Noodle choices and chilli preferences stay separate.</p>
+      {globalRows.map((row, index) => <div key={row.id} className={s.optionRow}>
+        <label className={s.check}><input type="checkbox" checked={row.included} onChange={e => updateGlobal(index, { included: e.target.checked })} />Include</label>
+        <label className="field">Add-on name<input maxLength={120} value={row.name} disabled={!row.included} onChange={e => updateGlobal(index, { name: e.target.value })} /></label>
+        <label className="field">Extra price (S$)<input inputMode="decimal" value={row.price} disabled={!row.included} placeholder="Price needed" onChange={e => updateGlobal(index, { price: e.target.value })} /></label>
+      </div>)}
+      <button className="btn btn-outline" disabled={globalRows.length >= 100} onClick={() => { setGlobalRows(old => [...old, { id: crypto.randomUUID(), name: "", price: "", included: true, sourceIds: [] }]); setGlobalDirty(true); }}>+ Add another extra</button>
+      <p className={s.help}>Each extra is optional. Uncheck duplicates and fill in any missing prices.</p>
+      <button className="btn btn-teal" disabled={!globalRows.length} onClick={applyShared}>Apply add-ons to all dishes</button>
+      {globalMessage && <p className="notice" role="status">{globalMessage}</p>}
+    </section>
     <div className={s.dishes}>{dishes.map((dish, index) => {
       const item = draft?.items.find(i => i.id === dish.draftItemId);
       const source = draft?.sourceEntries?.find(entry => entry.id === item?.sourceEntryId);
@@ -60,7 +91,7 @@ export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, o
         <summary>{decision.confirmed ? "✓ " : "○ "}{source.name ?? source.kind} · {source.rawPriceText ?? "Price unclear"}<span>{source.region}</span></summary>
         <div className={s.sourceBody}><p>{source.description}</p><p><strong>{source.kind}</strong> · {source.currency} · {source.priceCents === null ? "Price needs checking" : `S$${dollars(source.priceCents)}`}</p>{source.uncertainty && <p className="notice">{source.uncertainty}</p>}
           <fieldset className={s.assign}><legend>Applies to these dishes</legend>{dishes.filter(d => d.included).map(dish => <label className={s.check} key={dish.id}><input type="checkbox" checked={decision.dishIds.includes(dish.id)} onChange={e => onSourceChange(source.id, { ...decision, confirmed: false, dishIds: e.target.checked ? [...decision.dishIds, dish.id] : decision.dishIds.filter(id => id !== dish.id) })} />{dish.name || "Unnamed dish"}</label>)}</fieldset>
-          <p className={s.help}>For an extra, add its name, price and selection rules in the chosen dish cards above. This checklist records which printed entry those options came from. Leave all unchecked if you’re excluding this entry.</p>
+          <p className={s.help}>Use “Set your extras once” above to apply shared add-ons and record these source decisions together. For a dish-specific exception, edit its card and confirm its source decision here. Leave all unchecked if you’re excluding this entry.</p>
           <label className="field">What did you decide, and why?<textarea value={decision.reason} maxLength={1000} placeholder="e.g. Rice at 50¢ is an optional extra for these soups. I added it to their options." onChange={e => onSourceChange(source.id, { ...decision, confirmed: false, reason: e.target.value })} /></label>
           <button className="btn btn-teal" disabled={!decision.reason.trim()} onClick={() => onSourceChange(source.id, { ...decision, confirmed: true })}>Confirm this entry</button>
         </div>
@@ -68,6 +99,6 @@ export function MenuReview({ dishes, draft, sources, issues, sample, photoUrl, o
     })}</section>}
 
     {!!draft?.issues.length && <section className={`card ${s.section}`}><h2>One last check</h2><p>Tell us how you resolved each highlighted point. Your menu stays private until you confirm and publish.</p>{draft.issues.map(issue => <div className={s.issue} key={issue.id}><strong>{issue.blocking ? "Check required" : "For your attention"}</strong><p>{issue.code === "source_mapping_required" ? "Check the extra printed entry and record where it belongs above." : issue.message}</p>{issue.code === "source_mapping_required" && <details><summary>See the original extraction note</summary><p>{issue.message}</p></details>}{issue.blocking && <label className="field">What did you check or change?<textarea value={issues[issue.id] ?? ""} maxLength={1000} placeholder="Write your review decision here" onChange={e => onIssueChange(issue.id, e.target.value)} /></label>}</div>)}</section>}
-    <div className={s.actions}><button className="btn btn-outline" onClick={onBack}>← Back</button><button className="btn btn-primary" onClick={onContinue}>Preview my menu →</button></div>
+    <div className={s.actions}><button className="btn btn-outline" onClick={onBack}>← Back</button><button className="btn btn-primary" onClick={() => { if (globalDirty) { setGlobalMessage("Apply your edited add-on list before previewing the menu."); return; } onContinue(); }}>Preview my menu →</button></div>
   </div>;
 }
