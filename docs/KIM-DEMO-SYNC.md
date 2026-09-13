@@ -2,13 +2,13 @@
 
 Public Site: https://jiak-simi-business-demo.elsenyong.chatgpt.site
 
-Repository branch: `elsen/backend`. Reuse the existing Site project `appgprj_6aa6330ed72c819186a4fff3288b4caf`; do not register another Site. The latest deployment receipt will identify the exact commit. This update supersedes the earlier recording-only handoff.
+Repository branch: `elsen/backend`. Reuse the existing Site project `appgprj_6aa6330ed72c819186a4fff3288b4caf`; do not register another Site. Deployed commit: `26f2570b191879a5c28f9178ce9b82550b9f2781`, published successfully at 16:58 Singapore time. This update supersedes the earlier recording-only handoff.
 
 ## GPT Live ordering
 
 The reproduced failure was Next bundling the optional `ws` native mask helper incorrectly. `serverExternalPackages: ["ws"]` keeps the Node dependency intact. The Site forwards voice commands to the existing authenticated laptop relay; the laptop, Next server and Cloudflare tunnel must remain running.
 
-The actual app now completes `gpt-live-1` WebRTC audio → backend intent → database quote → finite spoken readback → separate recorded confirmation → one unpaid voice ticket. A real protocol test with synthetic input and confirmation created ticket `25028f86-b317-40a2-9695-a2f55e9e359c`; replay returned that same ticket and the kitchen contained exactly one copy. This tests the actual app and provider, but does not establish a human browser microphone/autoplay test. Evidence: `artifacts/joint-test/voice-runtime-result.json`.
+The actual app now completes `gpt-live-1` WebRTC audio → backend intent → database quote → finite spoken readback → separate recorded confirmation → one unpaid voice ticket. A real protocol test with synthetic input and confirmation created ticket `25028f86-b317-40a2-9695-a2f55e9e359c`; replay returned that same ticket and the kitchen contained exactly one copy. A subsequent hosted test created ticket `2944904e-eab7-4b88-b9b4-36b9993778ff`, again one unpaid ticket on replay. The user then tested the public Site in their browser and confirmed that the order and kitchen ticket appear. Evidence: `artifacts/joint-test/voice-runtime-result.json`.
 
 Voice defaults are dine-in and free chilli unless explicitly changed, as approved for this demo. Web orders still require explicit dining choice. The page shows the canonical order summary as soon as quoting finishes, then the persisted ticket. Known transcription failure can request a fresh readback/capture; uncertain database submission retries the same confirmation nonce. Error diagnostics never include customer speech or credentials.
 
@@ -61,8 +61,8 @@ Dummy restaurant: `ba2ad996-da84-4653-89a9-c028d77c050d`. Staff owner: `hawker-d
 
 ## Access and remaining operational limits
 
-The Site audience is public. Sites identifies `tzykim@gmail.com` as an external viewer; a viewing invitation has been added. Publishing editor access is **not granted**: the connector restricts editors to the Site's ChatGPT workspace. Once Kimberley's workspace account is available, the owner can promote it. GitHub source collaboration and Site publishing are separate permissions.
+The Site audience is public. Sites identifies `tzykim@gmail.com` as an external viewer; a viewing invitation has been added. Publishing editor access is **not granted**: the connector restricts editors to the Site's ChatGPT workspace. The user confirmed that publishing will stay with the owner for this demo. GitHub source collaboration and Site publishing are separate permissions.
 
-The laptop voice relay and Telegram polling process are demo dependencies, not permanent hosting. Voice currently limits one active device for the shared dummy actor. Real browser microphone/autoplay and the complete merchant photo UI need device acceptance; API, database and synthetic WebRTC checks are recorded separately. Photo retention cleanup is not automated yet.
+The laptop voice relay and Telegram polling process are demo dependencies, not permanent hosting. Voice currently limits one active device for the shared dummy actor. The user has confirmed browser voice ordering works. The complete merchant photo UI still needs device acceptance; API, database and synthetic WebRTC checks are recorded separately. Photo retention cleanup is not automated yet.
 
-Validation before this release: 234 tests passed, TypeScript passed, lint passed with one existing unused-variable warning in an older test artifact. Build/deployment and hosted acceptance results belong in the release receipt; local validation alone is not hosted acceptance.
+Validation before this release: 234 tests passed, TypeScript passed, lint passed with one existing unused-variable warning in an older test artifact. Worker build and public deployment passed. Hosted GPT Live ordering and real hosted image generation/private preview/replay checks passed. Release evidence: `artifacts/joint-test/hosted-voice-photo-release.json`. The generated and enhanced photo examples remain unpublished private previews; the live menu stays at three dishes.
