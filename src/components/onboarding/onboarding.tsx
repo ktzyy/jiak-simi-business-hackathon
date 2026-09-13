@@ -21,7 +21,8 @@ import { StallDetails } from "./stall-details";
 import { MenuReview } from "./menu-review";
 import { DAYS, globalAddonRows, dishProblem, draftDishes, emptyHours, existingDishes, hoursProblem, hoursSummary, newDish, menuFromEdits, type DishEdit, type GlobalAddonEdit } from "./review-state";
 import s from "./onboarding.module.css";
-import { splitSharedExtras } from "./shared-extras";
+import { readDemoPreset, saveDemoPreset, type DemoPreset } from "./demo-preset";
+import { splitSharedExtras, withSharedExtras } from "./shared-extras";
 
 const api = createApiClient();
 const PendingWithPhotosSchema = PendingPublicationSchema.extend({ photoSelections: z.array(dishPhotoSelectionSchema).max(100).optional() });
@@ -36,6 +37,12 @@ const needsReconciliation = (error: unknown) => !(error instanceof ApiError) || 
 
 export function Onboarding({ restaurantId, editPublished = false }: { restaurantId: string; editPublished?: boolean }) {
   const dishPhotos = useDishPhotos(restaurantId);
+  const [demoUpload, setDemoUpload] = useState(false);
+  const [loadedPreset, setLoadedPreset] = useState<DemoPreset | null>(null);
+  const [bulkProgress, setBulkProgress] = useState("");
+  const bulkStop = useRef(false);
+  const bulkRunning = useRef(false);
+  useEffect(() => { const stop = (e: KeyboardEvent) => { if (e.key === "Escape") bulkStop.current = true; }; window.addEventListener("keydown", stop); return () => window.removeEventListener("keydown", stop); }, []);
   const [uploads, setUploads] = useState<UploadedMenu[]>([]);
   const uploadRef = useRef<UploadedMenu[]>([]);
   const [crops, setCrops] = useState<Record<string, DishCrop>>({});
@@ -150,19 +157,29 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
     if (files.some(file => !file.size || file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
       setError("Use JPEG, PNG or WebP photos, up to 5 MB each."); return;
     }
+    setLoadedPreset(null); setDemoUpload(false);
     saveUploads([...uploads, ...files.map(file => ({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) }))]); setError("");
   }
   async function loadDemoImage() {
     if (inFlight.current || uploads.length >= 3) return;
     inFlight.current = true; setBusy("demo-image"); setError("");
     try {
+      if (!uploads.length) {
+        const preset = await readDemoPreset(restaurantId);
+        if (preset) {
+          saveUploads(preset.uploads.map(upload => ({ ...upload, url: URL.createObjectURL(upload.file) })));
+          setName(preset.name); setHours(preset.hours); setSameHours(preset.sameHours); setLoadedPreset(preset); setDemoUpload(true);
+          setNotice("Saved demo loaded. Next opens your reviewed menu."); return;
+        }
+      }
       const response = await fetch("/demo/menu-photo.jpg");
       if (!response.ok) throw new Error("The demo image could not be loaded.");
-      selectPhotos([new File([await response.blob()], "Charcoal-Char-Siew-menu.jpg", { type: "image/jpeg" })]);
+      selectPhotos([new File([await response.blob()], "Charcoal-Char-Siew-menu.jpg", { type: "image/jpeg" })]); setDemoUpload(true);
     } catch (error) { setError(errorText(error)); }
     finally { inFlight.current = false; setBusy(""); }
   }
   function removeUpload(id: string) {
+    setLoadedPreset(null); setDemoUpload(false);
     const upload = uploads.find(upload => upload.id === id);
     if (upload) URL.revokeObjectURL(upload.url);
     saveUploads(uploads.filter(upload => upload.id !== id));
@@ -170,6 +187,16 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
   async function extract() {
     if (inFlight.current || !mayContinue()) return;
     if (!uploads.length) { setError("Upload your menu first."); return; }
+    if (loadedPreset) {
+      try {
+        const preset = loadedPreset;
+        dishPhotos.restore(preset.photos);
+        Object.values(cropRef.current).forEach(crop => URL.revokeObjectURL(crop.url));
+        cropRef.current = Object.fromEntries(Object.entries(preset.crops).map(([id, crop]) => [id, { ...crop, url: URL.createObjectURL(crop.file) }])); setCrops(cropRef.current);
+        setDraft(preset.draft); setDishes(preset.dishes); setSharedRows(preset.sharedRows); setExcludedExtras(preset.excludedExtras); setAnyExtras(new Set(preset.anyExtras)); setRetainedPhotos([]); setPreview(null); setStep(2); setError(""); setNotice("Saved demo ready."); setLoadedPreset(null);
+      } catch (e) { setError(errorText(e)); }
+      return;
+    }
     inFlight.current = true; setBusy("extract");
     try {
       const token = await getStaffAccessToken();
@@ -189,6 +216,38 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
       }
     } catch (e) { setError(errorText(e)); }
     finally { inFlight.current = false; setBusy(""); }
+  }
+  async function polishAll() {
+    if (bulkRunning.current) { bulkStop.current = true; for (const id of Object.keys(dishPhotos.busy)) dishPhotos.cancel(id); return; }
+    bulkRunning.current = true; bulkStop.current = false;
+    const candidates = dishes.filter(dish => dish.included && crops[dish.id] && dish.name.trim());
+    let completed = 0;
+    try {
+      for (const dish of candidates) {
+        if (bulkStop.current) break;
+        setBulkProgress(`Polishing ${completed + 1} of ${candidates.length}…`);
+        const record = dishPhotos.latestRecords()[dish.id];
+        if (!(record?.selected && record.status === "ready" && record.request.mode === "enhance_visible" && record.request.dishName === dish.name)) {
+          const crop = crops[dish.id];
+          await dishPhotos.generate({ mode: "enhance_visible", dishId: dish.id, dishName: dish.name, sourceImageId: crop.sourceImageId, sourceEntryId: crop.sourceEntryId, merchantConfirmedVisible: true }, crop.file);
+        }
+        completed++;
+      }
+      const ready = candidates.filter(dish => { const record = dishPhotos.latestRecords()[dish.id]; return record?.status === "ready" && record.request.mode === "enhance_visible" && record.request.dishName === dish.name; }).length;
+      setNotice(`${ready} of ${candidates.length} polished photos ready.${bulkStop.current ? " Stopped." : ready < candidates.length ? " Check the remaining dish rows." : " Save your demo preset when ready."}`);
+    } finally { bulkRunning.current = false; setBulkProgress(""); }
+  }
+  async function savePreset() {
+    if (!draft || !demoUpload || bulkRunning.current || Object.values(dishPhotos.busy).some(Boolean)) return;
+    const problem = dishes.map(dish => dishProblem(dish)).find(Boolean);
+    if (problem) { setError(`Check the menu before saving: ${problem}`); return; }
+    setBusy("save-demo"); setError("");
+    try {
+      withSharedExtras(dishes, sharedRows, excludedExtras, crypto.randomUUID());
+      const preset: DemoPreset = { version: 1, restaurantId, savedAt: new Date().toISOString(), name, hours, sameHours, draft, dishes, sharedRows, excludedExtras, anyExtras: [...anyExtras], uploads: uploads.map(({ url, ...upload }) => upload), crops: Object.fromEntries(Object.entries(crops).map(([id, { url, ...crop }]) => [id, crop])), photos: await dishPhotos.snapshot() };
+      await saveDemoPreset(preset); setNotice("Demo saved in this browser, including crops and polished photos. Upload Demo Image will reuse it next time.");
+    } catch (e) { setError(errorText(e)); }
+    finally { setBusy(""); }
   }
   function changeDish(id: string, patch: Partial<DishEdit>) {
     if (patch.name !== undefined || patch.included === false) { dishPhotos.remove(id); setRetainedPhotos(old => old.filter(photo => photo.dishId !== id)); }
@@ -350,11 +409,12 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
       {notice && <div className="notice" role="status">{notice}</div>}
       {storageBlocked && <p className="notice" role="status">Publishing is paused while the previous browser record needs checking. You can continue editing, but don’t clear that record or start another publication.</p>}
       {busy === "extract" && <div className={s.extracting} role="status"><div className={s.foodAnimation} aria-hidden="true">{["kopi"].map(name => <Image key={name} src={`/illustrations/${name}.svg`} alt="" width={110} height={110} unoptimized />)}</div><h2>Reading your menu…</h2><p>Usually 30–60 seconds. Grab a drink; keep this page open.</p></div>}
-      {busy && busy !== "extract" && <p className={s.busy} role="status" aria-live="polite">{busy === "demo-image" ? "Adding demo image…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
+      {busy && busy !== "extract" && <p className={s.busy} role="status" aria-live="polite">{busy === "save-demo" ? "Saving demo preset…" : busy === "demo-image" ? "Adding demo image…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
       {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes</p><p>Your menu is live.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
         {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} uploads={uploads} onPhotos={selectPhotos} onRemovePhoto={removeUpload} busy={!!busy} onExtract={extract} onDemoImage={loadDemoImage} onExisting={() => void editExisting()} existingAvailable={!!current} />}
-        {step === 2 && <MenuReview manageAvailability={draft === null && current !== null} sharedRows={sharedRows} setSharedRows={setSharedRows} excludedExtras={excludedExtras} setExcludedExtras={setExcludedExtras} anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} dishes={dishes} draft={draft} uploads={draft ? uploads : []} renderDishPhoto={(dish, addonsAction) => {
+        {step === 2 && <div className={s.demoToolbar}><button type="button" className="btn btn-outline" disabled={!Object.keys(crops).length} onClick={() => void polishAll()}>{bulkProgress ? "Stop polishing" : "Polish all images"}</button>{demoUpload && <button type="button" className="btn btn-teal" disabled={!!bulkProgress || Object.values(dishPhotos.busy).some(Boolean)} onClick={() => void savePreset()}>Save as demo preset</button>}{bulkProgress && <span role="status">{bulkProgress}</span>}</div>}
+        {step === 2 && <fieldset className={s.work} disabled={!!bulkProgress}><MenuReview manageAvailability={draft === null && current !== null} sharedRows={sharedRows} setSharedRows={setSharedRows} excludedExtras={excludedExtras} setExcludedExtras={setExcludedExtras} anyExtras={anyExtras} onAnyExtrasChange={(id, enabled) => setAnyExtras(old => { const next = new Set(old); if (enabled) next.add(id); else next.delete(id); return next; })} dishes={dishes} draft={draft} uploads={draft ? uploads : []} renderDishPhoto={(dish, addonsAction) => {
           const item = draft?.items.find(item => item.id === dish.draftItemId);
           const upload = uploads.find(upload => upload.draft?.items.some(item => item.id === dish.draftItemId));
           const crop = crops[dish.id];
@@ -367,7 +427,7 @@ export function Onboarding({ restaurantId, editPublished = false }: { restaurant
             if (mode === "enhance_visible" && crop) void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name, sourceImageId: crop.sourceImageId, sourceEntryId: crop.sourceEntryId, merchantConfirmedVisible: true }, crop.file);
             else if (mode === "generate_similar") void dishPhotos.generate({ mode, dishId: dish.id, dishName: dish.name });
           }} onSelect={() => dishPhotos.select(dish.id)} onRemove={() => dishPhotos.remove(dish.id)} onCheck={record?.status === "dispatch_unknown" ? () => void dishPhotos.check(dish.id) : undefined} />;
-        }} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
+        }} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} /></fieldset>}
         {step === 3 && preview && <div className={s.stack}>
           <div className={s.previewIntro}><p>Try an order. Nothing is sent.</p></div>
           <div className={s.phone}><div className={s.phoneTop} aria-hidden="true"><span>9:41</span><span className={s.island} /><span>● ▰</span></div><div className={s.phoneScreen}><CustomerCart key={JSON.stringify(preview)} restaurantId={restaurantId} previewMenu={preview} previewPhotos={preview.dishes.flatMap(dish => {

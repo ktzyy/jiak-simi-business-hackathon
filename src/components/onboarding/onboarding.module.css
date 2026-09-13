@@ -224,3 +224,10 @@
 .availability { margin:0 24px 16px; }
 .sharedOptionRow,.sharedTableHeading { grid-template-columns:32px minmax(0,1fr) 170px;align-items:center; }.sharedTableHeading span:first-child{width:auto;}.sharedOptionRow > label:first-child { grid-column:auto; }
 @media(max-width:600px){ .inlineName{font-size:19px;}.inlinePrice{flex-basis:95px;font-size:18px;}.inlinePrice input{font-size:18px;}.sharedOptionRow{grid-template-columns:28px minmax(0,1fr) 80px;} }
+
+.demoToolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px; }.demoToolbar span{color:var(--green);font-weight:600;}
+.inlinePrice { border:1px solid transparent;border-radius:8px;padding:4px 8px;gap:3px; }
+.inlinePrice:focus-within { background:white;border-color:var(--green);outline:2px solid var(--green);outline-offset:2px; }
+.inlinePrice input,.inlinePrice input:hover,.inlinePrice input:focus { border:0;outline:0;background:transparent;padding:4px 0;box-shadow:none; }
+.inlinePrice:has(input[aria-invalid="true"]) { border-color:var(--red);outline:2px solid var(--red);background:#fff5f2; }
+.inlinePrice input[aria-invalid="true"] { outline:0;border:0; }

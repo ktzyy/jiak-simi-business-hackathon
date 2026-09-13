@@ -7,7 +7,7 @@ import { dishPhotoCandidateSchema, dishPhotoRequestSchema, type DishPhotoRequest
 import { getStaffAccessToken } from "@/components/ui/staff-access";
 
 const recordSchema = z.strictObject({ key: z.uuid(), request: dishPhotoRequestSchema, jobId: z.uuid().optional(), status: z.enum(["dispatch_unknown", "ready", "failed"]), selected: z.boolean(), cancelled: z.boolean().optional(), candidate: dishPhotoCandidateSchema.optional() });
-type PhotoRecord = z.infer<typeof recordSchema>;
+export type PhotoRecord = z.infer<typeof recordSchema>;
 const recordsSchema = z.record(z.string(), recordSchema);
 const api = createApiClient();
 
@@ -141,6 +141,24 @@ export function useDishPhotos(restaurantId: string) {
     if (!record) return;
     try { update(id, { ...record, selected: false }); } catch { setErrors(old => ({ ...old, [id]: "The saved selection could not be removed." })); }
   }
+  async function snapshot() {
+    const saved: Record<string, PhotoRecord> = {}, blobs: Record<string, Blob> = {};
+    for (const [id, record] of Object.entries(recordsRef.current)) {
+      if (record.status !== "ready" || !record.candidate || !urls.current[id]) continue;
+      saved[id] = record; blobs[id] = await (await fetch(urls.current[id])).blob();
+    }
+    return { records: saved, blobs };
+  }
+  function restore(saved: { records: Record<string, PhotoRecord>; blobs: Record<string, Blob> }) {
+    const checked = recordsSchema.parse(saved.records);
+    for (const [id, record] of Object.entries(checked)) {
+      if (record.status !== "ready" || !(saved.blobs[id] instanceof Blob) || saved.blobs[id].type !== "image/jpeg") throw new Error("The saved demo photo is incomplete.");
+    }
+    generation.current += 1; commit(checked);
+    Object.values(urls.current).forEach(url => URL.revokeObjectURL(url)); urls.current = {};
+    for (const [id, blob] of Object.entries(saved.blobs)) if (checked[id]) urls.current[id] = URL.createObjectURL(blob);
+    setPreviews({ ...urls.current }); setBusy({}); setErrors({});
+  }
   function reset() {
     generation.current += 1;
     for (const controller of controllers.current.values()) controller.abort();
@@ -148,5 +166,5 @@ export function useDishPhotos(restaurantId: string) {
     try { commit({}); } catch { setStorageError("Photo selections could not be reset in browser storage. Continue without photos until storage is available."); }
     Object.values(urls.current).forEach(url => URL.revokeObjectURL(url)); urls.current = {}; setPreviews({}); setBusy({}); setErrors({});
   }
-  return { latestRecords: () => recordsRef.current, records, previews, busy, errors, storageError, generate, cancel, check, select, remove, reset };
+  return { latestRecords: () => recordsRef.current, records, previews, busy, errors, storageError, snapshot, restore, generate, cancel, check, select, remove, reset };
 }

@@ -35,10 +35,11 @@ async function sendCommand<T>(body: object, signal?: AbortSignal, publicDemo = f
 const encode = (bytes: Uint8Array) => { let text = ""; for (let i = 0; i < bytes.length; i += 8192) text += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(text); };
 
 export type VoiceControls = { start: () => void; stop: () => void };
-export function HandsfreeVoiceTest({ publicDemo = false, inline = false, controlsRef, onActiveChange }: { publicDemo?: boolean; inline?: boolean; controlsRef?: Ref<VoiceControls>; onActiveChange?: (active: boolean) => void }) {
+export function HandsfreeVoiceTest({ publicDemo = false, inline = false, controlsRef, onActiveChange, onManualConfirm, manualBusy = false }: { publicDemo?: boolean; inline?: boolean; controlsRef?: Ref<VoiceControls>; onActiveChange?: (active: boolean) => void; onManualConfirm?: (quote: Quote) => void; manualBusy?: boolean }) {
   const command = <T,>(body: object, signal?: AbortSignal) => sendCommand<T>(body, signal, publicDemo);
   const audio = useRef<HTMLAudioElement>(null), connection = useRef<Connection | null>(null), controller = useRef<AbortController | null>(null), context = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
+  const spokenDispatched = useRef(false);
   const transcriptDraft = useRef({ text: "", at: 0, sent: "" });
   const [state, setState] = useState("Ready"), [running, setRunning] = useState(false), [text, setText] = useState(""), [error, setError] = useState(""), [ticket, setTicket] = useState<Ticket | null>(null);
   const [opened, setOpened] = useState(false);
@@ -57,7 +58,7 @@ export function HandsfreeVoiceTest({ publicDemo = false, inline = false, control
   async function start() {
     if (controller.current || !audio.current) return;
     const abort = new AbortController(); controller.current = abort;
-    transcriptDraft.current = { text: "", at: 0, sent: "" };
+    transcriptDraft.current = { text: "", at: 0, sent: "" }; spokenDispatched.current = false;
     setOpened(true); setRunning(true); onActiveChange?.(true); setError(""); setTicket(null); setQuote(null); setText(""); setState("Connecting GPT-Live");
     const ctx = new AudioContext(); context.current = ctx;
     try {
@@ -97,6 +98,8 @@ export function HandsfreeVoiceTest({ publicDemo = false, inline = false, control
           setState("Checking your recorded answer");
           const body = { action: "confirm", voiceSessionId: live.voiceSessionId, readbackId: id, audio: encode(wav) };
           // Exact recording/id retry recovers uncertain transport without a new consent.
+          if (abort.signal.aborted) break;
+          spokenDispatched.current = true;
           try { await command(body, abort.signal); }
           catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; await command(body, abort.signal); }
         }
@@ -116,6 +119,8 @@ export function HandsfreeVoiceTest({ publicDemo = false, inline = false, control
     <p className={styles.transcript} aria-live="polite" aria-label="Live transcript">{text || (running ? "Tell us your dishes and add-ons…" : "Mic off")}</p>
     {error && <p role="alert" className={styles.inlineError}>{error}</p>}
     {summary && <div className={styles.inlineOrder} aria-live="polite"><h3>{ticket ? "Order sent" : "Your order"}</h3><p>{summary.fulfillmentType === "takeaway" ? "Takeaway" : "Dine-in"}</p><ul className={styles.order}>{summary.lines.map((line, index) => <li key={`${line.dishId}-${index}`}><div><strong>{line.quantity} × {line.name}</strong><strong>{money(line.lineTotalCents)}</strong></div>{!!line.options.length && <p>{line.options.map(option => option.name).join(" · ")}</p>}</li>)}</ul><div className={styles.total}><strong>Total</strong><strong>{money(summary.totalCents)}</strong></div>{ticket && <p>Received by the kitchen · Pay at the stall</p>}</div>}
+    {!running && quote && !ticket && onManualConfirm && !spokenDispatched.current && <button type="button" className="btn btn-primary" disabled={manualBusy} onClick={() => onManualConfirm(quote)}>{manualBusy ? "Checking order…" : "Confirm order"}</button>}
+    {!running && !ticket && spokenDispatched.current && <p>Spoken confirmation may already have been sent. Check Cook mode before placing another order.</p>}
     <audio ref={audio} autoPlay />
   </section>;
   return <main className={styles.page}>

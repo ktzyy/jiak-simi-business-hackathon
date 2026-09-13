@@ -178,17 +178,19 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       if (error instanceof ApiError && ["INVALID_SESSION", "SESSION_EXPIRED"].includes(error.code)) setReady(false);
     } finally { if (epoch === requestEpoch.current) { setBusy(false); busyRef.current = false; } }
   }
-  async function submit() {
-    if (!quote || busyRef.current || (storageError && !pending)) return;
-    if (preview) { setPreviewReceipt(quote); setCartOpen(false); setLines([]); setQuote(null); return; }
+  async function submit(voiceQuote?: Quote) {
+    const confirmedQuote = voiceQuote ?? quote;
+    if (!confirmedQuote || busyRef.current || (storageError && !pending)) return;
+    if (preview) { setPreviewReceipt(confirmedQuote); setCartOpen(false); setLines([]); setQuote(null); return; }
     const retry = pending !== null;
     const epoch = requestEpoch.current;
     let record = pending;
     if (!record) {
       if (!menu || !fulfillmentType || !ready) return;
-      const cart = CartRequestSchema.parse({ restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType, lines });
-      if (!quoteMatchesCart(cart, quote)) { setMessage({ kind: "notSent", text: "Your order changed. Please check the total again. Nothing has been sent." }); setQuote(null); return; }
-      try { record = { kind: "pending", key: crypto.randomUUID(), cart, quote }; }
+      const cart = CartRequestSchema.parse(voiceQuote ? { restaurantId, menuId: voiceQuote.menuId, menuVersion: voiceQuote.menuVersion, fulfillmentType: voiceQuote.fulfillmentType, lines: voiceQuote.lines.map(line => ({ dishId: line.dishId, quantity: line.quantity, optionIds: line.options.map(option => option.id) })) } : { restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType, lines });
+      if (voiceQuote && (voiceQuote.restaurantId !== restaurantId || lines.length > 0)) return;
+      if (!quoteMatchesCart(cart, confirmedQuote)) { setMessage({ kind: "notSent", text: "Your order changed. Please check the total again. Nothing has been sent." }); setQuote(null); return; }
+      try { record = { kind: "pending", key: crypto.randomUUID(), cart, quote: confirmedQuote }; }
       catch { setStorageError("This browser cannot safely identify your order. Please use a current browser on a secure connection. Nothing has been sent."); return; }
       if (!save(record)) return;
       setPending(record);
@@ -270,7 +272,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours, previewP
       {loading && <div role="status" className={styles.loading}><span className={styles.loader} />Getting the menu ready…</div>}
       {!loading && !menu && !storageError && <div className={styles.empty}><h2>The menu isn’t ready just yet.</h2><p>Please try again, or ask the stall for help.</p><button className="btn btn-teal" disabled={!!pending} onClick={() => setBoot(value => value + 1)}>Try again</button></div>}
       {menu && <><div className={styles.sectionHeading}><h2>What would you like?</h2><span>{menu.dishes.length} dishes</span></div>
-        {restaurantId === DEMO_RESTAURANT_ID && !preview && <HandsfreeVoiceTest inline publicDemo controlsRef={voiceControls} onActiveChange={setVoiceActive} />}
+        {restaurantId === DEMO_RESTAURANT_ID && !preview && <HandsfreeVoiceTest inline publicDemo controlsRef={voiceControls} onActiveChange={setVoiceActive} manualBusy={busy || pending !== null} onManualConfirm={voiceQuote => void submit(voiceQuote)} />}
         <div className={styles.dishes}>{menu.dishes.map(item => <article className={`${styles.dish} ${!item.available ? styles.soldOut : ""}`} key={item.id}>
           <MenuDishPhoto restaurantId={menu.restaurantId} dish={item} photo={(preview ? previewPhotos : publishedPhotos.filter(photo => photo.menuId === menu.id && photo.menuVersion === menu.version)).find(photo => photo.dishId === item.id && photo.dishName === item.name)} />
           <div className={styles.dishBody}><h3>{item.name}</h3><strong className={styles.price}>{money(item.priceCents)}</strong>{item.modifierGroups.length > 0 && <p className={styles.modifierHint}>Make it yours · extras available</p>}
