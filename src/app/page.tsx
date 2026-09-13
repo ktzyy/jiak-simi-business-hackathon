@@ -1,3 +1,8 @@
+import { redirect } from "next/navigation";
+
+import { signOut } from "@/app/auth/actions";
+import { createClient } from "@/lib/supabase/server";
+
 const metrics = [
   { label: "People deciding nearby", value: "—", note: "Connect demo data" },
   { label: "Menu items live", value: "—", note: "Add your first dish" },
@@ -22,7 +27,12 @@ const actions = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getClaims();
+
+  if (error || !data?.claims?.sub) redirect("/login");
+
   return (
     <main className="min-h-screen bg-[var(--cream)] text-[var(--ink)]">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-12">
@@ -38,9 +48,12 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-[var(--line)] bg-white/70 px-3 py-1.5 text-xs font-bold text-[var(--green)]">
-            Hackathon prototype
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs font-semibold text-[var(--muted)] sm:inline">{data.claims.email as string}</span>
+            <form action={signOut}>
+              <button className="rounded-full border border-[var(--line)] bg-white/70 px-3 py-1.5 text-xs font-bold text-[var(--green)]">Sign out</button>
+            </form>
+          </div>
         </header>
 
         <section className="grid flex-1 gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">

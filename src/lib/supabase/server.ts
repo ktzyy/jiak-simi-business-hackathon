@@ -21,7 +21,7 @@ export async function createClient() {
           });
         } catch {
           // Server Components cannot always write cookies. The authentication
-          // proxy will refresh sessions once sign-in is implemented.
+          // proxy refreshes sessions for the protected workspace and login.
         }
       },
     },

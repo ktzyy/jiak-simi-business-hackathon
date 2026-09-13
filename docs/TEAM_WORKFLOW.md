@@ -1,37 +1,23 @@
 # Hackathon team workflow
 
-## Ownership
+## Ownership and branches
 
-### Kimberley — `kim/front-of-house`
+| Owner | Lane |
+| --- | --- |
+| Kimberley | All four UI surfaces: photograph upload/review, branded storefront/QR, customer cart and kitchen display; design, synthetic demo content, pitch/video and frontend QA. |
+| Elsen | API/server code, AI extraction and interpretation, deterministic validation, shared contracts/client/fixtures, dependencies/configuration, integration and deployment; database design and separately approved migrations. |
 
-- Photograph-menu onboarding and generated-menu review
-- Brand colours and storefront customization
-- Customer QR menu and ordering screens
-- Synthetic demo restaurant content
-- End-to-end testing and the judging/pitch flow
+PR #1's original ownership assigned kitchen display and demo payment to the backend lane. The approved handoff places kitchen UI with Kimberley and removes payment confirmation; this candidate workflow follows that handoff. PR #1 has been reviewed, not approved or merged by this work.
 
-### Husband — `husband/ai-butler`
+The local engineering branch is `elsen/backend`; earlier repository instructions used `husband/ai-butler`. Kimberley's existing PR uses `kim/front-of-house`. Coordinate the branch names at handoff; do not rename, overwrite or assume another session moved branches. This repository is the business portal; do not copy the B2C mobile application into it.
 
-- Menu-photo extraction and voice-order interpretation
-- Order validation, totals, modifiers and state changes
-- Demo payment confirmation and kitchen display
-- Supabase migrations, database tests and deployment
-- Shared types, dependency changes and configuration
+## Shared-file and integration rules
 
-Kimberley's husband is the designated merge, database and deployment owner. This is an ownership convention, not permission to change production.
 
-## Shared-file rule
+Kimberley is the sole UI writer for application screens, components and public assets. Elsen owns API routes, server logic, shared types, tests, root configuration and dependency/lockfile changes. Use npm and commit `package-lock.json`; pin security-sensitive dependencies exactly. Read the installed Next.js guides required by [AGENTS.md](../AGENTS.md) before implementation.
 
-Only the designated owner edits migrations, shared types, dependencies, lockfiles and configuration. If the other branch needs one of these changed, request it in a small pull request or issue instead of editing it independently.
+Use [PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md) and [engineering-handoff.md](engineering-handoff.md) to distinguish candidate shapes from implemented behavior. Review contract changes together before integrating; never present fixtures as persisted orders or an aspirational client method as a working endpoint. Integrate small, reviewable changes and preserve the full photograph-to-kitchen path.
 
-Both branches use the shapes and state machine in [PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md). Update the contract first when a shared assumption changes.
+Elsen is the designated integrator and database/deployment owner. Ownership is not approval to migrate or change production. [AGENTS.md](../AGENTS.md) explicitly requires approval before adding or running migrations. After that approval, keep schema, grants, RLS and isolation tests together; apply only to the confirmed hackathon project through the reviewed workflow in [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
-## Everyday Git rhythm
-
-1. Work only on your named branch.
-2. Make small working commits and push regularly.
-3. Open a focused pull request when one coherent piece works.
-4. The designated integrator reviews and merges into `main`.
-5. Update from `main` before starting the next piece; Git is configured to refuse accidental merge-style pulls.
-
-Never commit `.env.local`, credentials, production data or generated build output. Never deploy, migrate, publish or modify production as part of the hackathon workflow.
+Never commit `.env.local`, credentials, customer chats or production data. Do not deploy, publish, merge or send messages merely because a design document describes those actions. Runtime verification and external setup status belong in the engineering handoff.

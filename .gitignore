@@ -34,9 +34,15 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Local photo/OCR review outputs; publish only deliberately reviewed fixtures.
+/artifacts/
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Supabase CLI cache
+/supabase/.temp/

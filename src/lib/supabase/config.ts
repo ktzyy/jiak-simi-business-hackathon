@@ -8,5 +8,12 @@ export function getPublicSupabaseConfig() {
     );
   }
 
+  if (url.replace(/\/$/, "") !== "https://mikpepfrumtglwweolzq.supabase.co") {
+    throw new Error("Auth must use the approved Jiak Simi hackathon project.");
+  }
+  if (!publishableKey.startsWith("sb_publishable_")) {
+    throw new Error("Use the Supabase publishable key for browser Auth.");
+  }
+
   return { url, publishableKey };
 }

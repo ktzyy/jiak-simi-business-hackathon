@@ -1,0 +1,21 @@
+# Menu OCR onboarding
+
+`extractMenu({ image, mimeType }, { apiKey, fetch?, signal? })` accepts local image bytes, not remote URLs. The API route must authenticate the operator, verify restaurant membership, and bound the request body before invoking this server service. JPEG, PNG, and WebP uploads must match their magic bytes and be at most 5 MiB. This is format screening, not a full image decoder; malformed images may still be rejected by the provider.
+
+The service sends a base64 image to the OpenAI Responses API with strict structured output and `store: false`. It uses `gpt-5.4-mini`, with at most one retry using the same model for transient provider failures, incomplete output, or schema failures. This replaces the poor `gpt-4o-mini` baseline following the separately labelled two-photo evaluation. It never retries refusals, authentication errors, or valid output merely because a menu is ambiguous. A shared 150-second deadline bounds both attempts.
+
+The model transcribes flat source entries with exact raw price text, kind (item/addon/fee/category), source region, and menu label; output is untrusted and validated with Zod. Server code alone converts a scalar SGD token to cents. Slash prices, ranges, quantity text, foreign currency, and uncertain price associations remain null. Items carry optional `rawPriceText` and `sourceEntryId`; the service returns optional-compatible `sourceEntries` with server IDs. Add-ons, fees, and categories are retained as source evidence, never silently converted into dishes or modifier groups. Add-on/fee applicability and multiple-menu assignments generate `source_mapping_required` blockers for merchant review. IDs are generated on the server. Prices are integer SGD cents; unreadable, missing, ambiguous, or non-SGD prices remain `null`. Modifier prices are not assumed to be free. Null prices and inconsistent modifier selection rules produce blocking issues. Every result has `status: "needs_review"` and a blocking human-review issue, even when the extraction looks complete.
+
+Kimberley's review UI should display the original image alongside this draft, present issues against `itemId`, allow corrections, and require explicit operator approval before publishing through the separate menu workflow. Render names/descriptions/issues as text, never HTML. The extraction service does not save or publish menus and does not remove review blockers. A downstream reviewed-menu validator must reject null prices and invalid modifier rules before publication.
+
+Service tests use mocked Responses API calls. Run `npx tsx --test tests/menu-extraction.test.ts`. Live extraction from user-supplied menu photos uses the batch runner below; successful extraction is not an image-accuracy claim and every result still needs visual/operator review.
+
+```sh
+node --env-file=.env.local --import tsx scripts/extract-hawker-photos.ts --out /private/tmp/jiak-simi-ocr-results /absolute/path/menu.jpg
+```
+
+Pass multiple explicit JPEG/PNG/WebP paths after the output directory to process a batch sequentially. Each output wraps the draft with source filename, absolute path, SHA256, byte count, timestamp, and model/status attempt provenance. HEIC files must first be converted to a supported image format while preserving originals. The runner stops on credential or quota failures, does not log secrets or provider error bodies, and writes a new timestamped file per run so earlier raw outputs remain available for review.
+
+Official references: [image input](https://developers.openai.com/api/docs/guides/images-vision), [structured output and refusals](https://developers.openai.com/api/docs/guides/structured-outputs), [GPT-5.4 mini](https://developers.openai.com/api/docs/models/gpt-5.4-mini).
+
+The live rewritten-service verification is recorded in [menu-ocr-evaluation.md](menu-ocr-evaluation.md), with immutable result artifacts under `artifacts/ocr-review/service-verification/`. Source `region` is an image-location description, not geographic location or verified crop geometry. Repeated visible source occurrences remain separate for merchant resolution. See [menu-ocr-photo-provenance.md](menu-ocr-photo-provenance.md) for the boundary between current evidence links and future optional dish-photo matching.
