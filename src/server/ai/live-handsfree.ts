@@ -79,7 +79,7 @@ export function handsfreeHandler(deps: { backend?: () => BackendClient; create?:
               const selectedMode = explicitFulfillmentType(normalizedText) ?? (!mentionsDiningMode(normalizedText) ? "dine_in" : undefined);
               const parsed = await (deps.parse ?? parseOrderIntent)(current, normalizedText, { apiKey: key, signal: AbortSignal.timeout(25000), fulfillmentType: selectedMode });
               const intent = applyVoiceDefaults(parsed, current, text);
-              if (intent.issues.length || !intent.lines.length || !intent.fulfillmentType) return null;
+              if (intent.issues.length || !intent.lines.length || !intent.fulfillmentType) return { clarification: intent.issues.map(issue => issue.message).join(" ").slice(0, 700) || "Please say the dish and quantity you want." };
               const cart = CartRequestSchema.parse({ restaurantId: current.restaurantId, menuId: current.id, menuVersion: current.version, fulfillmentType: intent.fulfillmentType, lines: intent.lines });
               return databaseRpc(client, "save_voice_review", { ...args, p_cart: cart, p_revision: revision }, Review);
             },

@@ -194,3 +194,32 @@ test("menu questions stay conversational without pausing the microphone or consu
    assert.equal(s.commands[1].type,"session.commentary.append");
    assert.equal(s.counts().submitted,0);
  });
+
+
+test("an unsupported add-on is explained on screen without exposing a confirmable quote", async () => {
+  const s = setup(undefined, { prepare: async () => ({ clarification: "Chilli is not available for Char Siew Rice." }) });
+  s.butler.previewTranscript("One rice with chilli");
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+  assert.equal(s.butler.status().phase, "collecting");
+  assert.match(s.butler.status().clarification!, /Chilli is not available/);
+  assert.equal(s.butler.status().quote, undefined);
+  assert.equal(s.counts().submitted, 0);
+  await s.butler.stop();
+});
+
+test("a stalled quote times out and a late result cannot resurrect confirmation", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let finish!: (value: { quote: typeof fixtureQuote; confirmationNonce: string; revision: number }) => void;
+  const pending = new Promise<{ quote: typeof fixtureQuote; confirmationNonce: string; revision: number }>(resolve => { finish = resolve; });
+  const s = setup(undefined, { prepare: async () => pending });
+  s.butler.previewTranscript("One rice");
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  t.mock.timers.tick(40_000);
+  assert.equal(s.butler.status().phase, "error");
+  assert.equal(s.butler.status().errorCode, "VOICE_PREPARATION_TIMEOUT");
+  finish({ quote: fixtureQuote, confirmationNonce: "late", revision: 1 });
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  assert.equal(s.butler.status().quote, undefined);
+  assert.equal(s.butler.status().phase, "error");
+  assert.equal(s.counts().submitted, 0);
+});

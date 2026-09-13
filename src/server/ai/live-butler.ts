@@ -10,7 +10,7 @@ import { HAWKER_VOICE_STYLE } from "./live-voice-style";
 export type VoiceReview = { quote: Quote; confirmationNonce: string; revision: number };
 type Phase = "collecting" | "preparing" | "readback" | "playing" | "confirming" | "transcribing" | "submitted" | "closed" | "error";
 export interface ButlerHooks {
-  prepare(text: string): Promise<VoiceReview | null>;
+  prepare(text: string): Promise<VoiceReview | { clarification: string } | null>;
   invalidate(): Promise<void>;
   speech(text: string): Promise<Buffer>;
   transcribe(wav: Buffer): Promise<string>;
@@ -53,12 +53,13 @@ export class LiveButler {
   private now: () => number;
   private errorCode?: string;
   private errorStage?: string;
+  private clarification?: string;
   private draftTimer?: ReturnType<typeof setTimeout>;
   constructor(readonly actor: string, readonly sessionId: string, private hooks: ButlerHooks) { this.now = hooks.now ?? Date.now; }
 
   status() {
     const showQuote = ["preparing", "readback", "playing", "confirming", "transcribing"].includes(this.phase);
-    return { phase: this.phase, ...(this.errorCode ? { errorCode: this.errorCode, errorStage: this.errorStage } : {}), readbackId: this.readbackId, ticket: this.ticket, ...(showQuote && this.review ? { quote: this.review.quote } : {}) };
+    return { phase: this.phase, ...(this.clarification ? { clarification: this.clarification } : {}), ...(this.errorCode ? { errorCode: this.errorCode, errorStage: this.errorStage } : {}), readbackId: this.readbackId, ticket: this.ticket, ...(showQuote && this.review ? { quote: this.review.quote } : {}) };
   }
   previewTranscript(text: string) {
     if (this.phase !== "collecting" || !text.trim() || text.length > 4000) return;
@@ -128,10 +129,15 @@ export class LiveButler {
       } catch { this.diagnose("provider", "VOICE_PROVIDER_COMMAND_FAILED"); await this.stop(true); }
       return;
     }
-    this.phase = "preparing"; this.review = undefined;
+    this.phase = "preparing"; this.review = undefined; this.clarification = undefined;
     let generation = this.generation;
     let stage = "mute";
     this.errorCode = undefined; this.errorStage = undefined;
+    const deadline = setTimeout(() => {
+      if (this.phase !== "preparing") return;
+      this.diagnose(stage, "VOICE_PREPARATION_TIMEOUT");
+      void this.stop(true);
+    }, 40_000);
     try {
       if (++this.attempts > 5) throw new Error("Session preparation limit.");
       await this.inputControl(true);
@@ -142,7 +148,10 @@ export class LiveButler {
       stage = "prepare";
       const review = await this.hooks.prepare(this.text);
       if (this.phase !== "preparing") return;
-      if (!review || generation !== this.generation) { await this.resume("The order needs clarification. Ask one short question about the unclear dish, quantity or required choice. Keep the demo's dine-in and chilli defaults unless the customer changes them. Then collect the final order and delegate again. Nothing was placed."); return; }
+      if (!review || "clarification" in review || generation !== this.generation) {
+        this.clarification = review && "clarification" in review ? review.clarification : "Please repeat your full order with any changes.";
+        await this.resume(`Order check: ${JSON.stringify(this.clarification)}. Explain this issue briefly and ask for the corrected order. Nothing has been placed.`); return;
+      }
       this.review = review;
       const text = quoteReadback(review.quote);
       stage = "speech";
@@ -155,7 +164,7 @@ export class LiveButler {
 
       this.diagnose(stage, error instanceof HttpError && /^[A-Z_]{1,64}$/.test(error.code) ? error.code : `VOICE_${stage.toUpperCase()}_FAILED`);
       await this.stop(true);
-    }
+    } finally { clearTimeout(deadline); }
   }
   takeAudio(id: string) {
     if (this.phase !== "readback" || id !== this.readbackId || !this.audio) throw new HttpError(409, "STALE_VOICE_REVIEW", "Start a fresh voice order.");
