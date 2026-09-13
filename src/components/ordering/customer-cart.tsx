@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ApiError, createApiClient } from "@/shared/api-client";
 import { CartRequestSchema, MenuSchema, type CartRequest, type Menu, type Quote, type Ticket } from "@/shared/contracts";
-import { cartProblems, definitelyNotSent, money, previewQuote, quoteMatchesCart, receiptMatches, savedOrderSchema, type PendingOrder, type SavedOrder } from "./order-state";
+import type { StallDetails } from "@/shared/stall-details";
+import { formatPublishedHours, cartProblems, definitelyNotSent, money, previewQuote, quoteMatchesCart, receiptMatches, savedOrderSchema, type PendingOrder, type SavedOrder } from "./order-state";
 import { OrderReview } from "./order-review";
 import styles from "./ordering.module.css";
 
@@ -48,6 +49,8 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
   const api = useMemo(() => createApiClient(), []);
   const storageKey = `jiak-order-v1:${restaurantId}`;
   const [menu, setMenu] = useState<Menu | null>(previewMenu ?? null);
+  const [publishedDetails, setPublishedDetails] = useState<StallDetails | null>(null);
+  const [fulfillmentType, setFulfillmentType] = useState<CartRequest["fulfillmentType"] | null>(null);
   const [loading, setLoading] = useState(!preview);
   const [ready, setReady] = useState(preview);
   const [boot, setBoot] = useState(0);
@@ -72,7 +75,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
     requestEpoch.current += 1;
     async function start() {
       busyRef.current = false; setBusy(false);
-      setLoading(true); setReady(preview); setMenu(previewMenu ?? null); setLines([]); setQuote(null); setPending(null); setReceipt(null); setPreviewReceipt(null); setStorageError(null); setMessage(null); setCartOpen(false); setSheet(null); setSheetError(null);
+      setLoading(true); setReady(preview); setPublishedDetails(null); setFulfillmentType(null); setMenu(previewMenu ?? null); setLines([]); setQuote(null); setPending(null); setReceipt(null); setPreviewReceipt(null); setStorageError(null); setMessage(null); setCartOpen(false); setSheet(null); setSheetError(null);
       if (previewMenu) {
         const parsed = MenuSchema.safeParse(previewMenu);
         if (parsed.success) setMenu(parsed.data);
@@ -85,7 +88,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
         if (raw) {
           saved = savedOrderSchema.parse(JSON.parse(raw));
           if (saved.cart.restaurantId !== restaurantId) throw new Error("Wrong stall in saved order.");
-          setLines(saved.cart.lines); setQuote(saved.quote);
+          setLines(saved.cart.lines); setFulfillmentType(saved.cart.fulfillmentType); setQuote(saved.quote);
           if (saved.kind === "receipt") setReceipt(saved.ticket);
           else { setPending(saved); setCartOpen(true); setMessage({ kind: "unknown", text: "We found an order waiting for confirmation. It may already be with the stall. Check again using the same order below." }); }
         } else {
@@ -98,10 +101,13 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
         return;
       }
       try {
-        const current = await api.readMenu(restaurantId);
+        const published = await api.readPublishedStall(restaurantId);
+        const current = published.menu;
         if (!active) return;
         if (current.restaurantId !== restaurantId) throw new Error("This menu belongs to another stall. Please scan the QR again.");
         setMenu(current);
+        if (published.details && published.details.restaurantId !== restaurantId) throw new Error("These hours belong to another stall.");
+        setPublishedDetails(published.details);
         // Never replace a guest capability while an earlier order may have been received.
         if (!saved) { await api.startGuest(restaurantId); if (active) setReady(true); }
       } catch (error) { if (active) setMessage(saved?.kind === "pending" ? { kind: "unknown", text: "Your saved order is still waiting for confirmation. Keep it unchanged and use the same order to check again." } : { kind: "error", text: errorText(error) }); }
@@ -122,7 +128,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
   const locked = pending !== null || busy || storageError !== null;
   const problems = menu ? cartProblems(menu, lines) : [];
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
-  const estimate = menu && lines.length && !problems.length ? previewQuote(menu, lines).totalCents : null;
+  const estimate = menu && fulfillmentType && lines.length && !problems.length ? previewQuote(menu, lines, fulfillmentType).totalCents : null;
   const dish = sheet && menu?.dishes.find(item => item.id === sheet.dishId);
   const sheetProblems = dish && menu ? cartProblems(menu, [{ dishId: dish.id, quantity, optionIds }]) : [];
   const sheetPrice = dish ? (dish.priceCents + dish.modifierGroups.flatMap(group => group.options).filter(option => optionIds.includes(option.id)).reduce((sum, option) => sum + option.priceDeltaCents, 0)) * quantity : 0;
@@ -141,13 +147,13 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
     setQuote(null); setSheet(null); setMessage({ kind: "info", text: `${dish.name} ${sheet.index === undefined ? "added to" : "updated in"} your order.` });
   }
   async function review() {
-    if (!menu || !lines.length || locked || !ready || busyRef.current) return;
+    if (!menu || !fulfillmentType || !lines.length || locked || !ready || busyRef.current) return;
     if (problems.length) { setMessage({ kind: "error", text: problems[0] }); return; }
-    const cart = CartRequestSchema.parse({ restaurantId, menuId: menu.id, menuVersion: menu.version, lines });
+    const cart = CartRequestSchema.parse({ restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType, lines });
     const epoch = requestEpoch.current;
     busyRef.current = true; setBusy(true); setMessage(null);
     try {
-      const priced = preview ? previewQuote(menu, lines) : await api.quote(cart);
+      const priced = preview ? previewQuote(menu, lines, fulfillmentType) : await api.quote(cart);
       if (epoch !== requestEpoch.current) return;
       if (!quoteMatchesCart(cart, priced)) throw new Error("The price check didn’t match your order. Please try again.");
       setQuote(priced);
@@ -164,8 +170,8 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
     const epoch = requestEpoch.current;
     let record = pending;
     if (!record) {
-      if (!menu || !ready) return;
-      const cart = CartRequestSchema.parse({ restaurantId, menuId: menu.id, menuVersion: menu.version, lines });
+      if (!menu || !fulfillmentType || !ready) return;
+      const cart = CartRequestSchema.parse({ restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType, lines });
       if (!quoteMatchesCart(cart, quote)) { setMessage({ kind: "notSent", text: "Your order changed. Please check the total again. Nothing has been sent." }); setQuote(null); return; }
       try { record = { kind: "pending", key: crypto.randomUUID(), cart, quote }; }
       catch { setStorageError("This browser cannot safely identify your order. Please use a current browser on a secure connection. Nothing has been sent."); return; }
@@ -198,7 +204,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
     if (locked || busyRef.current || preview) return;
     const epoch = requestEpoch.current;
     busyRef.current = true; setBusy(true); setQuote(null);
-    try { const next = await api.readMenu(restaurantId); if (epoch !== requestEpoch.current) return; if (next.restaurantId !== restaurantId) throw new Error("Please scan this stall’s QR again."); setMenu(next); await api.startGuest(restaurantId); if (epoch !== requestEpoch.current) return; setReady(true); setMessage({ kind: "info", text: "The menu is up to date. Please check your items and total again." }); }
+    try { const published = await api.readPublishedStall(restaurantId); const next = published.menu; if (epoch !== requestEpoch.current) return; if (next.restaurantId !== restaurantId) throw new Error("Please scan this stall’s QR again."); setMenu(next); if (published.details && published.details.restaurantId !== restaurantId) throw new Error("These hours belong to another stall."); setPublishedDetails(published.details); await api.startGuest(restaurantId); if (epoch !== requestEpoch.current) return; setReady(true); setMessage({ kind: "info", text: "The menu is up to date. Please check your items and total again." }); }
     catch (error) { if (epoch === requestEpoch.current) setMessage({ kind: "notSent", text: `${errorText(error)} No order has been sent.` }); }
     finally { if (epoch === requestEpoch.current) { busyRef.current = false; setBusy(false); } }
   }
@@ -214,6 +220,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       <div className={styles.receiptMark} aria-hidden="true">✓</div>
       <p className="eyebrow">{previewReceipt ? "Preview only" : "Order received"}</p>
       <h1>{previewReceipt ? "That’s how ordering works." : "Your order is with the stall."}</h1>
+      <p>{currentReceipt.fulfillmentType === "dine_in" ? "Dine-in" : currentReceipt.fulfillmentType === "takeaway" ? "Takeaway" : "Dining choice not recorded"}</p>
       <p>{previewReceipt ? "This is a practice order. Nothing was sent and no payment was taken." : "Sit tight. Show this confirmation at the stall when collecting your food."}</p>
       {receipt && <><div className={styles.receivedBadge}>Received by the stall</div><p className={styles.muted}>Received {new Date(receipt.createdAt).toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Singapore" })} · Payment due at stall</p><small className={styles.reference}>Order reference: {receipt.id}</small></>}
       {currentReceipt.lines.map((line, i) => <div className={styles.reviewLine} key={i}><div><strong>{line.quantity} × {line.name}</strong>{line.options.map(option => <small key={option.id}>{option.name}</small>)}</div><span>{money(line.lineTotalCents)}</span></div>)}
@@ -229,9 +236,11 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       <Link href="/" className={styles.brand}><Image src="/brand/jiak-simi.png" alt="Jiak Simi" width={144} height={35} style={{ width: 144, height: "auto" }} /></Link>
       <p className="eyebrow">Good food, less waiting</p>
       <h1>{menu?.name ?? "Your stall’s menu"}</h1>
-      <p className={styles.hours}>{previewHours || "Opening hours · Please check with the stall"}</p>
-      <div className={styles.dining} aria-label="Dining preference unavailable"><button disabled>Dine-in</button><button disabled>Takeaway</button></div>
-      <small className={styles.muted}>Dining preference isn’t available here yet. Please tell the stall.</small>
+      {publishedDetails ? <details className={styles.hours}><summary>Opening hours · Singapore time</summary>{formatPublishedHours(publishedDetails).map(day => <p key={day}>{day}</p>)}</details> : <p className={styles.hours}>{previewHours || "Opening hours · Please check with the stall"}</p>}
+      <div className={styles.dining} role="group" aria-label="Choose dine-in or takeaway">
+        {(["dine_in", "takeaway"] as const).map(mode => <button key={mode} type="button" aria-pressed={fulfillmentType === mode} disabled={locked} onClick={() => { if (locked || busyRef.current) return; setFulfillmentType(mode); setQuote(null); setMessage(null); }}>{mode === "dine_in" ? "Dine-in" : "Takeaway"}</button>)}
+      </div>
+      {!fulfillmentType && <small className={styles.muted}>Choose dine-in or takeaway before checking your order.</small>}
     </header>
     <div className={styles.menuContent}>
       {storageError && <div className={`${styles.alert} ${styles.error}`} role="alert"><strong>Saved order needs checking</strong><p>{storageError}</p><button className="btn btn-outline" onClick={() => setBoot(value => value + 1)}>Try loading again</button></div>}
@@ -270,6 +279,8 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
       {storageError && <p className={styles.validation} role="alert">{storageError}</p>}
       {quote ? <OrderReview quote={quote} busy={busy} locked={!!pending} preview={preview} onConfirm={() => void submit()} onEdit={() => setQuote(null)} /> : <>
         <p className="eyebrow">A good meal starts here</p><h2>Your order</h2>
+        <div className={styles.dining} role="group" aria-label="Choose dine-in or takeaway for this cart">{(["dine_in", "takeaway"] as const).map(mode => <button key={mode} type="button" aria-pressed={fulfillmentType === mode} disabled={locked} onClick={() => { if (locked || busyRef.current) return; setFulfillmentType(mode); setQuote(null); }}>{mode === "dine_in" ? "Dine-in" : "Takeaway"}</button>)}</div>
+        {!fulfillmentType && <p className={styles.validation}>Choose dine-in or takeaway to continue.</p>}
         {!lines.length && <p>Your order is empty. Pick something nice from the menu.</p>}
         {lines.map((line, index) => {
           const item = menu?.dishes.find(value => value.id === line.dishId);
@@ -279,7 +290,7 @@ export function CustomerCart({ restaurantId, previewMenu, previewHours }: { rest
         {problems.length > 0 && <div className={styles.validation} role="alert"><strong>A quick check, please</strong><ul>{problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul></div>}
         {estimate !== null && <div className={styles.total}><span>Estimated total</span><strong>{money(estimate)}</strong></div>}
         <p className={styles.muted}>We’ll check the latest prices before you confirm.</p>
-        <button className={`btn btn-primary ${styles.full}`} disabled={!lines.length || locked || !ready || problems.length > 0} onClick={() => void review()}>{busy ? "Checking the total…" : "Check order & total"}</button>
+        <button className={`btn btn-primary ${styles.full}`} disabled={!fulfillmentType || !lines.length || locked || !ready || problems.length > 0} onClick={() => void review()}>{busy ? "Checking the total…" : "Check order & total"}</button>
         {!preview && <button className={`btn btn-outline ${styles.full}`} disabled={locked} onClick={() => void refresh()}>Refresh menu & reconnect</button>}
       </>}
       {pending && <small className={styles.reference}>Keep this reference: {pending.key}</small>}

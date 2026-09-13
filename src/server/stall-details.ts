@@ -10,14 +10,14 @@ export function stallDetailsHandlers(factory: () => BackendClient = getBackendCl
   const run = async (fn: () => Promise<Response>) => { try { return await fn(); } catch (error) { return errorResponse(error); } };
   return {
     read: (request: Request, restaurantId: string) => run(async () => {
-      const restaurant = id(restaurantId), client = factory(), actor = await verifiedActor(request, client);
+      const restaurant = id(restaurantId), client = factory(), actor = await verifiedActor(request, client, restaurant);
       const result = await databaseRpc(client, "read_stall_details", { p_actor_id: actor, p_restaurant_id: restaurant }, StallDetailsResponseSchema);
       if (result.details && result.details.restaurantId !== restaurant) throw new HttpError(502, "INVALID_RESPONSE", "Stall details did not match the restaurant.");
       return json(result);
     }),
     save: (request: Request, restaurantId: string) => run(async () => {
       requireSameOrigin(request);
-      const restaurant = id(restaurantId), client = factory(), actor = await verifiedActor(request, client);
+      const restaurant = id(restaurantId), client = factory(), actor = await verifiedActor(request, client, restaurant);
       if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") throw new HttpError(415, "INVALID_CONTENT_TYPE", "Send JSON stall details.");
       let value: unknown;
       try { value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await readBoundedBody(request, 20_000))); }

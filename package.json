@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts tests/*.test.mjs",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts tests/*.test.mjs src/components/onboarding/*.test.ts src/components/ordering/*.test.ts src/components/kitchen/*.test.ts",
     "build:sites": "node scripts/build-sites.mjs"
   },
   "dependencies": {

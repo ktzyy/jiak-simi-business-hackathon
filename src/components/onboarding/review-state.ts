@@ -1,12 +1,13 @@
 import { MenuSchema, type Menu } from "@/shared/contracts";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
+import { weeklyHours } from "./hours-state";
 import { buildReviewedMenu } from "@/shared/menu-review";
 
 export type OptionEdit = { id: string; name: string; price: string };
 export type GroupEdit = { id: string; name: string; min: string; max: string; options: OptionEdit[] };
 export type DishEdit = { id: string; name: string; price: string; available: boolean; groups: GroupEdit[]; included: boolean; confirmed: boolean; reason: string; draftItemId?: string };
 export type SourceDecision = { dishIds: string[]; reason: string; confirmed: boolean };
-export type HourDay = { closed: boolean; start: string; end: string; nextDay: boolean; breakStart: string; breakEnd: string; hasBreak: boolean };
+export type HourDay = { intervals?: { opens: string; closes: string; closesNextDay: boolean }[]; closed: boolean; start: string; end: string; nextDay: boolean; breakStart: string; breakEnd: string; hasBreak: boolean };
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export const emptyHours = (): HourDay => ({ closed: false, start: "", end: "", nextDay: false, breakStart: "", breakEnd: "", hasBreak: false });
 export const titleName = (value: string) => value.trim().replace(/[A-Za-z]+(?:'[A-Za-z]+)?/g, word => /^(BBQ|XL|XXL|DIY|SGD)$/.test(word) ? word : word[0].toUpperCase() + word.slice(1).toLowerCase());
@@ -64,27 +65,8 @@ export function reviewedMenu(input: { draft: ExtractedMenuDraft | null; dishes: 
     manualDishIds: input.dishes.filter(d => !d.draftItemId && d.included).map(d => d.id),
   });
 }
-const minute = (v: string) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(v) ? Number(v.slice(0, 2)) * 60 + Number(v.slice(3)) : NaN;
 export function hoursProblem(hours: HourDay[], same: boolean): string | null {
-  const effective = same ? DAYS.map(() => hours[0]) : hours;
-  if (effective.every(day => day.closed)) return "Choose at least one day when your stall is open.";
-  const occupied: { start: number; end: number; day: string }[] = [];
-  for (let i = 0; i < effective.length; i++) {
-    const day = effective[i];
-    if (day.closed) continue;
-    const start = minute(day.start), end = minute(day.end) + (day.nextDay ? 1440 : 0);
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > 1440) return `Check the opening and closing times for ${same ? "each day" : DAYS[i]}. For overnight hours, tick “Closes next day”.`;
-    if (day.hasBreak) {
-      let bs = minute(day.breakStart), be = minute(day.breakEnd);
-      if (day.nextDay && bs < start) bs += 1440;
-      if (day.nextDay && be < start) be += 1440;
-      if (!Number.isFinite(bs) || !Number.isFinite(be) || bs <= start || be >= end || bs >= be) return `Put ${same ? "your" : DAYS[i] + "’s"} midday break inside the opening hours.`;
-      occupied.push({ start: i * 1440 + start, end: i * 1440 + bs, day: DAYS[i] }, { start: i * 1440 + be, end: i * 1440 + end, day: DAYS[i] });
-    } else occupied.push({ start: i * 1440 + start, end: i * 1440 + end, day: DAYS[i] });
-  }
-  const segments = occupied.flatMap(s => s.end > 10080 ? [{ ...s, end: 10080 }, { ...s, start: 0, end: s.end - 10080 }] : [s]).sort((a, b) => a.start - b.start);
-  if (segments.some((s, i) => i > 0 && s.start < segments[i - 1].end)) return "Two opening periods overlap. Check the overnight hours and the following day.";
-  return null;
+  try { weeklyHours(hours, same); return null; } catch (error) { return error instanceof Error ? ("issues" in error ? "Set all seven days and check opening periods, breaks and overnight overlaps." : error.message) : "Check your opening hours."; }
 }
 export function timeLabel(value: string) {
   if (!value) return "—";
@@ -92,6 +74,6 @@ export function timeLabel(value: string) {
   return `${hour % 12 || 12}:${value.slice(3)} ${hour < 12 ? "am" : "pm"}`;
 }
 export function hoursSummary(hours: HourDay[], same: boolean) {
-  const describe = (day: HourDay) => day.closed ? "Closed" : `${timeLabel(day.start)}–${timeLabel(day.end)}${day.nextDay ? " next day" : ""}${day.hasBreak ? ` (break ${timeLabel(day.breakStart)}–${timeLabel(day.breakEnd)})` : ""}`;
+  const describe = (day: HourDay) => day.closed ? "Closed" : day.intervals ? day.intervals.map(period => `${timeLabel(period.opens)}–${timeLabel(period.closes)}${period.closesNextDay ? " next day" : ""}`).join(", ") : `${timeLabel(day.start)}–${timeLabel(day.end)}${day.nextDay ? " next day" : ""}${day.hasBreak ? ` (break ${timeLabel(day.breakStart)}–${timeLabel(day.breakEnd)})` : ""}`;
   return same ? `Mon–Sun ${describe(hours[0])}` : hours.map((day, i) => `${DAYS[i]} ${describe(day)}`).join(" · ");
 }

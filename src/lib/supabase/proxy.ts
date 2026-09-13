@@ -10,6 +10,12 @@ export function isPublicCustomerPath(pathname: string): boolean {
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  if (process.env.DEMO_MODE === "true") {
+    // Public hackathon pages; each API separately scopes demo actions to the
+    // fixed dummy restaurant. This flag never supplies a real Auth identity.
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
   if (isPublicCustomerPath(request.nextUrl.pathname)) {
     response.headers.set("Cache-Control", "no-store");
     return response;
@@ -55,7 +61,10 @@ export async function updateSession(request: NextRequest) {
   };
   const isLoginRoute = request.nextUrl.pathname === "/login";
 
-  if (!isSignedIn && !isLoginRoute) {
+  // Home renders its own signed-out Landing or verified signed-in Dashboard.
+  // Still refresh cookies above, including sessions arriving at the public root.
+  const isLandingRoute = request.nextUrl.pathname === "/";
+  if (!isSignedIn && !isLoginRoute && !isLandingRoute) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";

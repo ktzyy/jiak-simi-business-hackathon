@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Brand } from "./page-shell";
 import styles from "./workspace.module.css";
+import { DEMO_RESTAURANT_ID } from "@/shared/demo-menu";
 
-export function Landing() {
+export function Landing({ demo = false }: { demo?: boolean }) {
   return <>
-    <header className="site-header"><Brand /><Link className="btn btn-outline" href="/login">Log in</Link></header>
+    <header className="site-header"><Brand /><Link className="btn btn-outline" href={demo ? `/?restaurantId=${DEMO_RESTAURANT_ID}` : "/login"}>{demo ? "Open demo" : "Log in"}</Link></header>
     <main className={`page-main ${styles.landing}`}>
       <section className={styles.hero}>
-        <div><p className="eyebrow">Made for the neighbourhood hawker</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p>Short of hands? Start with a photo of your menu. Customers order on their phones, and you see clearly what to cook next.</p><div className="actions"><Link className="btn btn-primary" href="/login?next=%2Fonboarding">Get started →</Link><Link className="btn btn-outline" href="/login">Log in</Link></div></div>
+        <div><p className="eyebrow">Made for the neighbourhood hawker</p><h1>You do the cooking.<br /><span>Let us take<br />the orders.</span></h1><p>Short of hands? Start with a photo of your menu. Customers order on their phones, and you see clearly what to cook next.</p><div className="actions"><Link className="btn btn-primary" href={demo ? "/onboarding" : "/login?next=%2Fonboarding"}>Get started →</Link><Link className="btn btn-outline" href={demo ? `/order/${DEMO_RESTAURANT_ID}` : "/login"}>{demo ? "Try customer ordering" : "Log in"}</Link></div></div>
         <div className={styles.heroPreview} aria-label="Example kitchen ticket"><p className="eyebrow">Less calling out. More cooking.</p><div className={styles.demoTicket}><span className={styles.demoLabel}>EXAMPLE ORDER</span><h2>2 × Char Siew Rice</h2><p>Extra char siew on one</p><hr /><strong>1 × Pork Knuckle Noodles</strong><p>No chilli</p><div className={styles.received}>Order received ✓</div></div><p className="muted">One clear screen. Every dish and extra.</p></div>
       </section>
       <section className={styles.benefits} aria-label="How it works">

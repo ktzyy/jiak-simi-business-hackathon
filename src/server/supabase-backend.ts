@@ -5,6 +5,8 @@ import { z } from "zod";
 import { CartRequestSchema, CompleteKitchenOrderSchema, Id, KitchenResponseSchema, MenuSchema, QuoteSchema, SubmitSchema, TicketSchema } from "../shared/contracts";
 import { errorResponse, HttpError, readBoundedBody } from "./http";
 
+import { publicDemoActor } from "./demo-access";
+
 const STAGING_URL = "https://mikpepfrumtglwweolzq.supabase.co";
 export interface BackendClient {
   rpc(name: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { code?: string; message?: string } | null }>;
@@ -66,7 +68,9 @@ export async function databaseRpc<T>(client: BackendClient, name: string, args: 
 }
 const rpc = databaseRpc;
 
-export async function verifiedActor(request: Request, client: BackendClient): Promise<string> {
+export async function verifiedActor(request: Request, client: BackendClient, restaurantId?: string): Promise<string> {
+  const demoActor = publicDemoActor(request, restaurantId);
+  if (demoActor) return demoActor;
   const token = /^Bearer ([^\s]+)$/.exec(request.headers.get("authorization") ?? "")?.[1];
   if (!token) throw new HttpError(401, "UNAUTHORIZED", "Sign in to the restaurant staff account.");
   const { data, error } = await client.auth.getUser(token);
@@ -149,20 +153,20 @@ export function backendHandlers(factory: () => BackendClient = getBackendClient)
     }),
     kitchen: (request: Request, restaurantId: string) => run(async () => {
       const id = uuid(restaurantId), client = factory();
-      const actor = await verifiedActor(request, client);
+      const actor = await verifiedActor(request, client, id);
       return json(await rpc(client, "read_kitchen_orders", { p_restaurant_id: id, p_actor_id: actor }, KitchenResponseSchema));
     }),
     completeKitchenOrder: (request: Request) => run(async () => {
       requireSameOrigin(request);
-      const client = factory(), actor = await verifiedActor(request, client);
       const input = await body(request, CompleteKitchenOrderSchema);
+      const client = factory(), actor = await verifiedActor(request, client, input.restaurantId);
       const key = uuid(request.headers.get("idempotency-key"));
       return json(await rpc(client, "complete_kitchen_order", { p_actor_id: actor, p_restaurant_id: input.restaurantId, p_order_id: input.orderId, p_expected_status_version: input.expectedStatusVersion, p_idempotency_key: key }, TicketSchema));
     }),
     publish: (request: Request) => run(async () => {
       requireSameOrigin(request);
-      const client = factory(), actor = await verifiedActor(request, client);
       const { menu, stallDetailsVersion } = await body(request, z.strictObject({ menu: MenuSchema, stallDetailsVersion: z.number().int().positive() }));
+      const client = factory(), actor = await verifiedActor(request, client, menu.restaurantId);
       return json(await rpc(client, "publish_menu", { p_restaurant_id: menu.restaurantId, p_actor_id: actor, p_menu: menu, p_stall_details_version: stallDetailsVersion }, MenuSchema));
     }),
   };

@@ -15,7 +15,7 @@ export function createOcrHandler(dependencies: {
       const restaurant = Id.safeParse(request.headers.get("x-restaurant-id"));
       if (!restaurant.success) throw new HttpError(400, "INVALID_REQUEST", "Choose the stall whose menu you're uploading.");
       const client = (dependencies.backend ?? getBackendClient)();
-      const actor = await verifiedActor(request, client);
+      const actor = await verifiedActor(request, client, restaurant.data);
       const apiKey = (dependencies.apiKey ?? (() => process.env.OPENAI_API_KEY))();
       if (!apiKey?.trim()) throw new HttpError(503, "NOT_CONFIGURED", "Menu photo reading isn't available yet. Please enter your menu manually.");
       const image = await readBoundedBody(request, MAX_MENU_IMAGE_BYTES);

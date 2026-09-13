@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, createApiClient } from "@/shared/api-client";
 import { MenuSchema, type Menu } from "@/shared/contracts";
+import type { StallDetails as SavedStallDetails } from "@/shared/stall-details";
+import { detailsInput, editorHours, sameDetailsInput, PendingPublicationSchema, matchesPublication } from "./hours-state";
 import type { ExtractedMenuDraft } from "@/shared/extraction";
 import { OCR_DRAFT_FIXTURE } from "@/shared/ocr-fixtures";
 import { PageShell } from "@/components/ui/page-shell";
@@ -28,7 +30,10 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
   const [name, setName] = useState("");
   const [hours, setHours] = useState(() => DAYS.map(emptyHours));
   const [pageDetails, setPageDetails] = useState({ url: "", address: "", contact: "" });
-  const [sameHours, setSameHours] = useState(true);
+  const [sameHours, setSameHours] = useState(false);
+  const [savedDetails, setSavedDetails] = useState<SavedStallDetails | null>(null);
+  const [previewDetails, setPreviewDetails] = useState<SavedStallDetails | null>(null);
+  const [pendingDetails, setPendingDetails] = useState<SavedStallDetails | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [draft, setDraft] = useState<ExtractedMenuDraft | null>(null);
@@ -54,9 +59,11 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
 
   useEffect(() => {
     let active = true;
-    readCurrent(restaurantId).then(menu => {
+    Promise.all([readCurrent(restaurantId), getStaffAccessToken().then(token => api.readStallDetails(restaurantId, token))]).then(([menu, response]) => {
       if (!active) return;
-      setCurrent(menu); setMenuRead("ready"); setName(old => old || menu?.name || "");
+      setCurrent(menu); setMenuRead("ready"); setSavedDetails(response.details);
+      setName(response.details?.name ?? menu?.name ?? "");
+      if (response.details) { setHours(editorHours(response.details)); setSameHours(false); }
     }).catch(e => {
       if (!active) return;
       setMenuRead("error"); setError(`We couldn’t load the current menu. ${errorText(e)} You can work on your draft, but publication needs this check.`);
@@ -65,9 +72,9 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       try {
         const saved = sessionStorage.getItem(pendingKey);
         if (saved) {
-          const parsed = MenuSchema.safeParse(JSON.parse(saved));
-          if (parsed.success && parsed.data.restaurantId === restaurantId) {
-            setPending(parsed.data); setPreview(parsed.data); setDishes(existingDishes(parsed.data)); setName(parsed.data.name); setStep(3);
+          const parsed = PendingPublicationSchema.safeParse(JSON.parse(saved));
+          if (parsed.success && parsed.data.menu.restaurantId === restaurantId && parsed.data.details.restaurantId === restaurantId) {
+            setPending(parsed.data.menu); setPendingDetails(parsed.data.details); setPreview(parsed.data.menu); setPreviewDetails(parsed.data.details); setDishes(existingDishes(parsed.data.menu)); setName(parsed.data.details.name); setHours(editorHours(parsed.data.details)); setSameHours(false); setStep(3);
             setNotice("A previous publish needs checking. Keep this page open and check its status before making another version.");
           } else throw new Error("The saved publication record could not be verified.");
         }
@@ -141,6 +148,12 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     setSources(old => Object.fromEntries(Object.entries(old).map(([key, value]) => [key, value.dishIds.includes(id) ? { ...value, dishIds: value.dishIds.filter(d => d !== id), confirmed: false } : value])));
     setPreview(null);
   }
+  async function reloadDetails() {
+    if (inFlight.current) return;
+    inFlight.current = true; setBusy("details"); setError("");
+    try { const response = await api.readStallDetails(restaurantId, await getStaffAccessToken()); setSavedDetails(response.details); setName(response.details?.name ?? current?.name ?? ""); setHours(response.details ? editorHours(response.details) : DAYS.map(emptyHours)); setSameHours(false); setPreview(null); setPreviewDetails(null); setNotice("Saved name and hours loaded. Review them before preparing a new preview."); }
+    catch (e) { setError(errorText(e)); } finally { inFlight.current = false; setBusy(""); }
+  }
   async function refresh() {
     if (inFlight.current) return;
     inFlight.current = true; setBusy("refresh"); setError("");
@@ -156,32 +169,40 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     try {
       const fresh = await readCurrent(restaurantId); setCurrent(fresh); setMenuRead("ready");
       const menu = reviewedMenu({ draft, dishes, sources, issues, id: fresh?.id ?? crypto.randomUUID(), restaurantId, version: (fresh?.version ?? 0) + 1, name });
-      setPreview(menu); setMenuOnly(false); setNotice(""); setStep(3);
+      const input = detailsInput(name, hours, sameHours);
+      const token = await getStaffAccessToken();
+      let details = savedDetails;
+      if (!details || !sameDetailsInput(input, details)) {
+        details = (await api.saveStallDetails(restaurantId, { ...input, expectedVersion: details?.version ?? 0 }, token)).details;
+        setSavedDetails(details);
+      }
+      setPreviewDetails(details); setPreview(menu); setMenuOnly(false); setNotice(""); setStep(3);
     } catch (e) { setError(errorText(e)); }
     finally { inFlight.current = false; setBusy(""); }
   }
-  function remember(candidate: Menu) {
+  function remember(candidate: Menu, details: SavedStallDetails) {
     try {
       const prior = sessionStorage.getItem(pendingKey);
       if (prior) {
-        const parsed = MenuSchema.safeParse(JSON.parse(prior));
-        if (!parsed.success || !sameMenu(parsed.data, candidate)) {
+        const parsed = PendingPublicationSchema.safeParse(JSON.parse(prior));
+        if (!parsed.success || !matchesPublication(parsed.data, { menu: candidate, details })) {
           setStorageBlocked(true);
           throw new Error("A different publication record needs checking first.");
         }
       }
-      sessionStorage.setItem(pendingKey, JSON.stringify(candidate));
+      sessionStorage.setItem(pendingKey, JSON.stringify({ menu: candidate, details }));
     }
     catch { throw new Error("Your browser couldn’t keep a record of this publish attempt. Free up browser storage, then try again. Nothing was sent."); }
-    setPending(candidate);
+    setPending(candidate); setPendingDetails(details);
   }
   function finish(menu: Menu) {
-    setCurrent(menu); setPublished(menu); setPending(null); setConflict(false); setNotice(""); setError("");
+    setCurrent(menu); setPublished(menu); setPending(null); setPendingDetails(null); setConflict(false); setNotice(""); setError("");
     try { sessionStorage.removeItem(pendingKey); } catch { /* Reconciliation can safely repeat on a stale saved candidate. */ }
   }
-  async function checkCandidate(candidate: Menu) {
-    const latest = await readCurrent(restaurantId); setCurrent(latest); setMenuRead("ready");
-    if (latest && sameMenu(latest, candidate)) { finish(latest); return "published"; }
+  async function checkCandidate(candidate: Menu, details: SavedStallDetails) {
+    const published = await api.readPublishedStall(restaurantId);
+    const latest = published.menu; setCurrent(latest); setMenuRead("ready");
+    if (matchesPublication({ menu: candidate, details }, published)) { finish(latest); return "published"; }
     if (latest && (latest.id !== candidate.id || latest.version >= candidate.version)) {
       setConflict(true); setNotice("The live menu has changed and doesn’t match this draft. Review again before publishing a new version."); return "conflict";
     }
@@ -189,33 +210,37 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
     return "waiting";
   }
   async function reconcile() {
-    if (!pending || inFlight.current) return;
+    if (!pending || !pendingDetails || inFlight.current) return;
     inFlight.current = true; setBusy("reconcile"); setError("");
-    try { await checkCandidate(pending); }
+    try { await checkCandidate(pending, pendingDetails); }
     catch (e) { setError(`Publish status is still unknown. ${errorText(e)} Keep this page open and check again.`); }
     finally { inFlight.current = false; setBusy(""); }
   }
   async function publish(retry = false) {
     const candidate = retry ? pending : preview;
-    if (!candidate || candidate.restaurantId !== restaurantId || inFlight.current || (!retry && !menuOnly) || conflict || storageBlocked) return;
+    const details = retry ? pendingDetails : previewDetails;
+    if (!details || !candidate || candidate.restaurantId !== restaurantId || inFlight.current || (!retry && !menuOnly) || conflict || storageBlocked) return;
     inFlight.current = true; setBusy("publish"); setError(""); setNotice("");
     let sent = false;
     try {
       const latest = await readCurrent(restaurantId); setCurrent(latest); setMenuRead("ready");
-      if (latest && sameMenu(latest, candidate)) { finish(latest); return; }
+      if (latest && sameMenu(latest, candidate)) { await checkCandidate(candidate, details); return; }
       if ((latest?.version ?? 0) + 1 !== candidate.version || (latest && latest.id !== candidate.id)) {
         if (retry) { setConflict(true); setNotice("The live menu changed while this publication was being checked. Review the draft again before publishing."); }
         else { setPreview(null); setStep(2); setError("The live menu changed since your preview. Check your draft and open a fresh preview before publishing."); }
         return;
       }
-      const token = await getStaffAccessToken(); remember(candidate); sent = true;
-      const result = await api.publishMenu(candidate, token);
+      const token = await getStaffAccessToken();
+      const currentDetails = (await api.readStallDetails(restaurantId, token)).details;
+      if (!currentDetails || JSON.stringify(currentDetails) !== JSON.stringify(details)) { if (retry) setConflict(true); throw new Error("Saved stall details changed. Reload the name and hours and prepare a fresh preview before publishing."); }
+      remember(candidate, details); sent = true;
+      const result = await api.publishMenu(candidate, token, details.version);
       if (!sameMenu(candidate, result)) throw new ApiError("INVALID_RESPONSE", "The published result does not match this draft.", 200, false);
       finish(result);
     } catch (e) {
       if (sent && (needsReconciliation(e) || e instanceof ApiError && e.code === "STALE_MENU")) {
         setError("We haven’t confirmed whether your menu was published. Checking the live menu now…");
-        try { const result = await checkCandidate(candidate); if (result !== "published") setError("Publication isn’t confirmed. Keep this page open and use the status check below."); }
+        try { const result = await checkCandidate(candidate, details); if (result !== "published") setError("Publication isn’t confirmed. Keep this page open and use the status check below."); }
         catch { setError("Publication status is unknown. Keep this page open and check again. Your exact menu version has been kept for a safe retry."); }
       } else {
         if (sent && !retry) { setPending(null); try { sessionStorage.removeItem(pendingKey); } catch { /* No live publication was acknowledged. */ } }
@@ -238,14 +263,14 @@ export function Onboarding({ restaurantId }: { restaurantId: string }) {
       {storageBlocked && <p className="notice" role="status">Publishing is paused while the previous browser record needs checking. You can continue editing, but don’t clear that record or start another publication.</p>}
       {busy && <p className={s.busy} role="status" aria-live="polite">{busy === "extract" ? "Reading the names and prices. Hang on to this page…" : busy === "publish" ? "Checking the latest menu and publishing…" : busy === "preview" ? "Checking your review and the latest menu…" : "Checking the live menu…"}</p>}
       {menuRead === "loading" && <p role="status">Checking your current menu…</p>}
-      {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes · version {published.version}</p><p>Menu names, prices and options are live. Opening hours, address and contact details still need the stall details connection.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
-        {step === 1 && <StallDetails name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} photo={photo} onPhoto={selectPhoto} photoUrl={photoUrl} busy={!!busy} onExtract={extract} onManual={() => { if (mayContinue()) loadDraft(null, "manual"); }} onExample={() => { if (mayContinue()) loadDraft(OCR_DRAFT_FIXTURE, "sample"); }} onExisting={() => { if (current && mayContinue()) loadDraft(null, "current"); }} currentMenu={current?.name ?? ""} existingAvailable={!!current} pageDetails={pageDetails} setPageDetails={setPageDetails} />}
+      {published ? <section className={`card ${s.success}`}><span className={s.successMark} aria-hidden="true">✓</span><h2>All set. Share your menu.</h2><p><strong>{published.name}</strong> · {published.dishes.length} dishes · version {published.version}</p><p>Menu names, prices, options and the reviewed opening hours are live. Address and contact import remain unavailable.</p><div className={s.actions}><Link href={`/storefront?restaurantId=${restaurantId}`} className="btn btn-primary">Get my menu link & QR →</Link><Link href={`/order/${restaurantId}`} className="btn btn-outline">Open customer menu</Link></div></section> : <fieldset className={s.work} disabled={!!busy || menuRead === "loading"}>
+        {step === 1 && <StallDetails onReloadDetails={reloadDetails} name={name} setName={setName} hours={hours} setHours={setHours} sameHours={sameHours} setSameHours={setSameHours} photo={photo} onPhoto={selectPhoto} photoUrl={photoUrl} busy={!!busy} onExtract={extract} onManual={() => { if (mayContinue()) loadDraft(null, "manual"); }} onExample={() => { if (mayContinue()) loadDraft(OCR_DRAFT_FIXTURE, "sample"); }} onExisting={() => { if (current && mayContinue()) loadDraft(null, "current"); }} currentMenu={current?.name ?? ""} existingAvailable={!!current} pageDetails={pageDetails} setPageDetails={setPageDetails} />}
         {step === 2 && <MenuReview dishes={dishes} draft={draft} sources={sources} issues={issues} sample={sample} photoUrl={draft && !sample ? photoUrl : null} onDishChange={changeDish} onConfirmDish={id => confirmDishes([id])} onConfirmAll={() => confirmDishes(dishes.map(d => d.id))} onAddDish={() => { const dish = newDish(); setDishes(old => [...old, dish]); return dish.id; }} onRemoveDish={removeDish} onSourceChange={(id, decision) => { setSources(old => ({ ...old, [id]: decision })); setPreview(null); }} onIssueChange={(id, value) => setIssues(old => ({ ...old, [id]: value }))} onContinue={preparePreview} onBack={() => { setStep(1); setError(""); }} />}
         {step === 3 && preview && <div className={s.stack}>
           <div className={s.previewIntro}><p className="eyebrow">Customer preview</p><h2>This is what they’ll see.</h2><p>Scroll through the menu and tap “Add to order” to try the options. Preview orders won’t go to your kitchen.</p>{sample && <p className="notice">You are previewing the saved, unapproved extraction example.</p>}</div>
           <div className={s.phone}><div className={s.phoneTop} aria-hidden="true"><span>9:41</span><span className={s.island} /><span>● ▰</span></div><div className={s.phoneScreen}><CustomerCart key={JSON.stringify(preview)} restaurantId={restaurantId} previewMenu={preview} previewHours={hoursProblem(hours, sameHours) ? undefined : hoursSummary(hours, sameHours)} /></div><div className={s.phoneBottom} aria-hidden="true" /></div>
-          <section className={`card ${s.section}`}><h2>{pending ? "Check your publication" : "Ready to put your menu up?"}</h2><p>Version {preview.version} · {preview.dishes.filter(d => d.available).length} dishes available to order</p>
-            <p className="notice">For this first test, publishing saves the menu name, dish prices and options. Hours, address, contact details, dine-in/takeaway and dish photos aren’t saved to the customer page yet.</p>
+          <section className={`card ${s.section}`}><h2>{pending ? "Check your publication" : "Ready to put your menu up?"}</h2><p>Version {preview.version} · reviewed stall details version {previewDetails?.version ?? pendingDetails?.version} · {preview.dishes.filter(d => d.available).length} dishes available to order</p>
+            <p className="notice">Publishing saves this menu with the reviewed stall name and opening hours. Address, contact import and dish photos are not included.</p>
             {!pending ? <><label className={s.check}><input type="checkbox" checked={menuOnly} onChange={e => setMenuOnly(e.target.checked)} />I’ve checked the preview. Publish this menu for the test.</label><div className={s.actions}><button className="btn btn-outline" onClick={() => { setStep(2); setPreview(null); }}>← Back to editing</button><button className="btn btn-primary" disabled={!menuOnly || storageBlocked} onClick={() => publish()}>Publish menu →</button></div></> : <><p>Keep this page open until we can confirm what’s live. Retrying uses this same menu and version.</p><div className={s.actions}><button className="btn btn-teal" onClick={reconcile}>Check publication status</button>{conflict ? <button className="btn btn-outline" onClick={returnAfterConflict}>Return to review</button> : <button className="btn btn-outline" disabled={storageBlocked} onClick={() => publish(true)}>Retry this exact publish</button>}</div></>}
           </section>
         </div>}

@@ -8,6 +8,7 @@ export function OrderReview({ quote, busy, locked, preview, onConfirm, onEdit }:
   return <section aria-label="Review your order">
     <p className="eyebrow">{preview ? "Preview only" : "One last check"}</p>
     <h2>Your order, all correct?</h2>
+    <p><strong>{quote.fulfillmentType === "dine_in" ? "Dine-in" : "Takeaway"}</strong></p>
     <p className={styles.muted}>{locked ? "Keep these details as they are while we check your order." : "Check your dishes and extras before sending to the stall."}</p>
     <div className={styles.reviewLines}>{quote.lines.map((line, i) => <div className={styles.reviewLine} key={`${line.dishId}-${i}`}>
       <div><strong>{line.quantity} × {line.name}</strong>{line.options.map(option => <small key={option.id}>{option.name} {option.priceDeltaCents !== 0 && `(${option.priceDeltaCents > 0 ? "+" : "−"}${money(Math.abs(option.priceDeltaCents))})`}</small>)}</div>

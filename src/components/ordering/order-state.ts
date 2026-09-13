@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { ApiError } from "@/shared/api-client";
+import type { StallDetails } from "@/shared/stall-details";
 import { CartRequestSchema, QuoteSchema, TicketSchema, type CartRequest, type Menu, type Quote, type Ticket } from "@/shared/contracts";
 
 export const money = (cents: number) => new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(cents / 100);
 
-export function quoteMatchesCart(cart: CartRequest, quote: Quote): boolean {
-  return cart.restaurantId === quote.restaurantId && cart.menuId === quote.menuId && cart.menuVersion === quote.menuVersion &&
+export function quoteMatchesCart(cart: CartRequest, quote: Quote | Ticket["cart"]): boolean {
+  return cart.restaurantId === quote.restaurantId && cart.menuId === quote.menuId && cart.menuVersion === quote.menuVersion && cart.fulfillmentType === quote.fulfillmentType &&
     cart.lines.length === quote.lines.length && quote.totalCents === quote.lines.reduce((sum, line) => sum + line.lineTotalCents, 0) &&
     cart.lines.every((line, i) => {
       const priced = quote.lines[i];
@@ -60,12 +61,18 @@ export function cartProblems(menu: Menu, lines: CartRequest["lines"]): string[] 
 }
 
 /** Display estimate only. Real orders always use the shared client's server quote. */
-export function previewQuote(menu: Menu, lines: CartRequest["lines"]): Quote {
+export function previewQuote(menu: Menu, lines: CartRequest["lines"], fulfillmentType: CartRequest["fulfillmentType"]): Quote {
   const quotedLines = lines.map(line => {
     const dish = menu.dishes.find(item => item.id === line.dishId)!;
     const options = dish.modifierGroups.flatMap(group => group.options).filter(option => line.optionIds.includes(option.id));
     const unitPriceCents = dish.priceCents + options.reduce((sum, option) => sum + option.priceDeltaCents, 0);
     return { dishId: dish.id, name: dish.name, quantity: line.quantity, options, unitPriceCents, lineTotalCents: unitPriceCents * line.quantity };
   });
-  return { restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, currency: "SGD", lines: quotedLines, totalCents: quotedLines.reduce((sum, line) => sum + line.lineTotalCents, 0) };
+  return { restaurantId: menu.restaurantId, menuId: menu.id, menuVersion: menu.version, fulfillmentType, currency: "SGD", lines: quotedLines, totalCents: quotedLines.reduce((sum, line) => sum + line.lineTotalCents, 0) };
+}
+
+
+export function formatPublishedHours(details: StallDetails): string[] {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  return [...details.weeklyHours].sort((a, b) => a.weekday - b.weekday).map(day => `${days[day.weekday - 1]}: ${day.closed ? "Closed" : day.intervals.map(interval => `${interval.opens}–${interval.closes}${interval.closesNextDay ? " (next day)" : ""}`).join(", ")}`);
 }

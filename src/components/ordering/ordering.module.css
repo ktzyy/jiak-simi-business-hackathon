@@ -8,3 +8,5 @@
 @media(min-width:650px){.customer:not(.preview){border-inline:1px solid var(--line)}.customer:not(.preview) .dishes{grid-template-columns:1fr 1fr}.customer:not(.preview) .dish{grid-template-columns:1fr}.customer:not(.preview) .photo{min-height:175px}.customer:not(.preview) .dishBody{min-height:185px}.customer:not(.preview) .header{padding:40px}.customer:not(.preview) .menuContent{padding:32px 40px}.receipt{padding:50px}}
 @media(max-width:400px){.header,.menuContent{padding-inline:20px}.dish{grid-template-columns:110px 1fr;min-height:170px}.dishBody{padding:16px 13px}.dishBody h3{font-size:18px}.dishBody button{font-size:12px;padding:10px 14px}.sectionHeading h2{font-size:21px}.sheet{padding-inline:20px}.receipt{padding:34px 22px}.receipt h1{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.loader{animation:none}}
+
+.dining button:not(:disabled){cursor:pointer}.dining button[aria-pressed="true"]{background:var(--teal,#16756a);color:white}.dining button:focus-visible{outline:3px solid #1b6258;outline-offset:2px}.dining button:disabled{opacity:.65}
