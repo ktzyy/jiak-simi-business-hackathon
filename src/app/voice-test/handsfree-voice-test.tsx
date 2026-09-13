@@ -7,6 +7,7 @@ import { connectLiveAudio, playVoiceReadback, recordVoiceConfirmation, type Live
 import type { Ticket, Quote, Menu } from "@/shared/contracts";
 import { PUBLIC_DEMO_BEARER } from "@/shared/public-demo";
 import { createApiClient } from "@/shared/api-client";
+import { isVoiceMenuConversation } from "@/shared/live-conversation";
 import styles from "./voice.module.css";
 
 type Connection = Awaited<ReturnType<typeof connectLiveAudio>>;
@@ -70,10 +71,10 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
       connection.current = live;
       const seen = new Set<string>();
       while (!abort.signal.aborted) {
-        const status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
+        let status = await command<Status>({ action: "status", voiceSessionId: live.voiceSessionId }, abort.signal);
         if (!mounted.current || abort.signal.aborted) break;
         if (status.phase === "error" || status.phase === "closed") throw new Error(failureMessage(status));
-        if (status.phase === "collecting" && transcriptDraft.current.text && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
+        if (status.phase === "collecting" && transcriptDraft.current.text && !isVoiceMenuConversation(transcriptDraft.current.text) && transcriptDraft.current.sent !== transcriptDraft.current.text && Date.now() - transcriptDraft.current.at >= 1200) {
           transcriptDraft.current.sent = transcriptDraft.current.text;
           await command({ action: "draft", voiceSessionId: live.voiceSessionId, text: transcriptDraft.current.text }, abort.signal);
         }
@@ -95,8 +96,11 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
           setState("Checking your recorded answer");
           const body = { action: "confirm", voiceSessionId: live.voiceSessionId, readbackId: id, audio: encode(wav) };
           // Exact recording/id retry recovers uncertain transport without a new consent.
-          try { await command(body, abort.signal); }
-          catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; await command(body, abort.signal); }
+          try { status = await command<Status>(body, abort.signal); }
+          catch (failure) { if (abort.signal.aborted || !(failure instanceof TypeError)) throw failure; status = await command<Status>(body, abort.signal); }
+          if (!mounted.current || abort.signal.aborted) break;
+          if (status.phase === "error" || status.phase === "closed") throw new Error(failureMessage(status));
+          setQuote(status.quote ?? null);
         }
         if (status.ticket) { setTicket(status.ticket); setState("Order sent to kitchen — payment due at the stall"); audio.current!.muted = false; live.setMicrophoneEnabled(false); break; }
         await new Promise<void>(resolve => setTimeout(resolve, 350));
@@ -114,7 +118,7 @@ export function HandsfreeVoiceTest({ publicDemo = false }: { publicDemo?: boolea
       <section className={`card ${styles.panel}`} aria-labelledby="voice-guide"><h2 id="voice-guide">What can I order?</h2>
         {menu ? <ul className={styles.menu}>{menu.dishes.filter(dish => dish.available).map(dish => <li key={dish.id}><strong>{dish.name}</strong><span>{money(dish.priceCents)}</span></li>)}</ul> : <p>Loading today’s menu…</p>}
         <p>Add egg, char siew or shao rou. Ask for chilli or no chilli.</p>
-        <div className={styles.example}><strong>Try saying</strong><p>“One Char Siew Rice, add egg, no chilli, takeaway.”</p></div>
+        <div className={styles.example}><strong>Try saying</strong><p>“One Char Siew Rice, add egg, no chilli, dabao.”</p></div>
         <p>Listen to the summary. After the beep, say <strong>“Confirm.”</strong></p>
         <div className="actions"><button className="btn btn-primary" onClick={() => { void start(); }} disabled={running}>Start device</button><button className="btn btn-outline" onClick={() => { void stop(); }} disabled={!running}>Stop device</button></div>
         <p role="status" className={styles.state}>{state}</p>{error && <p role="alert" className={styles.error}>{error}</p>}

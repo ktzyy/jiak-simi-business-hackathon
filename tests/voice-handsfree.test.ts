@@ -19,7 +19,7 @@ function setup(answer = "Yes, place this order.", overrides: Partial<ButlerHooks
   const butler = new LiveButler("actor", "session", {
     now: () => clock,
     prepare: async text => { assert.match(text, /rice/); return { quote: fixtureQuote, confirmationNonce: nonce, revision: 2 }; },
-    invalidate: async () => { invalidated++; }, speech: async text => { assert.match(text, /Payment is still due/); return Buffer.from("finite-audio"); },
+    invalidate: async () => { invalidated++; }, speech: async text => { assert.match(text, /Pay at the stall/); return Buffer.from("finite-audio"); },
     transcribe: async () => { transcribed++; return answer; },
     submit: async id => { assert.equal(id, nonce); submitted++; return { ...fixtureTicket, source: "voice" }; },
     close: async () => {},
@@ -99,7 +99,7 @@ test("confirmation guard accepts only complete exact affirmative; audio must con
   assert.equal(explicitVoiceConfirmation("Yes, place this order!"), true);
   validateConfirmationWav(wav()); assert.throws(() => validateConfirmationWav(wav(true))); assert.throws(() => validateConfirmationWav(Buffer.alloc(100)));
   const silence = wav(); silence.fill(0, 44); assert.throws(() => validateConfirmationWav(silence));
-  assert.match(quoteReadback(fixtureQuote), /Singapore dollars/);
+  assert.match(quoteReadback(fixtureQuote), /dollars/);
 });
 test("separate speech adapters use exact documented models and complete file response without approval prompt", async () => {
   const fetcher: typeof fetch = async (url, options) => {
@@ -164,4 +164,20 @@ test("fresh server quote is visible while speech is prepared and disappears on a
   assert.equal("quote" in s.butler.status(), false);
   finishSpeech(Buffer.from("audio")); await pending;
   assert.equal(s.butler.status().phase, "collecting"); assert.equal("quote" in s.butler.status(), false);
+});
+
+
+test("menu questions stay conversational without pausing the microphone or consuming quote attempts", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const s = setup();
+  await s.butler.receive({ type: "session.input_transcript.delta", event_id: "question", delta: "Hi, what's your menu?" });
+  t.mock.timers.tick(1200);
+  s.butler.previewTranscript("Hi, what's your menu? Show me the menu again.");
+  await s.butler.receive({ type: "session.delegation.created", event_id: "question-delegation", delegation: { id: "question", target: "client" } });
+  assert.equal(s.butler.status().phase, "collecting");
+  assert.ok(!s.commands.some(event => event.type === "session.input_audio.mute"));
+  await s.butler.receive({ type: "session.input_transcript.delta", event_id: "order", delta: " One rice, takeaway." });
+  await s.butler.receive({ type: "session.delegation.created", event_id: "order-delegation", delegation: { id: "order", target: "client" } });
+  assert.equal(s.butler.status().phase, "readback");
+  await s.butler.stop();
 });

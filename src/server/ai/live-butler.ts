@@ -4,6 +4,7 @@ import WebSocket from "ws";
 import type { Quote, Ticket } from "../../shared/contracts";
 import { HttpError } from "../http";
 import { explicitVoiceConfirmation, quoteReadback, validateConfirmationWav } from "./live-confirmation-audio";
+import { isVoiceMenuConversation } from "../../shared/live-conversation";
 
 export type VoiceReview = { quote: Quote; confirmationNonce: string; revision: number };
 type Phase = "collecting" | "preparing" | "readback" | "playing" | "confirming" | "transcribing" | "submitted" | "closed" | "error";
@@ -105,6 +106,12 @@ export class LiveButler {
   }
   private async prepare(delegationId: string | null) {
     if (this.draftTimer) clearTimeout(this.draftTimer);
+    if (isVoiceMenuConversation(this.text)) {
+      try {
+        if (delegationId) this.send("session.thinking.append", "Answer this greeting or menu question briefly from the published menu. No order is being prepared. Keep listening for the customer's order.", delegationId);
+      } catch { this.diagnose("provider", "VOICE_PROVIDER_COMMAND_FAILED"); await this.stop(true); }
+      return;
+    }
     this.phase = "preparing"; this.review = undefined;
     let generation = this.generation;
     let stage = "mute";
@@ -119,7 +126,7 @@ export class LiveButler {
       stage = "prepare";
       const review = await this.hooks.prepare(this.text);
       if (this.phase !== "preparing") return;
-      if (!review || generation !== this.generation) { await this.resume("The order needs clarification. Ask for the full final order, including dine-in or takeaway and required options, then delegate again. Nothing was placed."); return; }
+      if (!review || generation !== this.generation) { await this.resume("The order needs clarification. Ask one short question about the unclear dish, quantity or required choice. Keep the demo's dine-in and chilli defaults unless the customer changes them. Then collect the final order and delegate again. Nothing was placed."); return; }
       this.review = review;
       const text = quoteReadback(review.quote);
       stage = "speech";
@@ -165,7 +172,7 @@ export class LiveButler {
         stage = "submit";
         const ticket = await this.hooks.submit(review.confirmationNonce);
         this.ticket = ticket; this.phase = "submitted";
-        this.send("session.commentary.append", `The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Tell the customer their order has reached the kitchen and payment is due at the stall.`);
+        this.send("session.commentary.append", `The order was saved successfully. Ticket ${ticket.id}. Payment remains unpaid. Acknowledge once, briefly in natural Singapore English: Can, order sent to the kitchen. Pay at the stall, thanks! Do not read the ticket ID or ask another question.`);
       } catch (error) {
         this.diagnose(stage, error instanceof HttpError && /^[A-Z_]{1,64}$/.test(error.code) ? error.code : `VOICE_${stage.toUpperCase()}_FAILED`);
         // A known transcription failure happened before submission. Replay the
